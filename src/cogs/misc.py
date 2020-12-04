@@ -17,7 +17,7 @@ class Misc(commands.Cog):
         milliseconds_to_send = round((after - before).total_seconds() * 1000)
         message: discord.Message = ctx.message
         heartbeat_latency = round(self.bot.latency * 1000)
-        total_latency = (sent_message.created_at - message.created_at).microseconds // 1000
+        total_latency = round((sent_message.created_at - message.created_at).total_seconds() * 1000)
         embed = discord.Embed(title="Latency (Ping) Report")
         embed.add_field(name="Ping to Discord", value="{}ms".format(milliseconds_to_send // 2), inline=False)
         embed.add_field(name="Me -> Discord -> Me (Heartbeat)",
