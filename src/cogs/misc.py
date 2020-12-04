@@ -30,6 +30,9 @@ class Misc(commands.Cog):
         embed.add_field(name="Received (millis)", value=str(rx_from_epoch))
         embed.add_field(name="Sent (millis)", value=str(tx_from_epoch))
         embed.add_field(name="Difference between (ms)", value=str(tx_from_epoch-rx_from_epoch))
+        embed.add_field(name="Received snowflake timestamp", value=str((message.id >> 22) + 1420070400000))
+        embed.add_field(name="Sent snowflake timestamp", value=str((sent_message.id >> 22) + 1420070400000))
+
         if total_latency < 75:
             embed.colour = discord.Colour.green()
         elif total_latency < 250:
