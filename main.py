@@ -49,7 +49,7 @@ def get_bot():
     async def on_ready():
         for extension_name in config.extensions:
             print("Loading cog named {}...".format(extension_name))
-            bot.load_extension("cogs.{}".format(extension_name))
+            bot.load_extension("src.cogs.{}".format(extension_name))
             print("Loaded cog {}!".format(extension_name))
         bot.guild = bot.get_guild(config.guild_id)
         bot.error_channel = bot.get_channel(config.error_channel_id)
