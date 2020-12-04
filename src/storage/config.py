@@ -22,6 +22,14 @@ suggestions_decisions_id = 727563806762598450
 # Settings for audit/general reactions cog
 fast_forward_emoji = u"\u23E9"
 rewind_emoji = u"\u23EA"
+robot_emoji = u"\U0001F916"
+computer_emoji = u"\U0001F4BB"
+forward_arrow = u"\u25B6"
+backwards_arrow = u"\u25C0"
+both_arrow = u"\u2194"
+heart_emoji = u"\u2764"
+discord_emoji = "<:discord:784309400524292117>"
+
 
 # Settings for purge
 purge_max = 30

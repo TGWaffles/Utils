@@ -13,7 +13,7 @@ class Audit(commands.Cog):
 
     @commands.command(pass_context=True)
     @is_staff()
-    def audit(self, ctx, command, member: discord.Member, *, other_info=""):
+    async def audit(self, ctx, command, member: discord.Member, *, other_info=""):
         if command.lower() == "roles":
             await self.audit_roles(ctx, member)
             return
