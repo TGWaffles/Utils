@@ -24,6 +24,12 @@ class Misc(commands.Cog):
                         value="{}ms".format(heartbeat_latency), inline=False)
         embed.add_field(name="Total time: Your message -> My reply",
                         value="{}ms".format(total_latency), inline=False)
+        epoch = datetime.datetime.utcfromtimestamp(0)
+        rx_from_epoch = round((message.created_at - epoch).total_seconds() * 1000)
+        tx_from_epoch = round((sent_message.created_at - epoch).total_seconds() * 1000)
+        embed.add_field(name="Received (millis)", value=str(rx_from_epoch))
+        embed.add_field(name="Sent (millis)", value=str(tx_from_epoch))
+        embed.add_field(name="Difference between (ms)", value=str(tx_from_epoch-rx_from_epoch))
         if total_latency < 75:
             embed.colour = discord.Colour.green()
         elif total_latency < 250:
