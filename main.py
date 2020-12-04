@@ -12,7 +12,12 @@ class UtilsBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=config.bot_prefix, description=config.description,
                          loop=asyncio.new_event_loop())
-        self.server = None
+        self.guild = None
+
+    @staticmethod
+    def create_error_embed(text):
+        embed = discord.Embed(title="Error", description=text, colour=discord.Colour.red())
+        return embed
 
     @staticmethod
     def restart():
@@ -28,6 +33,7 @@ def get_bot():
             print("Loading cog named {}...".format(extension_name))
             bot.load_extension(extension_name)
             print("Loaded cog {}!".format(extension_name))
+        bot.guild = bot.get_guild(config.guild_id)
 
     # noinspection PyUnusedLocal
     @bot.event
