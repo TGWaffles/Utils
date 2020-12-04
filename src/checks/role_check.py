@@ -10,3 +10,12 @@ def is_staff():
         return config.staff_role_id in [role.id for role in member.roles] or member.guild_permissions.administrator
 
     commands.check(predicate)
+
+
+def is_high_staff():
+    def predicate(ctx: commands.Context):
+        member: discord.Member = ctx.message.author
+        return (any([True for role in member.roles if role.id in config.high_staff]) or
+                member.guild_permissions.administrator)
+
+    commands.check(predicate)
