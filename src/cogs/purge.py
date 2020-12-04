@@ -15,7 +15,7 @@ class Purge(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
 
-    @commands.command()
+    @commands.command(pass_context=True)
     @is_high_staff()
     async def purge(self, ctx, amount: int = None):
         if ctx.message.author.id != config.owner_id and (config.purge_max > amount > 0):
