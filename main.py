@@ -83,7 +83,7 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx, error):
-        if isinstance(error, commands.CommandNotFound):
+        if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.DisabledCommand):
             return
         try:
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
