@@ -32,9 +32,10 @@ class CommandManager(commands.Cog):
         if command.enabled:
             await ctx.send(embed=self.bot.create_error_embed("Command already enabled."))
             return
+        cog = command.cog
         command.update(enabled=True)
         try:
-            await command.callback(ctx)
+            await command.callback(cog, ctx)
         except TypeError:
             pass
         enabling_msg = await ctx.send(embed=self.bot.create_processing_embed("Enabling...",
