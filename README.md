@@ -1,6 +1,8 @@
 # MonkeyUtils
 Utils bot for Ahh-Monkey
 
+I will be adding comments, promise!
+
 # Rules for Contributors 
 There's one rule. Conform to PEP-8. 
 
