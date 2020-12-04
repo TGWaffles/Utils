@@ -24,6 +24,12 @@ class Misc(commands.Cog):
                         value="{}ms".format(heartbeat_latency), inline=False)
         embed.add_field(name="Total time: Your message -> My reply",
                         value="{}ms".format(total_latency), inline=False)
+        if total_latency < 75:
+            embed.colour = discord.Colour.green()
+        elif total_latency < 250:
+            embed.colour = discord.Colour.orange()
+        else:
+            embed.colour = discord.Colour.red()
 
         await sent_message.edit(content="", embed=embed)
 
