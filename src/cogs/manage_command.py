@@ -32,6 +32,7 @@ class CommandManager(commands.Cog):
             return
         command.update(enabled=True)
         await ctx.send(embed=self.bot.create_completed_embed("Enabled.", "Command {} enabled!".format(command_name)))
+        await command.callback(ctx)
 
 
 def setup(bot):
