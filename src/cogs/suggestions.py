@@ -96,6 +96,8 @@ class Suggestions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.author.bot:
+            return
         if message.channel == self.suggestions_channel:
             await self.handle_channel_message(message)
 
