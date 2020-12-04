@@ -2,7 +2,7 @@ import datetime
 
 import discord
 from discord.ext import commands
-
+from src.storage import config
 from src.checks.role_check import is_staff
 from src.main import UtilsBot
 
@@ -116,7 +116,7 @@ class Audit(commands.Cog):
             if user.id != int(embed.author.name):
                 await reaction.remove(user)
                 return
-            if reaction.emoji == "⏩":
+            if reaction.emoji == config.fast_forward_emoji:
                 if embed.footer is discord.Embed.Empty:
                     return
                 time_object = datetime.datetime.fromtimestamp(float(embed.footer.text.split("\n")[1]))
@@ -133,14 +133,14 @@ class Audit(commands.Cog):
                     add_forward = False
                 await message.edit(content=None, embed=new_embed)
                 await reaction.remove(user)
-                if "⏪" not in message.reactions:
-                    await message.add_reaction("⏪")
+                if config.rewind_emoji not in message.reactions:
+                    await message.add_reaction(config.rewind_emoji)
                     if add_forward:
-                        await message.remove_reaction("⏩", self.bot.user)
-                        await message.add_reaction("⏩")
+                        await message.remove_reaction(config.fast_forward_emoji, self.bot.user)
+                        await message.add_reaction(config.fast_forward_emoji)
                 if not add_forward:
-                    await message.remove_reaction("⏩", self.bot.user)
-            elif reaction.emoji == "⏪":
+                    await message.remove_reaction(config.fast_forward_emoji, self.bot.user)
+            elif reaction.emoji == config.rewind_emoji:
                 embed_fields = embed.fields
                 if len(embed_fields) == 0:
                     return
