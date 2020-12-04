@@ -14,6 +14,6 @@ bot_not_author = "I didn't send that message."
 no_embed = "No embed was found in that message. That's odd."
 
 purge_limit = (f"I have a limit of {config.purge_max} imposed on this command to prevent accidents. "
-               f"Tag me or do an amount <= {config.purge_max}.")
+               f"Tag Thomas or do an amount <= {config.purge_max}.")
 
 no_purge_amount = "You included no amount. I am not allowing this so I can prevent accidents."

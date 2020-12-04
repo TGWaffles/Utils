@@ -18,7 +18,7 @@ class Purge(commands.Cog):
     @commands.command(pass_context=True)
     @is_high_staff()
     async def purge(self, ctx, amount: int = None):
-        if ctx.message.author.id != config.owner_id and (config.purge_max > amount > 0):
+        if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
             await ctx.send(embed=self.bot.create_error_embed(messages.purge_limit))
             return
         if amount is None:
@@ -29,10 +29,14 @@ class Purge(commands.Cog):
                                                                                     "clear the whole channel...?"))
             try:
                 await self.bot.wait_for("message", check=check_reply, timeout=60.0)
+                await ctx.message.channel.purge(limit=None, bulk=True)
             except asyncio.TimeoutError:
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
-            await ctx.message.channel.purge(limit=amount, bulk=True)
+            try:
+                await ctx.message.channel.purge(limit=amount+1, bulk=True)
+            except discord.NotFound:
+                pass
 
 
 def setup(bot):

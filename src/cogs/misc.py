@@ -11,23 +11,20 @@ class Misc(commands.Cog):
 
     @commands.command(pass_context=True)
     async def ping(self, ctx):
-        time_now = datetime.datetime.now()
-        message: discord.Message = ctx.message
-        receive_message_delay = (time_now - message.created_at).microseconds // 1000
-        time_before = datetime.datetime.now()
+        before = datetime.datetime.now()
         sent_message: discord.Message = await ctx.send("Pong!")
-        send_message_delay = (sent_message.created_at - time_before).microseconds // 1000
+        after = datetime.datetime.now()
+        milliseconds_to_send = round((after - before).total_seconds() * 1000)
+        message: discord.Message = ctx.message
         heartbeat_latency = round(self.bot.latency * 1000)
         total_latency = (sent_message.created_at - message.created_at).microseconds // 1000
         embed = discord.Embed(title="Latency (Ping) Report")
-        embed.add_field(name="Your message -> Me",
-                        value="{}ms".format(receive_message_delay), inline=False)
-        embed.add_field(name="My reply -> Discord", value="{}ms".format(send_message_delay),
-                        inline=False)
+        embed.add_field(name="Ping to Discord", value="{}ms".format(milliseconds_to_send // 2), inline=False)
         embed.add_field(name="Me -> Discord -> Me (Heartbeat)",
                         value="{}ms".format(heartbeat_latency), inline=False)
         embed.add_field(name="Total time: Your message -> My reply",
                         value="{}ms".format(total_latency), inline=False)
+
         await sent_message.edit(content="", embed=embed)
 
 

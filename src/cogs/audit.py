@@ -102,6 +102,7 @@ class Audit(commands.Cog):
                     break
         return entries, last_time, first_time
 
+    @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         if user == self.bot.user or reaction.message.author != self.bot.user:
             return
