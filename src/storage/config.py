@@ -1,3 +1,5 @@
+version_number = "1.0"
+
 bot_prefix = "!"
 description = "Discord bot for Ahh-Monkey"
 owner_id = 230778630597246983

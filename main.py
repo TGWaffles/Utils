@@ -3,6 +3,7 @@ import asyncio
 import sys
 import json
 import os
+import subprocess
 
 from discord.ext import commands
 from src.storage import config
@@ -40,7 +41,7 @@ class UtilsBot(commands.Bot):
     @staticmethod
     def completed_restart_write(channel_id, message_id, title, text):
         with open("restart_info.json", 'w') as file:
-            file.write(json.dumps([channel_id, message_id, title, text]))
+            file.write(json.dumps([channel_id, message_id, title, text, config.version_number]))
 
 
 def get_bot():
@@ -57,9 +58,14 @@ def get_bot():
             print("Loaded cog {}!".format(extension_name))
         if os.path.exists("restart_info.json"):
             with open("restart_info.json", 'r') as file:
-                channel_id, message_id, title, text = json.loads(file.read())
+                channel_id, message_id, title, text, old_version_num = json.loads(file.read())
             original_msg = await bot.get_channel(channel_id).fetch_message(message_id)
-            await original_msg.edit(embed=bot.create_completed_embed(title, text))
+            embed = bot.create_completed_embed(title, text)
+            embed.add_field(name="New Version: {}".format(config.version_number),
+                            value="Previous Version: {}".format(old_version_num))
+            last_commit_message = subprocess.check_output(["git", "log", "-1", "--pretty=%s"]).decode("utf-8").strip()
+            embed.set_footer(text=last_commit_message)
+            await original_msg.edit(embed=embed)
             os.remove("restart_info.json")
 
     # noinspection PyUnusedLocal
