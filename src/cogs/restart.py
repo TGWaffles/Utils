@@ -38,3 +38,9 @@ class Restart(commands.Cog):
                                          "Restarted successfully!")
         self.bot.restart()
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
+
+
+def setup(bot):
+    cog = Restart(bot)
+    bot.add_cog(cog)
+

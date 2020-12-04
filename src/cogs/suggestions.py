@@ -101,3 +101,8 @@ class Suggestions(commands.Cog):
 
         elif message.channel == self.decisions_channel:
             await self.handle_decision_message(message)
+
+
+def setup(bot):
+    cog = Suggestions(bot)
+    bot.add_cog(cog)

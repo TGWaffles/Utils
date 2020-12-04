@@ -28,3 +28,8 @@ class Misc:
         embed.add_field(name="Total latency from your message time to my message time",
                         value="{}ms".format(total_latency))
         await sent_message.edit(content="", embed=embed)
+
+
+def setup(bot):
+    cog = Misc(bot)
+    bot.add_cog(cog)

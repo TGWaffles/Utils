@@ -33,3 +33,8 @@ class Purge(commands.Cog):
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
             await ctx.message.channel.purge(limit=amount, bulk=True)
+
+
+def setup(bot):
+    cog = Purge(bot)
+    bot.add_cog(cog)

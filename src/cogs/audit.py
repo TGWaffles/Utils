@@ -161,3 +161,8 @@ class Audit(commands.Cog):
                 await reaction.remove(user)
                 if not add_back:
                     await reaction.remove(self.bot.user)
+
+
+def setup(bot):
+    cog = Audit(bot)
+    bot.add_cog(cog)
