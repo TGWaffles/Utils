@@ -12,6 +12,7 @@ from src.storage.token import token  # token.py is just one variable - token = "
 
 class UtilsBot(commands.Bot):
     def __init__(self):
+        # Initialises the actual commands.Bot class
         super().__init__(command_prefix=config.bot_prefix, description=config.description,
                          loop=asyncio.new_event_loop())
         self.guild = None
@@ -47,12 +48,13 @@ def get_bot():
 
     @bot.event
     async def on_ready():
+        print("Ready!")
+        bot.guild = bot.get_guild(config.guild_id)
+        bot.error_channel = bot.get_channel(config.error_channel_id)
         for extension_name in config.extensions:
             print("Loading cog named {}...".format(extension_name))
             bot.load_extension("src.cogs.{}".format(extension_name))
             print("Loaded cog {}!".format(extension_name))
-        bot.guild = bot.get_guild(config.guild_id)
-        bot.error_channel = bot.get_channel(config.error_channel_id)
         if os.path.exists("restart_info.json"):
             with open("restart_info.json", 'r') as file:
                 channel_id, message_id, title, text = json.loads(file.read())
