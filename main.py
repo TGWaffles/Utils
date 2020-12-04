@@ -19,6 +19,7 @@ class UtilsBot(commands.Bot):
         self.guild = None
         self.error_channel = None
 
+    # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod
     def create_error_embed(text):
         embed = discord.Embed(title="Error", description=text, colour=discord.Colour.red())
