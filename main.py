@@ -13,6 +13,7 @@ class UtilsBot(commands.Bot):
         super().__init__(command_prefix=config.bot_prefix, description=config.description,
                          loop=asyncio.new_event_loop())
         self.guild = None
+        self.error_channel = None
 
     @staticmethod
     def create_error_embed(text):
@@ -34,15 +35,15 @@ def get_bot():
             bot.load_extension(extension_name)
             print("Loaded cog {}!".format(extension_name))
         bot.guild = bot.get_guild(config.guild_id)
+        bot.error_channel = bot.get_channel(config.error_channel_id)
 
     # noinspection PyUnusedLocal
     @bot.event
     async def on_error(method, *args, **kwargs):
         try:
-            error_channel = bot.get_channel(config.error_channel_id)
             embed = discord.Embed(title="MonkeyUtils experienced an error when running.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
-            await error_channel.send(embed=embed)
+            await bot.error_channel.send(embed=embed)
             bot.restart()
         except Exception as e:
             print("Error in sending error to discord. Error was {}".format(format_exc()))
@@ -51,12 +52,11 @@ def get_bot():
     @bot.event
     async def on_command_error(ctx, error):
         try:
-            error_channel = bot.get_channel(config.error_channel_id)
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
             embed.add_field(name="Command passed error", value=error)
             embed.add_field(name="Context", value=ctx)
-            await error_channel.send(embed=embed)
+            await bot.error_channel.send(embed=embed)
             bot.restart()
         except Exception as e:
             print("Error in sending error to discord. Error was {}".format(format_exc()))
