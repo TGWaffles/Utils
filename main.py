@@ -89,7 +89,7 @@ def get_bot():
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
             embed.add_field(name="Command passed error", value=error)
-            embed.add_field(name="Context", value=ctx)
+            embed.add_field(name="Context", value=ctx.message.content)
             await bot.error_channel.send(embed=embed)
             bot.restart()
         except Exception as e:
