@@ -1,11 +1,10 @@
-import discord
 import asyncio
-import datetime
+from subprocess import Popen
 
 from discord.ext import commands
-from src.main import UtilsBot
+
 from src.checks.user_check import is_owner
-from subprocess import Popen
+from src.main import UtilsBot
 
 
 class Restart(commands.Cog):

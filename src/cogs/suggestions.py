@@ -15,9 +15,9 @@ class Suggestions(commands.Cog):
         if not message.content.lower().startswith("suggest "):
             await message.channel.send(embed=self.bot.create_error_embed(
                 messages.new_suggestion_format.format(message.author.mention)), delete_after=10.0)
+            await message.delete()
             return
         await self.create_suggestion(message.content.partition(" ")[2], message.author)
-        await message.delete()
 
     async def create_suggestion(self, suggestion, author):
         suggestion_embed = discord.Embed(title="New User Suggestion", description=suggestion,
