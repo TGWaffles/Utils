@@ -33,7 +33,10 @@ class CommandManager(commands.Cog):
             await ctx.send(embed=self.bot.create_error_embed("Command already enabled."))
             return
         command.update(enabled=True)
-        await command.callback(ctx)
+        try:
+            await command.callback(ctx)
+        except TypeError:
+            pass
         enabling_msg = await ctx.send(embed=self.bot.create_processing_embed("Enabling...",
                                                                              text="Enabling {}".format(command_name)))
         await asyncio.sleep(3)
