@@ -1,9 +1,11 @@
 import discord
 import asyncio
-from src.storage import config
 import sys
+import json
+import os
 
 from discord.ext import commands
+from src.storage import config
 from traceback import format_exc
 from src.storage.token import token  # token.py is just one variable - token = "token"
 
@@ -21,8 +23,23 @@ class UtilsBot(commands.Bot):
         return embed
 
     @staticmethod
+    def create_processing_embed(title, text):
+        embed = discord.Embed(title=title, description=text, colour=discord.Colour.dark_orange())
+        return embed
+
+    @staticmethod
+    def create_completed_embed(title, text):
+        embed = discord.Embed(title=title, description=text, colour=discord.Colour.green())
+        return embed
+
+    @staticmethod
     def restart():
         sys.exit(1)
+
+    @staticmethod
+    def completed_restart_write(channel_id, message_id, title, text):
+        with open("restart_info.json", 'w') as file:
+            file.write(json.dumps([channel_id, message_id, title, text]))
 
 
 def get_bot():
@@ -36,6 +53,12 @@ def get_bot():
             print("Loaded cog {}!".format(extension_name))
         bot.guild = bot.get_guild(config.guild_id)
         bot.error_channel = bot.get_channel(config.error_channel_id)
+        if os.path.exists("restart_info.json"):
+            with open("restart_info.json", 'r') as file:
+                channel_id, message_id, title, text = json.loads(file.read())
+            original_msg = await bot.get_channel(channel_id).fetch_message(message_id)
+            await original_msg.edit(embed=bot.create_completed_embed(title, text))
+            os.remove("restart_info.json")
 
     # noinspection PyUnusedLocal
     @bot.event

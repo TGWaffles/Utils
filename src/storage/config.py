@@ -1,7 +1,8 @@
 bot_prefix = "!"
 description = "Discord bot for Ahh-Monkey"
+owner_id = 230778630597246983
 
-extensions = ["suggestions"]
+extensions = ["suggestions", "restart"]
 
 guild_id = 725886999646437407
 error_channel_id = 784231099324301312
