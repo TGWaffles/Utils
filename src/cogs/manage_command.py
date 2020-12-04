@@ -1,3 +1,5 @@
+import asyncio
+
 from discord.ext import commands
 
 from main import UtilsBot
@@ -31,7 +33,12 @@ class CommandManager(commands.Cog):
             await ctx.send(embed=self.bot.create_error_embed("Command already enabled."))
             return
         command.update(enabled=True)
-        await ctx.send(embed=self.bot.create_completed_embed("Enabled.", "Command {} enabled!".format(command_name)))
+        await command.callback(ctx)
+        enabling_msg = await ctx.send(embed=self.bot.create_processing_embed("Enabling...",
+                                                                             text="Enabling {}".format(command_name)))
+        await asyncio.sleep(3)
+        await enabling_msg.edit(embed=self.bot.create_completed_embed("Enabled.",
+                                                                      "Command {} enabled!".format(command_name)))
 
 
 def setup(bot):
