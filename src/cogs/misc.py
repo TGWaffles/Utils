@@ -2,7 +2,7 @@ import discord
 import datetime
 
 from discord.ext import commands
-from src.main import UtilsBot
+from main import UtilsBot
 
 
 class Misc(commands.Cog):

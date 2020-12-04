@@ -3,7 +3,7 @@ import asyncio
 import discord
 
 from discord.ext import commands
-from src.main import UtilsBot
+from main import UtilsBot
 from src.checks.role_check import is_high_staff
 from src.storage import config, messages
 

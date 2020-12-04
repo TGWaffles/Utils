@@ -4,7 +4,7 @@ from subprocess import Popen
 from discord.ext import commands
 
 from src.checks.user_check import is_owner
-from src.main import UtilsBot
+from main import UtilsBot
 
 
 class Restart(commands.Cog):

@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from src.storage import config
 from src.checks.role_check import is_staff
-from src.main import UtilsBot
+from main import UtilsBot
 
 
 class Audit(commands.Cog):

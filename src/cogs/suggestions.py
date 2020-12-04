@@ -2,7 +2,7 @@ from src.storage import config, messages
 import discord
 
 from discord.ext import commands
-from src.main import UtilsBot
+from main import UtilsBot
 
 
 class Suggestions(commands.Cog):
