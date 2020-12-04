@@ -1,11 +1,11 @@
 import discord
 import asyncio
-import config
+from src.storage import config
 import sys
 
 from discord.ext import commands
 from traceback import format_exc
-from token import token  # token.py is just one variable - token = "token"
+from src.storage.token import token  # token.py is just one variable - token = "token"
 
 
 class UtilsBot(commands.Bot):
@@ -32,7 +32,7 @@ def get_bot():
     async def on_ready():
         for extension_name in config.extensions:
             print("Loading cog named {}...".format(extension_name))
-            bot.load_extension(extension_name)
+            bot.load_extension("cogs.{}".format(extension_name))
             print("Loaded cog {}!".format(extension_name))
         bot.guild = bot.get_guild(config.guild_id)
         bot.error_channel = bot.get_channel(config.error_channel_id)

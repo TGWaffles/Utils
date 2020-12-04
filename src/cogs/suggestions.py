@@ -1,9 +1,8 @@
-import config
+from src.storage import config, messages
 import discord
-import messages
 
 from discord.ext import commands
-from main import UtilsBot
+from src.main import UtilsBot
 
 
 class Suggestions(commands.Cog):
