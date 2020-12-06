@@ -15,7 +15,7 @@ class Suggestions(commands.Cog):
 
     async def handle_channel_message(self, message):
         if not message.content.lower().startswith("suggest "):
-            if is_staff() and self.allow_messages:
+            if self.allow_messages and is_staff():
                 return
             await message.channel.send(embed=self.bot.create_error_embed(
                 messages.new_suggestion_format.format(message.author.mention)), delete_after=10.0)
@@ -108,10 +108,10 @@ class Suggestions(commands.Cog):
         elif message.channel == self.decisions_channel:
             await self.handle_decision_message(message)
 
-    # noinspection SpellCheckingInspection
+    # noinspection SpellCheckingInspection,PyUnusedLocal
     @commands.command(pass_context=True)
     @is_staff()
-    async def allowtext(self):
+    async def allowtext(self, ctx):
         self.allow_messages = not self.allow_messages
 
 
