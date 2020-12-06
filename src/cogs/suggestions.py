@@ -3,6 +3,7 @@ import discord
 
 from discord.ext import commands
 from main import UtilsBot
+from src.checks.role_check import is_staff
 
 
 class Suggestions(commands.Cog):
@@ -10,9 +11,12 @@ class Suggestions(commands.Cog):
         self.bot: UtilsBot = bot
         self.suggestions_channel: discord.TextChannel = self.bot.get_channel(config.suggestions_channel_id)
         self.decisions_channel: discord.TextChannel = self.bot.get_channel(config.suggestions_decisions_id)
+        self.allow_messages = False
 
     async def handle_channel_message(self, message):
         if not message.content.lower().startswith("suggest "):
+            if is_staff() and self.allow_messages:
+                return
             await message.channel.send(embed=self.bot.create_error_embed(
                 messages.new_suggestion_format.format(message.author.mention)), delete_after=10.0)
             await message.delete()
@@ -103,6 +107,12 @@ class Suggestions(commands.Cog):
 
         elif message.channel == self.decisions_channel:
             await self.handle_decision_message(message)
+
+    # noinspection SpellCheckingInspection
+    @commands.command(pass_context=True)
+    @is_staff()
+    async def allowtext(self):
+        self.allow_messages = not self.allow_messages
 
 
 def setup(bot):
