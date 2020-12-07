@@ -3,6 +3,7 @@ import datetime
 
 from discord.ext import commands
 from main import UtilsBot
+from src.checks.user_check import is_owner
 
 
 class Misc(commands.Cog):
@@ -42,6 +43,18 @@ class Misc(commands.Cog):
             embed.colour = discord.Colour.red()
 
         await sent_message.edit(content="", embed=embed)
+
+    @commands.command(pass_context=True)
+    @is_owner()
+    async def members(self, ctx):
+        temp_text = ""
+        for member in ctx.message.guild.members:
+            if len(temp_text) < 1900:
+                temp_text += member.displayname + "\n"
+            else:
+                await ctx.send(temp_text)
+                temp_text = ""
+
 
 
 def setup(bot):
