@@ -50,7 +50,7 @@ class Misc(commands.Cog):
         temp_text = ""
         for member in ctx.message.guild.members:
             if len(temp_text) < 1900:
-                temp_text += member.displayname + "\n"
+                temp_text += member.name + "\n"
             else:
                 await ctx.send(temp_text)
                 temp_text = ""
