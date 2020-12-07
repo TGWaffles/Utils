@@ -14,8 +14,10 @@ from src.storage.token import token  # token.py is just one variable - token = "
 class UtilsBot(commands.Bot):
     def __init__(self):
         # Initialises the actual commands.Bot class
+        intents = discord.Intents.all()
+        intents.members = True
         super().__init__(command_prefix=config.bot_prefix, description=config.description,
-                         loop=asyncio.new_event_loop())
+                         loop=asyncio.new_event_loop(), intents=intents)
         self.guild = None
         self.error_channel = None
 
