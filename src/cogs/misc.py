@@ -54,6 +54,7 @@ class Misc(commands.Cog):
             else:
                 await ctx.send(temp_text)
                 temp_text = ""
+        await ctx.send(temp_text)
 
 
 
