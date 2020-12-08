@@ -88,8 +88,8 @@ def get_bot():
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.DisabledCommand):
             return
         if isinstance(error, commands.CheckFailure):
-            await ctx.send(bot.create_error_embed("You don't have permission to do that, {}.".
-                                                  format(ctx.message.author.mention)))
+            await ctx.send(embed=bot.create_error_embed("You don't have permission to do that, {}.".
+                                                        format(ctx.message.author.mention)))
         try:
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
