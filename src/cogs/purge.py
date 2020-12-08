@@ -4,7 +4,7 @@ import discord
 
 from discord.ext import commands
 from main import UtilsBot
-from src.checks.role_check import is_high_staff
+from src.checks.role_check import is_staff
 from src.storage import config, messages
 
 def check_reply(message):
@@ -16,7 +16,7 @@ class Purge(commands.Cog):
         self.bot: UtilsBot = bot
 
     @commands.command(pass_context=True)
-    @is_high_staff()
+    @is_staff()
     async def purge(self, ctx, amount: int = None):
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
             await ctx.send(embed=self.bot.create_error_embed(messages.purge_limit))
