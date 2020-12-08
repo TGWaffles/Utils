@@ -22,6 +22,7 @@ class Suggestions(commands.Cog):
             await message.delete()
             return
         await self.create_suggestion(message.content.partition(" ")[2], message.author)
+        await message.delete()
 
     async def create_suggestion(self, suggestion, author):
         suggestion_embed = discord.Embed(title="New User Suggestion", description=suggestion,
