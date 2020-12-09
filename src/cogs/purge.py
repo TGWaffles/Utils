@@ -20,12 +20,12 @@ class Purge(commands.Cog):
 
     @commands.command(pass_context=True)
     @is_staff()
-    async def purge(self, ctx, amount: int = None, disable_bulk: str = None):
+    async def purge(self, ctx, amount: int = None, disable_bulk: bool = False):
         bulk = True
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
             await ctx.send(embed=self.bot.create_error_embed(messages.purge_limit))
             return
-        if ctx.message.author.id == config.owner_id and disable_bulk.lower() == "true":
+        if ctx.message.author.id == config.owner_id and disable_bulk:
             bulk = False
         if amount is None:
             await ctx.send(embed=self.bot.create_error_embed(messages.no_purge_amount))
