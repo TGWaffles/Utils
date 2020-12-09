@@ -34,7 +34,7 @@ class Purge(commands.Cog):
             sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
                                                                                     "clear the whole channel...?"))
             try:
-                await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
+                await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
                 await ctx.message.channel.purge(limit=None, bulk=bulk)
             except asyncio.TimeoutError:
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
@@ -45,7 +45,7 @@ class Purge(commands.Cog):
                                                                                         "(type \"yes\" to confirm)".
                                                                              format(amount)))
                 try:
-                    await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
+                    await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
                     try:
                         await ctx.message.channel.purge(limit=amount + 3, bulk=bulk)
                     except discord.NotFound:
