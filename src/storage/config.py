@@ -34,5 +34,6 @@ discord_emoji = "<:discord:784309400524292117>"
 
 
 # Settings for purge
-purge_max = 30
+purge_max = 40
 purge_all = -1  # DO NOT CHANGE THIS FOR FEAR OF DEATH
+confirm_amount = 10

@@ -7,8 +7,11 @@ from main import UtilsBot
 from src.checks.role_check import is_staff
 from src.storage import config, messages
 
-def check_reply(message):
-    return message.author.id == config.owner_id and message.content == "yes"
+
+def check_reply(author):
+    def check_author(message):
+        return message.author.id == author.id and message.content.lower() == "yes"
+    return check_author
 
 
 class Purge(commands.Cog):
@@ -28,15 +31,29 @@ class Purge(commands.Cog):
             sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
                                                                                     "clear the whole channel...?"))
             try:
-                await self.bot.wait_for("message", check=check_reply, timeout=60.0)
+                await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
                 await ctx.message.channel.purge(limit=None, bulk=True)
             except asyncio.TimeoutError:
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
-            try:
-                await ctx.message.channel.purge(limit=amount+1, bulk=True)
-            except discord.NotFound:
-                pass
+            if amount > config.confirm_amount:
+                sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
+                                                                                        "clear **{}** messages?\n"
+                                                                                        "(type \"yes\" to confirm)".
+                                                                             format(amount)))
+                try:
+                    await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
+                    try:
+                        await ctx.message.channel.purge(limit=amount + 1, bulk=True)
+                    except discord.NotFound:
+                        pass
+                except asyncio.TimeoutError:
+                    await sent.edit(embed=self.bot.create_error_embed("Purge wasn't confirmed by the user."))
+            else:
+                try:
+                    await ctx.message.channel.purge(limit=amount + 1, bulk=True)
+                except discord.NotFound:
+                    pass
 
 
 def setup(bot):
