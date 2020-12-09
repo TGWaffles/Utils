@@ -44,7 +44,7 @@ class Purge(commands.Cog):
                 try:
                     await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
                     try:
-                        await ctx.message.channel.purge(limit=amount + 1, bulk=True)
+                        await ctx.message.channel.purge(limit=amount + 3, bulk=True)
                     except discord.NotFound:
                         pass
                 except asyncio.TimeoutError:
