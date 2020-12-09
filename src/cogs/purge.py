@@ -20,10 +20,13 @@ class Purge(commands.Cog):
 
     @commands.command(pass_context=True)
     @is_staff()
-    async def purge(self, ctx, amount: int = None):
+    async def purge(self, ctx, amount: int = None, disable_bulk: str = None):
+        bulk = True
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
             await ctx.send(embed=self.bot.create_error_embed(messages.purge_limit))
             return
+        if ctx.message.author.id == config.owner_id and disable_bulk.lower() == "true":
+            bulk = False
         if amount is None:
             await ctx.send(embed=self.bot.create_error_embed(messages.no_purge_amount))
             return
@@ -32,7 +35,7 @@ class Purge(commands.Cog):
                                                                                     "clear the whole channel...?"))
             try:
                 await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
-                await ctx.message.channel.purge(limit=None, bulk=True)
+                await ctx.message.channel.purge(limit=None, bulk=bulk)
             except asyncio.TimeoutError:
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
@@ -44,14 +47,14 @@ class Purge(commands.Cog):
                 try:
                     await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=60.0)
                     try:
-                        await ctx.message.channel.purge(limit=amount + 3, bulk=True)
+                        await ctx.message.channel.purge(limit=amount + 3, bulk=bulk)
                     except discord.NotFound:
                         pass
                 except asyncio.TimeoutError:
                     await sent.edit(embed=self.bot.create_error_embed("Purge wasn't confirmed by the user."))
             else:
                 try:
-                    await ctx.message.channel.purge(limit=amount + 1, bulk=True)
+                    await ctx.message.channel.purge(limit=amount + 1, bulk=bulk)
                 except discord.NotFound:
                     pass
 
