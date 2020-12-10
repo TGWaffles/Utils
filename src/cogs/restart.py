@@ -4,6 +4,7 @@ from subprocess import Popen
 from discord.ext import commands
 
 from src.checks.user_check import is_owner
+from src.checks.role_check import is_high_staff
 from main import UtilsBot
 
 
@@ -31,7 +32,7 @@ class Restart(commands.Cog):
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
 
     @commands.command(pass_context=True)
-    @is_owner()
+    @is_high_staff()
     async def restart(self, ctx: commands.Context):
         reply_message = await ctx.send(embed=self.bot.create_processing_embed("Restarting", "Restarting..."))
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Restart Complete!",
