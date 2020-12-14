@@ -1,4 +1,4 @@
-version_number = "1.5.5"
+version_number = "1.5.6"
 
 bot_prefix = "!"
 description = "Discord bot for Ahh-Monkey"
