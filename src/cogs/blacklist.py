@@ -15,7 +15,7 @@ class Blacklist(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:
             return
-
+        print("running blacklist check...")
         if is_staff():
             return
         contents: str = message.contents
