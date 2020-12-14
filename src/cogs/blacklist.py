@@ -19,7 +19,7 @@ class Blacklist(commands.Cog):
         if (config.staff_role_id in [role.id for role in message.author.roles] or
                 message.author.guild_permissions.administrator):
             return
-        contents: str = message.contents
+        contents: str = message.content
         print(''.join(filter(str.isalpha, contents)))
         if "cantswim" in ''.join(filter(str.isalpha, contents)):
             print("it's in...")
