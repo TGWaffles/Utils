@@ -18,9 +18,10 @@ class Blacklist(commands.Cog):
 
         if is_staff():
             return
-
         contents: str = message.contents
+        print(''.join(filter(str.isalpha, contents)))
         if "cantswim" in ''.join(filter(str.isalpha, contents)):
+            print("it's in...")
             await message.delete()
 
 
