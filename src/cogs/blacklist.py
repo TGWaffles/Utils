@@ -22,3 +22,9 @@ class Blacklist(commands.Cog):
         contents: str = message.contents
         if "cantswim" in ''.join(filter(str.isalpha, contents)):
             await message.delete()
+
+
+def setup(bot):
+    cog = Blacklist(bot)
+    bot.add_cog(cog)
+
