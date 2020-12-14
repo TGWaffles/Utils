@@ -16,7 +16,8 @@ class Blacklist(commands.Cog):
         if message.author.bot:
             return
         print("running blacklist check...")
-        if is_staff():
+        if (config.staff_role_id in [role.id for role in message.author.roles] or
+                message.author.guild_permissions.administrator):
             return
         contents: str = message.contents
         print(''.join(filter(str.isalpha, contents)))
