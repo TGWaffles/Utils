@@ -3,6 +3,7 @@ import asyncio
 import sys
 import json
 import os
+import datetime
 import subprocess
 
 from discord.ext import commands
@@ -24,17 +25,20 @@ class UtilsBot(commands.Bot):
     # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod
     def create_error_embed(text):
-        embed = discord.Embed(title="Error", description=text, colour=discord.Colour.red())
+        embed = discord.Embed(title="Error", description=text, colour=discord.Colour.red(),
+                              timestamp=datetime.datetime.now())
         return embed
 
     @staticmethod
     def create_processing_embed(title, text):
-        embed = discord.Embed(title=title, description=text, colour=discord.Colour.dark_orange())
+        embed = discord.Embed(title=title, description=text, colour=discord.Colour.dark_orange(),
+                              timestamp=datetime.datetime.now())
         return embed
 
     @staticmethod
     def create_completed_embed(title, text):
-        embed = discord.Embed(title=title, description=text, colour=discord.Colour.green())
+        embed = discord.Embed(title=title, description=text, colour=discord.Colour.green(),
+                              timestamp=datetime.datetime.now())
         return embed
 
     @staticmethod
