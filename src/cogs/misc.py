@@ -13,7 +13,7 @@ class Misc(commands.Cog):
     # noinspection SpellCheckingInspection
     @commands.command(pass_context=True)
     async def ping(self, ctx):
-        before = datetime.datetime.now()
+        before = datetime.datetime.utcnow()
         sent_message: discord.Message = await ctx.send("Pong!")
         after = datetime.datetime.now()
         milliseconds_to_send = round((after - before).total_seconds() * 1000)
