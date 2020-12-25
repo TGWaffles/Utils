@@ -26,19 +26,19 @@ class UtilsBot(commands.Bot):
     @staticmethod
     def create_error_embed(text):
         embed = discord.Embed(title="Error", description=text, colour=discord.Colour.red(),
-                              timestamp=datetime.datetime.now())
+                              timestamp=datetime.datetime.utcnow())
         return embed
 
     @staticmethod
     def create_processing_embed(title, text):
         embed = discord.Embed(title=title, description=text, colour=discord.Colour.dark_orange(),
-                              timestamp=datetime.datetime.now())
+                              timestamp=datetime.datetime.utcnow())
         return embed
 
     @staticmethod
     def create_completed_embed(title, text):
         embed = discord.Embed(title=title, description=text, colour=discord.Colour.green(),
-                              timestamp=datetime.datetime.now())
+                              timestamp=datetime.datetime.utcnow())
         return embed
 
     @staticmethod

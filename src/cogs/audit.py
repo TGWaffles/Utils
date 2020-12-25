@@ -33,7 +33,7 @@ class Audit(commands.Cog):
         await sent_message.add_reaction("⏩")
 
     async def create_role_changes_embed(self, member, before=None, start_index=0, after=None):
-        embed = discord.Embed(timestamp=datetime.datetime.now())
+        embed = discord.Embed(timestamp=datetime.datetime.utcnow())
         embed.colour = discord.Colour.blue()
         embed.title = "Role changes for {} - {}".format(member.id, member.name)
         role_changes, last_time, first_time = await self.get_role_updates(member, before=before, after=after)
