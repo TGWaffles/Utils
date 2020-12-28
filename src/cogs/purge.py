@@ -14,6 +14,11 @@ def check_reply(author):
     return check_author
 
 
+def check_pinned(message):
+    return not message.pinned
+
+
+
 class Purge(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
@@ -35,7 +40,7 @@ class Purge(commands.Cog):
                                                                                     "clear the whole channel...?"))
             try:
                 await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
-                await ctx.message.channel.purge(limit=None, bulk=bulk)
+                await ctx.message.channel.purge(limit=None, bulk=bulk, check=check_pinned)
             except asyncio.TimeoutError:
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
@@ -47,14 +52,14 @@ class Purge(commands.Cog):
                 try:
                     await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
                     try:
-                        await ctx.message.channel.purge(limit=amount + 3, bulk=bulk)
+                        await ctx.message.channel.purge(limit=amount + 3, bulk=bulk, check=check_pinned)
                     except discord.NotFound:
                         pass
                 except asyncio.TimeoutError:
                     await sent.edit(embed=self.bot.create_error_embed("Purge wasn't confirmed by the user."))
             else:
                 try:
-                    await ctx.message.channel.purge(limit=amount + 1, bulk=bulk)
+                    await ctx.message.channel.purge(limit=amount + 1, bulk=bulk, check=check_pinned)
                 except discord.NotFound:
                     pass
 
