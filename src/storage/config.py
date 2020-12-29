@@ -1,10 +1,10 @@
-version_number = "1.6.5"
+version_number = "1.6.6"
 
 bot_prefix = "!"
 description = "Discord bot for Ahh-Monkey"
 owner_id = 230778630597246983
 
-extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "blacklist"]
+extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command"]
 
 guild_id = 725886999646437407
 error_channel_id = 784231099324301312
