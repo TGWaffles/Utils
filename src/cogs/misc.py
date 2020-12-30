@@ -8,13 +8,16 @@ from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.checks.role_check import is_staff
 
+
 def convert_colour(colour):
     try:
         colour = colour.strip('#')
         int(colour, 16)
         print(21)
         if len(colour) == 3:
+            print(colour)
             embed_colour = discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
+            print(embed_colour)
         elif len(colour) == 6:
             print(25)
             embed_colour = discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
@@ -27,6 +30,7 @@ def convert_colour(colour):
         except ValueError:
             raise commands.BadArgument
     return embed_colour
+
 
 class Misc(commands.Cog):
     def __init__(self, bot: UtilsBot):
@@ -79,7 +83,6 @@ class Misc(commands.Cog):
             embed.colour = discord.Colour.red()
 
         await sent_message.edit(content="", embed=embed)
-
 
 
 def setup(bot):
