@@ -3,10 +3,30 @@ import datetime
 import webcolors
 
 from discord.ext import commands
+from typing import Optional
 from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.checks.role_check import is_staff
 
+def convert_colour(colour):
+    try:
+        colour = colour.strip('#')
+        int(colour, 16)
+        print(21)
+        if len(colour) == 3:
+            embed_colour = discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
+        elif len(colour) == 6:
+            print(25)
+            embed_colour = discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
+            print(27)
+        else:
+            raise commands.BadArgument
+    except ValueError:
+        try:
+            embed_colour = discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour.replace(" ", ""))))
+        except ValueError:
+            raise commands.BadArgument
+    return embed_colour
 
 class Misc(commands.Cog):
     def __init__(self, bot: UtilsBot):
@@ -14,29 +34,8 @@ class Misc(commands.Cog):
         
     @commands.command(pass_context=True)
     @is_staff()
-    async def embed(self, ctx, colour: str = "000000", title: str = '\u200b', description: str = '\u200b', *fields):
-        try:
-            colour = colour.strip('#')
-            int(colour, 16)
-            print(21)
-            if len(colour) == 3:
-                embed_colour = discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
-            elif len(colour) == 6:
-                print(25)
-                embed_colour = discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
-                print(27)
-            else:
-                await ctx.send(embed=self.bot.create_error_embed("The colour needs to be "
-                                                                 "3 or 6 characters long and all hexadecimal."))
-                return
-        except ValueError:
-            try:
-                embed_colour = discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour.replace(" ", ""))))
-            except ValueError:
-                await ctx.send(embed=self.bot.create_error_embed("Invalid colour. The colour needs to be a hex of 3/6 "
-                                                                 "characters long or a recognised colour."))
-                return
-        embed = discord.Embed(colour=embed_colour, title=title, description=description)
+    async def embed(self, ctx, colour: Optional[convert_colour] = "000000", title: str = '\u200b', description: str = '\u200b', *fields):
+        embed = discord.Embed(colour=colour, title=title, description=description)
         embed.set_author(name=ctx.message.author.name, icon_url=ctx.message.author.avatar_url)
         if len(fields) % 2 != 0:
             await ctx.send(embed=self.bot.create_error_embed("Fields were not even."))
