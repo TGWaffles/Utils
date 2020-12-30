@@ -34,7 +34,8 @@ class Misc(commands.Cog):
         
     @commands.command(pass_context=True)
     @is_staff()
-    async def embed(self, ctx, colour: Optional[convert_colour] = "000000", title: str = '\u200b', description: str = '\u200b', *fields):
+    async def embed(self, ctx, colour: Optional[convert_colour] = discord.Colour.default(),
+                    title: str = '\u200b', description: str = '\u200b', *fields):
         embed = discord.Embed(colour=colour, title=title, description=description)
         embed.set_author(name=ctx.message.author.name, icon_url=ctx.message.author.avatar_url)
         if len(fields) % 2 != 0:
