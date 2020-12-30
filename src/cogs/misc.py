@@ -1,14 +1,46 @@
 import discord
 import datetime
+import webcolors
 
 from discord.ext import commands
 from main import UtilsBot
 from src.checks.user_check import is_owner
+from src.checks.role_check import is_staff
 
 
 class Misc(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
+        
+    @commands.command(pass_context=True)
+    @is_staff()
+    async def embed(self, ctx, colour: str = "000000", title: str = '\u200b', description: str = '\u200b', *fields):
+        if colour.strip('#').isnumeric():
+            colour = colour.strip('#')
+            if len(colour) == 3:
+                embed_colour = discord.Colour.from_rgb(colour[0], colour[1], colour[2])
+            elif len(colour) == 6:
+                embed_colour = discord.Colour.from_rgb(colour[:2], colour[2:4], colour[4:6])
+            else:
+                await ctx.send(embed=self.bot.create_error_embed("The colour needs to be "
+                                                                 "3 or 6 characters long and all numeric."))
+                return
+        else:
+            try:
+                embed_colour = discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour)))
+            except ValueError:
+                await ctx.send(embed=self.bot.create_error_embed("Invalid colour. The colour needs to be a hex of 3/6 "
+                                                                 "characters long or a recognised colour."))
+                return
+        embed = discord.Embed(colour=embed_colour, title=title, description=description)
+        embed.set_author(name=ctx.message.author.name, icon_url=ctx.message.author.avatar_url)
+        if len(fields) % 2 != 0:
+            await ctx.send(embed=self.bot.create_error_embed("Fields were not even."))
+            return
+        for i in range(0, len(fields), 2):
+            embed.add_field(name=fields[i], value=fields[i+1], inline=False)
+        await ctx.send(embed=embed)
+        await ctx.message.delete(delay=5)
 
     # noinspection SpellCheckingInspection
     @commands.command(pass_context=True)
