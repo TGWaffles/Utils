@@ -13,23 +13,17 @@ def convert_colour(colour):
     try:
         colour = colour.strip('#')
         int(colour, 16)
-        print(21)
         if len(colour) == 3:
-            print(colour)
-            embed_colour = discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
-            print(embed_colour)
+            return discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
         elif len(colour) == 6:
-            print(25)
-            embed_colour = discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
-            print(27)
+            return discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
         else:
             raise commands.BadArgument
     except ValueError:
         try:
-            embed_colour = discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour.replace(" ", ""))))
+            return discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour.replace(" ", ""))))
         except ValueError:
             raise commands.BadArgument
-    return embed_colour
 
 
 class Misc(commands.Cog):
