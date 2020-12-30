@@ -17,7 +17,7 @@ class Misc(commands.Cog):
     async def embed(self, ctx, colour: str = "000000", title: str = '\u200b', description: str = '\u200b', *fields):
         try:
             colour = colour.strip('#')
-            int(plain_colour, 16)
+            int(colour, 16)
             if len(colour) == 3:
                 embed_colour = discord.Colour.from_rgb(colour[0], colour[1], colour[2])
             elif len(colour) == 6:
