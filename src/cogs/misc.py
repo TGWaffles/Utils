@@ -9,19 +9,20 @@ from src.checks.user_check import is_owner
 from src.checks.role_check import is_staff
 
 
-def convert_colour(colour):
+def convert_colour(input_colour):
+    input_colour = input_colour.strip('#')
     try:
-        colour = colour.strip('#')
+        colour = input_colour
         int(colour, 16)
         if len(colour) == 3:
-            return discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
-        elif len(colour) == 6:
+            colour = webcolors.normalize_hex("#" + colour).strip('#')
+        if len(colour) == 6:
             return discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
         else:
             raise commands.BadArgument
     except ValueError:
         try:
-            return discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour.replace(" ", ""))))
+            return discord.Colour.from_rgb(*(webcolors.name_to_rgb(input_colour.replace(" ", ""))))
         except ValueError:
             raise commands.BadArgument
 
