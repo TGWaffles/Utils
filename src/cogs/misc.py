@@ -20,10 +20,10 @@ class Misc(commands.Cog):
             int(colour, 16)
             print(21)
             if len(colour) == 3:
-                embed_colour = discord.Colour.from_rgb(colour[0], colour[1], colour[2])
+                embed_colour = discord.Colour.from_rgb(int(colour[0], 16), int(colour[1], 16), int(colour[2], 16))
             elif len(colour) == 6:
                 print(25)
-                embed_colour = discord.Colour.from_rgb(colour[:2], colour[2:4], colour[4:6])
+                embed_colour = discord.Colour.from_rgb(int(colour[:2], 16), int(colour[2:4], 16), int(colour[4:6], 16))
                 print(27)
             else:
                 await ctx.send(embed=self.bot.create_error_embed("The colour needs to be "
@@ -31,7 +31,7 @@ class Misc(commands.Cog):
                 return
         except ValueError:
             try:
-                embed_colour = discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour)))
+                embed_colour = discord.Colour.from_rgb(*(webcolors.name_to_rgb(colour.replace(" ", ""))))
             except ValueError:
                 await ctx.send(embed=self.bot.create_error_embed("Invalid colour. The colour needs to be a hex of 3/6 "
                                                                  "characters long or a recognised colour."))
