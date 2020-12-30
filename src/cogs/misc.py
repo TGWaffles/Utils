@@ -18,10 +18,13 @@ class Misc(commands.Cog):
         try:
             colour = colour.strip('#')
             int(colour, 16)
+            print(21)
             if len(colour) == 3:
                 embed_colour = discord.Colour.from_rgb(colour[0], colour[1], colour[2])
             elif len(colour) == 6:
+                print(25)
                 embed_colour = discord.Colour.from_rgb(colour[:2], colour[2:4], colour[4:6])
+                print(27)
             else:
                 await ctx.send(embed=self.bot.create_error_embed("The colour needs to be "
                                                                  "3 or 6 characters long and all hexadecimal."))
