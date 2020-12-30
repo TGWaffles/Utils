@@ -35,7 +35,7 @@ class Misc(commands.Cog):
     @is_staff()
     async def embed(self, ctx, colour: Optional[convert_colour] = discord.Colour.default(),
                     title: str = '\u200b', description: str = '\u200b', *fields):
-        embed = discord.Embed(colour=colour, title=title, description=description)
+        embed = discord.Embed(colour=colour, title=title, description=description, timestamp=datetime.datetime.utcnow())
         embed.set_author(name=ctx.message.author.name, icon_url=ctx.message.author.avatar_url)
         if len(fields) % 2 != 0:
             await ctx.send(embed=self.bot.create_error_embed("Fields were not even."))
