@@ -40,7 +40,7 @@ class Suggestions(commands.Cog):
     async def handle_decision_message(self, message):
         if not message.content.lower().startswith("accept") and not message.content.lower().startswith("deny"):
             return
-        accepted = int(message.content.startswith("accept"))
+        accepted = int(message.content.lower().startswith("accept"))
         message_to_send = messages.suggestion_changed
         try:
             suggestion_id = int(message.content.split(" ")[1])
