@@ -18,7 +18,6 @@ def check_pinned(message):
     return not message.pinned
 
 
-
 class Purge(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot

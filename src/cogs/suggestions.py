@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from main import UtilsBot
 from src.checks.role_check import is_staff
+from src.checks.guild_check import monkey_check
 
 
 class Suggestions(commands.Cog):
@@ -100,6 +101,7 @@ class Suggestions(commands.Cog):
         return False
 
     @commands.Cog.listener()
+    @monkey_check()
     async def on_message(self, message):
         if message.author.bot:
             return
@@ -112,6 +114,7 @@ class Suggestions(commands.Cog):
     # noinspection SpellCheckingInspection,PyUnusedLocal
     @commands.command(pass_context=True)
     @is_staff()
+    @monkey_check()
     async def allowtext(self, ctx):
         self.allow_messages = not self.allow_messages
 
