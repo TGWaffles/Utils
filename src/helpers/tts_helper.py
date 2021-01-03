@@ -12,7 +12,7 @@ def get_speak_file(message_content, lang):
     spoken_google = gTTS(message_content, lang=lang)
     spoken_google.write_to_fp(fp=pre_processed)
     print(2)
-    segment = pydub.AudioSegment.from_file(pre_processed, bitrate=356000, format="mp3")
+    segment = pydub.AudioSegment.from_file(pre_processedformat="mp3")
     print(3)
     segment = effects.speedup(segment, 1.25, 150, 25)
     print(4)
