@@ -18,7 +18,6 @@ class TTS(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.data = DataHelper()
-        self.lang = "en"
         self.index_num = 0
 
     @commands.command(pass_context=True)
@@ -69,8 +68,10 @@ class TTS(commands.Cog):
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def lang(self, ctx, new_lang: str):
-        self.lang = new_lang
-        await ctx.send(embed=self.bot.create_completed_embed("Language changed!", f"Changed voice language to {new_lang}"))
+        server_languages = self.data.get("server_languages", {})
+        server_languages[ctx.guild.id] = new_lang
+        await ctx.send(embed=self.bot.create_completed_embed("Language changed!",
+                                                             f"Changed voice language to {new_lang}"))
 
     async def speak_message(self, message):
         member = message.author
@@ -86,9 +87,11 @@ class TTS(commands.Cog):
         else:
             voice_client = await voice_channel.connect()
         temp_file = "chris_temp{}.mp3".format(self.index_num)
-        spoken_words = gTTS(message.clean_content, lang=self.lang)
+        server_languages = self.data.get("server_languages", {})
+        lang = server_languages.get(message.guild.id, "en")
+        spoken_words = gTTS(message.clean_content, lang=lang)
         spoken_words.save(temp_file)
-        current_file = "chris_speak{}.wav".format(self.index_num)
+        current_file = "{}{}.wav".format(message.guild.id, self.index_num)
         self.index_num += 1
         if self.index_num == 10:
             self.index_num = 0
