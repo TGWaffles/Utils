@@ -1,10 +1,10 @@
 import discord
 import asyncio
+import concurrent.futures
 import pydub
 import os
 
 from pydub import effects
-from aiogtts import aiogTTS
 from io import BytesIO
 from discord.ext import commands
 from main import UtilsBot
@@ -12,7 +12,9 @@ from src.checks.role_check import is_high_staff
 from src.checks.custom_check import speak_changer_check
 from src.storage import messages
 from src.helpers.storage_helper import DataHelper
+from src.helpers.tts_helper import get_speak_file
 from typing import Optional
+from functools import partial
 
 
 class TTS(commands.Cog):
@@ -20,7 +22,6 @@ class TTS(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.index_num = 0
-        self.gTTS = aiogTTS()
 
     @commands.command(pass_context=True)
     @speak_changer_check()
@@ -79,8 +80,6 @@ class TTS(commands.Cog):
 
     async def speak_message(self, message):
         member = message.author
-        pre_processing = BytesIO()
-        post_processing = BytesIO()
         if member.voice is None or member.voice.channel is None:
             return
         voice_channel = member.voice.channel
@@ -94,17 +93,12 @@ class TTS(commands.Cog):
             voice_client = await voice_channel.connect()
         server_languages = self.data.get("server_languages", {})
         lang = server_languages.get(str(message.guild.id), "en")
-        await self.gTTS.write_to_fp(text=message.clean_content, fp=pre_processing, lang=lang)
-        self.index_num += 1
-        if self.index_num == 10:
-            self.index_num = 0
-        segment = pydub.AudioSegment.from_file(pre_processing, bitrate=356000)
-        segment = effects.speedup(segment, 1.25, 150, 25)
-        segment.set_frame_rate(16000).export(post_processing, format="wav")
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, message, lang))
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
         try:
-            voice_client.play(discord.FFmpegPCMAudio(post_processing))
+            voice_client.play(discord.FFmpegPCMAudio(output))
         except discord.errors.ClientException:
             pass
         while voice_client.is_playing():
