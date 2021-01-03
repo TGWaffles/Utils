@@ -4,7 +4,8 @@ import pydub
 import os
 
 from pydub import effects
-from gtts import gTTS
+from aiogtts import aiogTTS
+from io import BytesIO
 from discord.ext import commands
 from main import UtilsBot
 from src.checks.role_check import is_high_staff
@@ -19,6 +20,7 @@ class TTS(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.index_num = 0
+        self.gTTS = aiogTTS()
 
     @commands.command(pass_context=True)
     @speak_changer_check()
@@ -77,6 +79,8 @@ class TTS(commands.Cog):
 
     async def speak_message(self, message):
         member = message.author
+        pre_processing = BytesIO()
+        post_processing = BytesIO()
         if member.voice is None or member.voice.channel is None:
             return
         voice_channel = member.voice.channel
@@ -88,33 +92,23 @@ class TTS(commands.Cog):
                 voice_client = await voice_channel.connect()
         else:
             voice_client = await voice_channel.connect()
-        temp_file = "chris_temp{}.mp3".format(self.index_num)
         server_languages = self.data.get("server_languages", {})
-        print(server_languages)
-        print(message.guild.id)
         lang = server_languages.get(str(message.guild.id), "en")
-        print(lang)
-        spoken_words = gTTS(message.clean_content, lang=lang)
-        spoken_words.save(temp_file)
-        current_file = "{}{}.wav".format(message.guild.id, self.index_num)
+        await self.gTTS.write_to_fp(text=message.clean_content, fp=pre_processing, lang=lang)
         self.index_num += 1
         if self.index_num == 10:
             self.index_num = 0
-        while not os.path.exists(temp_file):
-            await asyncio.sleep(0.1)
-        segment = pydub.AudioSegment.from_file(temp_file, bitrate=356000)
+        segment = pydub.AudioSegment.from_file(pre_processing, bitrate=356000)
         segment = effects.speedup(segment, 1.25, 150, 25)
-        segment.set_frame_rate(16000).export(current_file, format="wav")
+        segment.set_frame_rate(16000).export(post_processing, format="wav")
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
         try:
-            voice_client.play(discord.FFmpegPCMAudio(current_file))
+            voice_client.play(discord.FFmpegPCMAudio(post_processing))
         except discord.errors.ClientException:
             pass
         while voice_client.is_playing():
             await asyncio.sleep(0.5)
-        os.remove(temp_file)
-        os.remove(current_file)
 
     @commands.Cog.listener()
     async def on_message(self, message):

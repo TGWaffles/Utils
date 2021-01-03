@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.8.9dev2"
+version_number = "1.9"
 
 bot_prefix = "!"
 description = "Discord bot for Ahh-Monkey"
