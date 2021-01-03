@@ -71,6 +71,7 @@ class TTS(commands.Cog):
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
         self.data["server_languages"] = server_languages
+        print(self.data["server_languages"])
         await ctx.send(embed=self.bot.create_completed_embed("Language changed!",
                                                              f"Changed voice language to {new_lang}"))
 
@@ -89,7 +90,10 @@ class TTS(commands.Cog):
             voice_client = await voice_channel.connect()
         temp_file = "chris_temp{}.mp3".format(self.index_num)
         server_languages = self.data.get("server_languages", {})
+        print(server_languages)
+        print(message.guild.id)
         lang = server_languages.get(message.guild.id, "en")
+        print(lang)
         spoken_words = gTTS(message.clean_content, lang=lang)
         spoken_words.save(temp_file)
         current_file = "{}{}.wav".format(message.guild.id, self.index_num)
