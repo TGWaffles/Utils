@@ -92,7 +92,7 @@ class TTS(commands.Cog):
         server_languages = self.data.get("server_languages", {})
         print(server_languages)
         print(message.guild.id)
-        lang = server_languages.get(message.guild.id, "en")
+        lang = server_languages.get(str(message.guild.id), "en")
         print(lang)
         spoken_words = gTTS(message.clean_content, lang=lang)
         spoken_words.save(temp_file)
