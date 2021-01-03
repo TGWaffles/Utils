@@ -2,6 +2,7 @@ import pydub
 
 from pydub import effects
 from gtts import gTTS
+from time import sleep
 from io import BytesIO
 
 
@@ -12,6 +13,7 @@ def get_speak_file(message_content, lang):
     spoken_google = gTTS(message_content, lang=lang)
     spoken_google.write_to_fp(fp=pre_processed)
     print(2)
+    sleep(5)
     print(pre_processed.read())
     segment = pydub.AudioSegment.from_file(pre_processed, format="mp3")
     print(3)
