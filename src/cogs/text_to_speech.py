@@ -38,35 +38,28 @@ class TTS(commands.Cog):
     async def speak_perms(self, ctx, member: discord.Member):
         changer_list = self.data.get("speak_changer", [])
         if member.id in changer_list:
-            await ctx.send(self.bot.create_error_embed(messages.already_has_perms))
-            return
-        changer_list.append(member.id)
+            changer_list.remove(member.id)
+            await ctx.send(embed=self.bot.create_completed_embed("Perms Revoked",
+                                                                 f"Revoked {member.display_name}'s permissions!"))
+        else:
+            changer_list.append(member.id)
+            await ctx.send(embed=self.bot.create_completed_embed("Perms Granted",
+                                                                 f"Given {member.display_name} permissions!"))
         self.data["speak_changer"] = changer_list
-        await ctx.send(embed=self.bot.create_completed_embed("Perms Granted",
-                                                             f"Given {member.display_name} permissions!"))
 
-    @commands.command(pass_context=True, name="speak", description="Adds a user to the TTS list.")
+    @commands.command(pass_context=True, name="speak", description="Adds/removes a user to the TTS list.")
     @speak_changer_check()
     async def speak(self, ctx, member: discord.Member):
         speaking_list = self.data.get("speaking", [])
         if member.id in speaking_list:
-            await ctx.send(embed=self.bot.create_error_embed(messages.already_speaking))
-            return
-        speaking_list.append(member.id)
+            speaking_list.remove(member.id)
+            await ctx.send(embed=self.bot.create_completed_embed("Disabled TTS", f"Removed {member.display_name} from "
+                                                                                 f"the TTS list"))
+        else:
+            speaking_list.append(member.id)
+            await ctx.send(embed=self.bot.create_completed_embed("Enabled TTS", f"Added {member.display_name} to the "
+                                                                                f"TTS list."))
         self.data["speaking"] = speaking_list
-        await ctx.send(embed=self.bot.create_completed_embed("Enabled TTS", f"Added {member.display_name} to the TTS list."))
-
-    @commands.command(pass_context=True, name="no_speak", description="Removes a user from the TTS list.")
-    @speak_changer_check()
-    async def no_speak(self, ctx, member: discord.Member):
-        speaking_list = self.data.get("speaking", [])
-        if member.id not in speaking_list:
-            await ctx.send(embed=self.bot.create_error_embed(messages.not_already_speaking))
-            return
-        speaking_list.remove(member.id)
-        self.data["speaking"] = speaking_list
-        await ctx.send(embed=self.bot.create_completed_embed("Disabled TTS",
-                                                       f"Removed {member.display_name} from the TTS list."))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
