@@ -70,6 +70,7 @@ class TTS(commands.Cog):
     async def lang(self, ctx, new_lang: str):
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
+        self.data["server_languages"] = server_languages
         await ctx.send(embed=self.bot.create_completed_embed("Language changed!",
                                                              f"Changed voice language to {new_lang}"))
 
