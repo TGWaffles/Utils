@@ -7,6 +7,7 @@ from typing import Optional
 from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.checks.role_check import is_staff
+from src.helpers.storage_helper import DataHelper
 
 
 def convert_colour(input_colour):
@@ -44,6 +45,14 @@ class Misc(commands.Cog):
             embed.add_field(name=fields[i], value=fields[i+1], inline=False)
         await ctx.send(embed=embed)
         await ctx.message.delete(delay=5)
+
+    @commands.command(name="error_channel", description="Sets the bot error message channel for this guild.")
+    @is_owner()
+    async def error_channel(self, ctx, error_channel: discord.TextChannel):
+        data = DataHelper()
+        error_channels = data.get("guild_error_channels", {})
+        error_channels[ctx.guild.id] = error_channel.id
+        data["guild_error_channels"] = error_channels
 
     # noinspection SpellCheckingInspection
     @commands.command(pass_context=True)

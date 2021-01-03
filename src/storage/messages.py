@@ -17,3 +17,8 @@ purge_limit = (f"I have a limit of {config.purge_max} imposed on this command to
                f"Tag Thomas or do an amount <= {config.purge_max}.")
 
 no_purge_amount = "You included no amount. I am not allowing this so I can prevent accidents."
+
+no_voice_clients = "There were no active voice clients in your server."
+already_has_perms = "That user already has permission to add people to speak!"
+already_speaking = "That user is already on the speaking list."
+not_already_speaking = "That user is not already on the speaking list."

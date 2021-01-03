@@ -8,6 +8,7 @@ import subprocess
 
 from discord.ext import commands
 from src.storage import config
+from src.helpers.storage_helper import DataHelper
 from traceback import format_exc
 from src.storage.token import token  # token.py is just one variable - token = "token"
 
@@ -53,6 +54,7 @@ class UtilsBot(commands.Bot):
 
 def get_bot():
     bot = UtilsBot()
+    data = DataHelper()
 
     @bot.event
     async def on_ready():
@@ -100,10 +102,12 @@ def get_bot():
             embed.description = format_exc()[:2000]
             embed.add_field(name="Command passed error", value=error)
             embed.add_field(name="Context", value=ctx.message.content)
-            await bot.error_channel.send(embed=embed)
+            guild_error_channel_id = data.get("guild_error_channels", {}).get(ctx.guild.id, 795057163768037376)
+            error_channel = bot.get_channel(guild_error_channel_id)
+            await error_channel.send(embed=embed)
             bot.restart()
         except Exception as e:
-            print("Error in sending error to discord. Error was {}".format(format_exc()))
+            print("Error in sending error to discord. Error was {}".format(error))
             print("Error sending to discord was {}".format(e))
 
     return bot
