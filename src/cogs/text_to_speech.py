@@ -7,10 +7,11 @@ from pydub import effects
 from gtts import gTTS
 from discord.ext import commands
 from main import UtilsBot
-from src.checks.role_check import is_staff, is_high_staff
+from src.checks.role_check import is_high_staff
 from src.checks.custom_check import speak_changer_check
 from src.storage import messages
 from src.helpers.storage_helper import DataHelper
+from typing import Optional
 
 
 class TTS(commands.Cog):
@@ -21,7 +22,7 @@ class TTS(commands.Cog):
         self.index_num = 0
 
     @commands.command(pass_context=True)
-    @is_staff()
+    @speak_changer_check()
     async def disconnect(self, ctx):
         voice_clients = [x for x in self.bot.voice_clients if x.guild.id == ctx.guild.id]
         if len(voice_clients) == 0:
@@ -51,7 +52,9 @@ class TTS(commands.Cog):
 
     @commands.command(pass_context=True, name="speak", description="Adds/removes a user to the TTS list.")
     @speak_changer_check()
-    async def speak(self, ctx, member: discord.Member):
+    async def speak(self, ctx, member: Optional[discord.Member] = None):
+        if member is None:
+            member = ctx.author
         speaking_list = self.data.get("speaking", [])
         if member.id in speaking_list:
             speaking_list.remove(member.id)
