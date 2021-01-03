@@ -31,6 +31,8 @@ class TTS(commands.Cog):
             await voice_clients[0].disconnect()
         except Exception as e:
             await ctx.send(embed=self.bot.create_error_embed("Error disconnecting from vc: {}".format(e)))
+            return
+        await ctx.send(self.bot.create_completed_embed("Disconnect success.", "Disconnected from voice."))
 
     @commands.command(pass_context=True, name="speak_perms",
                       description="Gives other people access to the !speak command.")
