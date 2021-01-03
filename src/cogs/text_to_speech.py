@@ -115,6 +115,8 @@ class TTS(commands.Cog):
         member = message.author
         if member.id not in self.data.get("speaking", []):
             return
+        if message.content.startswith("!") or message.content.startswith("~"):
+            return
         await self.speak_message(message)
 
     @commands.Cog.listener()
