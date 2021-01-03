@@ -98,7 +98,7 @@ class TTS(commands.Cog):
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
         try:
-            voice_client.play(discord.FFmpegPCMAudio(output, pipe=True))
+            voice_client.play(discord.PCMAudio(output))
         except discord.errors.ClientException:
             pass
         while voice_client.is_playing():
