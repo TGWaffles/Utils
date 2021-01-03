@@ -94,7 +94,7 @@ class TTS(commands.Cog):
         server_languages = self.data.get("server_languages", {})
         lang = server_languages.get(str(message.guild.id), "en")
         with concurrent.futures.ProcessPoolExecutor() as pool:
-            output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, message, lang))
+            output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, message.clean_content, lang))
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
         try:
