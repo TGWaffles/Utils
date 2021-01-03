@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.8.1"
+version_number = "1.8.2"
 
 bot_prefix = "!"
 description = "Discord bot for Ahh-Monkey"
@@ -9,7 +9,7 @@ owner_id = 230778630597246983
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech"]
 
 guild_id = 725886999646437407
-error_channel_id = 754381631342772264
+error_channel_id = 795057163768037376
 staff_role_id = 726453086331338802
 mod_role_id = 725894916839964682
 mod_dev_role_id = 759431719748501575
