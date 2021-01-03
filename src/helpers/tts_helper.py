@@ -13,8 +13,8 @@ def get_speak_file(message_content, lang):
     print(message_content)
     print(lang)
     spoken_google = gTTS(message_content, lang=lang)
-    spoken_google.write_to_fp(fp=pre_processed)
-    spoken_google.save("test.mp3")
+    with open("test.mp3", 'wb') as file:
+        spoken_google.write_to_fp(fp=file)
     print(2)
     sleep(5)
     print(pre_processed.read())
