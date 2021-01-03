@@ -123,3 +123,7 @@ class TTS(commands.Cog):
                 voices_in_guild = [x for x in self.bot.voice_clients if x.guild == before.channel.guild]
                 for voice_client in voices_in_guild:
                     await voice_client.disconnect()
+
+def setup(bot):
+    cog = TTS(bot)
+    bot.add_cog(cog)
