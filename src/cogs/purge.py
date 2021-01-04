@@ -22,7 +22,7 @@ class Purge(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["clear", "clean", "wipe", "delete"])
     @is_staff()
     async def purge(self, ctx, amount: int = None, disable_bulk: bool = False):
         bulk = True
