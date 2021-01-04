@@ -51,7 +51,7 @@ class Misc(commands.Cog):
     async def error_channel(self, ctx, error_channel: discord.TextChannel):
         data = DataHelper()
         error_channels = data.get("guild_error_channels", {})
-        error_channels[ctx.guild.id] = error_channel.id
+        error_channels[str(ctx.guild.id)] = error_channel.id
         data["guild_error_channels"] = error_channels
 
     # noinspection SpellCheckingInspection
