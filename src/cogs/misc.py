@@ -1,12 +1,13 @@
 import discord
 import datetime
 import webcolors
+import asyncio
 
 from discord.ext import commands
 from typing import Optional
 from main import UtilsBot
 from src.checks.user_check import is_owner
-from src.checks.role_check import is_staff
+from src.checks.role_check import is_staff, is_high_staff
 from src.helpers.storage_helper import DataHelper
 
 
@@ -87,6 +88,26 @@ class Misc(commands.Cog):
             embed.colour = discord.Colour.red()
 
         await sent_message.edit(content="", embed=embed)
+
+    @commands.command()
+    @is_high_staff()
+    async def members(self, ctx):
+        data = DataHelper()
+        enabled = not data.get("members", False)
+        data["members"] = enabled
+        state = ("Disabled", "Enabled")[enabled]
+        await ctx.send(self.bot.create_completed_embed("Member Count {}!".format(state),
+                                                       f"Member count logging successfully {state.lower()}"))
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        users_vc: discord.VoiceChannel = self.bot.get_channel(727202196600651858)
+        data = DataHelper()
+        while True:
+            if data["members"]:
+                guild_members = users_vc.guild.member_count
+                await users_vc.edit(name="Total Users: {}".format(guild_members))
+            await asyncio.sleep(360)
 
 
 def setup(bot):
