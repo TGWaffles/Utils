@@ -8,7 +8,7 @@ def speak_changer_check():
         data = DataHelper()
         all_perms = data.get("speak_changer", {})
         guild_perms = all_perms.get(str(ctx.guild.id), [])
-        return (ctx.author.guild_permissions.administrator or str(ctx.author.id) in guild_perms
+        return (ctx.author.guild_permissions.administrator or ctx.author.id in guild_perms
                 or ctx.author.id == config.owner_id)
 
     return commands.check(predicate)
