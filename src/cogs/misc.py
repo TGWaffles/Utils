@@ -32,7 +32,7 @@ def convert_colour(input_colour):
 class Misc(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
-        
+
     @commands.command(pass_context=True)
     @is_staff()
     async def embed(self, ctx, colour: Optional[convert_colour] = discord.Colour.default(),
@@ -43,7 +43,7 @@ class Misc(commands.Cog):
             await ctx.send(embed=self.bot.create_error_embed("Fields were not even."))
             return
         for i in range(0, len(fields), 2):
-            embed.add_field(name=fields[i], value=fields[i+1], inline=False)
+            embed.add_field(name=fields[i], value=fields[i + 1], inline=False)
         await ctx.send(embed=embed)
         await ctx.message.delete(delay=5)
 
@@ -96,8 +96,8 @@ class Misc(commands.Cog):
         enabled = not data.get("members", False)
         data["members"] = enabled
         state = ("Disabled", "Enabled")[enabled]
-        await ctx.send(self.bot.create_completed_embed("Member Count {}!".format(state),
-                                                       f"Member count logging successfully {state.lower()}"))
+        await ctx.send(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
+                                                             f"Member count logging successfully {state.lower()}"))
 
     @commands.Cog.listener()
     async def on_ready(self):
