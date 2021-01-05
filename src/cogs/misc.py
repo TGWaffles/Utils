@@ -99,8 +99,7 @@ class Misc(commands.Cog):
         await ctx.send(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
                                                              f"Member count logging successfully {state.lower()}"))
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+    async def members_loop(self):
         users_vc: discord.VoiceChannel = self.bot.get_channel(727202196600651858)
         data = DataHelper()
         while True:
