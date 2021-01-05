@@ -1,9 +1,9 @@
 import os
 
-version_number = "1.10.12"
+version_number = "1.10.2"
 
 bot_prefix = "!"
-description = "Discord bot for Ahh-Monkey"
+description = "Discord Utility Bot"
 owner_id = 230778630597246983
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech"]
