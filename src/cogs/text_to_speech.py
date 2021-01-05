@@ -112,7 +112,7 @@ class TTS(commands.Cog):
     async def on_message(self, message):
         member = message.author
         all_guilds = self.data.get("speaking", {})
-        speaking = all_guilds.get(str(message.guild.id))
+        speaking = all_guilds.get(str(message.guild.id), [])
         if member.id not in speaking:
             return
         if message.content.startswith("!") or message.content.startswith("~"):
