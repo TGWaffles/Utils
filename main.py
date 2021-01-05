@@ -76,7 +76,8 @@ def get_bot():
             embed.set_footer(text=last_commit_message)
             await original_msg.edit(embed=embed)
             os.remove("restart_info.json")
-        await bot.get_cog("misc").members_loop()
+        misc_cog = bot.get_cog("Misc")
+        await misc_cog.members_loop()
 
     # noinspection PyUnusedLocal
     @bot.event
