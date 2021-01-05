@@ -3,7 +3,7 @@ import asyncio
 from discord.ext import commands
 
 from main import UtilsBot
-from src.checks.role_check import is_high_staff
+from src.checks.user_check import is_owner
 
 
 class CommandManager(commands.Cog):
@@ -11,7 +11,7 @@ class CommandManager(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @is_high_staff()
+    @is_owner()
     async def disable(self, ctx, command_name):
         command: commands.Command = self.bot.get_command(command_name)
         if command is None:
@@ -24,7 +24,7 @@ class CommandManager(commands.Cog):
         await ctx.send(embed=self.bot.create_completed_embed("Disabled.", "Command {} disabled!".format(command_name)))
 
     @commands.command()
-    @is_high_staff()
+    @is_owner()
     async def enable(self, ctx, command_name):
         command: commands.Command = self.bot.get_command(command_name)
         if command is None:

@@ -41,7 +41,8 @@ class TTS(commands.Cog):
                       description="Gives other people access to the !speak command.")
     @is_high_staff()
     async def speak_perms(self, ctx, member: discord.Member):
-        changer_list = self.data.get("speak_changer", [])
+        all_guilds = self.data.get("speak_changer", {})
+        changer_list = all_guilds.get(str(ctx.guild.id), [])
         if member.id in changer_list:
             changer_list.remove(member.id)
             await ctx.send(embed=self.bot.create_completed_embed("Perms Revoked",
@@ -50,14 +51,16 @@ class TTS(commands.Cog):
             changer_list.append(member.id)
             await ctx.send(embed=self.bot.create_completed_embed("Perms Granted",
                                                                  f"Given {member.display_name} permissions!"))
-        self.data["speak_changer"] = changer_list
+        all_guilds[str(ctx.guild.id)] = changer_list
+        self.data["speak_changer"] = all_guilds
 
     @commands.command(pass_context=True, name="speak", description="Adds/removes a user to the TTS list.")
     @speak_changer_check()
     async def speak(self, ctx, member: Optional[discord.Member] = None):
         if member is None:
             member = ctx.author
-        speaking_list = self.data.get("speaking", [])
+        all_guilds = self.data.get("speaking", {})
+        speaking_list = all_guilds.get(str(ctx.guild.id), [])
         if member.id in speaking_list:
             speaking_list.remove(member.id)
             await ctx.send(embed=self.bot.create_completed_embed("Disabled TTS", f"Removed {member.display_name} from "
@@ -66,7 +69,8 @@ class TTS(commands.Cog):
             speaking_list.append(member.id)
             await ctx.send(embed=self.bot.create_completed_embed("Enabled TTS", f"Added {member.display_name} to the "
                                                                                 f"TTS list."))
-        self.data["speaking"] = speaking_list
+        all_guilds[str(ctx.guild.id)] = speaking_list
+        self.data["speaking"] = all_guilds
 
     @commands.command(pass_context=True)
     @speak_changer_check()
