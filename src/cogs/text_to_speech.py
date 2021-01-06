@@ -111,7 +111,10 @@ class TTS(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         member = message.author
-        if member.id == self.bot.user.id or member.guild is None:
+        try:
+            if member.id == self.bot.user.id or member.guild is None:
+                return
+        except AttributeError:
             return
         all_guilds = self.data.get("speaking", {})
         speaking = all_guilds.get(str(message.guild.id), [])
