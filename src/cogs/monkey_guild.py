@@ -13,7 +13,6 @@ class Monkey(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
-        self.july = datetime.datetime
 
     def is_og(self, member: discord.Member):
         first_join_date = member.joined_at
