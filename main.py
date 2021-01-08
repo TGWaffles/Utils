@@ -37,7 +37,7 @@ class UtilsBot(commands.Bot):
             og_messages = self.data.get("og_messages", {})
             for user_id in og_messages.keys():
                 try:
-                    member_object = await guild.fetch_member(int(user_id))
+                    member_object = members[member_ids.index(int(user_id))]
                     first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
                     if first_join < member_object.joined_at:
                         member_object.joined_at = first_join
