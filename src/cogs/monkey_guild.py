@@ -28,11 +28,10 @@ class Monkey(commands.Cog):
             member = ctx.message.author
         is_og = self.is_og(member)
         message_time = None
-        if not is_og:
-            data = DataHelper()
-            if str(member.id) in data.get("og_messages", {}).keys():
-                is_og = True
-                message_time = datetime.datetime.utcfromtimestamp(data.get("og_messages", {}).get(str(member.id), 0))
+        data = DataHelper()
+        if str(member.id) in data.get("og_messages", {}).keys():
+            is_og = True
+            message_time = datetime.datetime.utcfromtimestamp(data.get("og_messages", {}).get(str(member.id), 0))
         embed = discord.Embed(title="OG Check")
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
