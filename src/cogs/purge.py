@@ -6,16 +6,7 @@ from discord.ext import commands
 from main import UtilsBot
 from src.checks.role_check import is_staff
 from src.storage import config, messages
-
-
-def check_reply(author):
-    def check_author(message):
-        return message.author.id == author.id and message.content.lower() == "yes"
-    return check_author
-
-
-def check_pinned(message):
-    return not message.pinned
+from src.checks.message_check import check_reply, check_pinned
 
 
 class Purge(commands.Cog):
