@@ -90,6 +90,23 @@ class Misc(commands.Cog):
         await sent_message.edit(content="", embed=embed)
 
     @commands.command()
+    @is_owner()
+    async def oldest(self, ctx):
+        current_member = 0
+        members = await ctx.guild.fetch_members(limit=None).flatten()
+        members = [member for member in members if member.joined_at is not None]
+        members.sort(key=lambda x: x.joined_at)
+        leader_board = ""
+        for member in members:
+            string_to_add = "{}: {} - {}\n".format(current_member, member.name,
+                                                   member.joined_at.strftime("%Y-%m-%d %H:%M"))
+            if len(leader_board + string_to_add) > 2048:
+                break
+            leader_board = leader_board + string_to_add
+        embed = discord.Embed(title="First Join Leaderboard", colour=discord.Colour.green(), description=leader_board)
+        await ctx.send(embed=embed)
+
+    @commands.command(pass_context=True)
     @is_high_staff()
     async def members(self, ctx):
         data = DataHelper()
