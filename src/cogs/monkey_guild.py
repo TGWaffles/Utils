@@ -56,7 +56,7 @@ class Monkey(commands.Cog):
         start_embed = discord.Embed(title="Doing all OGs.", description="I will now start to process all messages "
                                                                         "until the 1st of July.",
                                     colour=discord.Colour.orange())
-        processing_message = await ctx.send(start_embed)
+        processing_message = await ctx.send(embed=start_embed)
         last_edit = datetime.datetime.now()
         for channel in ctx.guild.text_channels:
             async for message in channel.history(limit=None, before=self.july.replace(tzinfo=None)):
@@ -71,7 +71,7 @@ class Monkey(commands.Cog):
                     await processing_message.edit(embed=embed)
                     last_edit = datetime.datetime.now()
                 if str(author.id) not in message_member_ids.keys():
-                    join_date = message.created_at.replace(datetime.timezone.utc)
+                    join_date = message.created_at.replace(tzinfo=datetime.timezone.utc)
                     message_member_ids[str(author.id)] = join_date.utctimestamp()
         messages_done = discord.Embed(title="Finished Messages.", description="Finished messages. I will now start to "
                                                                               "apply the OG role to all deserving "
