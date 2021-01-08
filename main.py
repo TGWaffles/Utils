@@ -32,17 +32,19 @@ class UtilsBot(commands.Bot):
 
     async def get_sorted_members(self, guild):
         members = await guild.fetch_members(limit=None).flatten()
-        member_ids = [user.id for user in members]
-        og_messages = self.data.get("og_messages", {})
-        for user_id in og_messages.keys():
-            try:
-                member_object = await guild.fetch_member(int(user_id))
-                first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
-                if first_join < member_object.joined_at:
-                    member_object.joined_at = first_join
-                    members[member_ids.index(int(user_id))] = member_object
-            except Exception as e:
-                print(e)
+        if guild.id == config.guild_id:
+            member_ids = [user.id for user in members]
+            og_messages = self.data.get("og_messages", {})
+            for user_id in og_messages.keys():
+                try:
+                    member_object = await guild.fetch_member(int(user_id))
+                    first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
+                    if first_join < member_object.joined_at:
+                        member_object.joined_at = first_join
+                        members[member_ids.index(int(user_id))] = member_object
+                except Exception as e:
+                    print(e)
+                    print(user_id)
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
         return members
