@@ -24,6 +24,13 @@ class UtilsBot(commands.Bot):
         self.error_channel = None
         self.latest_joins = {}
 
+    async def get_latest_joins(self):
+        for guild in self.guilds:
+            members = await guild.fetch_members(limit=None).flatten()
+            members = [user for user in members if user.joined_at is not None]
+            members.sort(key=lambda x: x.joined_at)
+            self.latest_joins[guild.id] = members
+
     # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod
     def create_error_embed(text):
@@ -77,11 +84,7 @@ def get_bot():
             embed.set_footer(text=last_commit_message)
             await original_msg.edit(embed=embed)
             os.remove("restart_info.json")
-        for guild in bot.guilds:
-            members = await guild.fetch_members(limit=None).flatten()
-            members = [user for user in members if user.joined_at is not None]
-            members.sort(key=lambda x: x.joined_at)
-            bot.latest_joins[guild.id] = members
+        await bot.get_latest_joins()
 
     # noinspection PyUnusedLocal
     @bot.event

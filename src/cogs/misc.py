@@ -94,6 +94,8 @@ class Misc(commands.Cog):
     @is_owner()
     async def oldest(self, ctx):
         current_member = 0
+        if self.bot.latest_joins == {}:
+            await self.bot.get_latest_joins()
         members = self.bot.latest_joins[ctx.guild.id]
         leader_board = ""
         for member in members:
