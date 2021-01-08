@@ -42,9 +42,8 @@ class UtilsBot(commands.Bot):
                     if first_join < member_object.joined_at:
                         member_object.joined_at = first_join
                         members[member_ids.index(int(user_id))] = member_object
-                except Exception as e:
-                    print(e)
-                    print(user_id)
+                except (ValueError, IndexError):
+                    pass
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
         return members

@@ -126,6 +126,7 @@ class Misc(commands.Cog):
             await users_vc.edit(name="Total Users: {}".format(guild_members))
 
     async def on_member_change(self, member):
+        print("processing member change")
         guild = member.guild
         if guild.id == config.guild_id:
             await self.update_members_vc()
