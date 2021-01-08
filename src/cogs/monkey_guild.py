@@ -17,6 +17,8 @@ class Monkey(commands.Cog):
 
     def is_og(self, member: discord.Member):
         first_join_date = member.joined_at
+        # noinspection SpellCheckingInspection
+        first_join_date.tzinfo = datetime.timezone.utc
         return first_join_date < self.july
 
     @commands.command(pass_context=True)
@@ -25,8 +27,6 @@ class Monkey(commands.Cog):
     async def check_og(self, ctx, member: discord.Member = None):
         if member is None:
             member = ctx.message.author
-        await ctx.send(str(member.joined_at))
-        await ctx.send(str(member.joined_at.tzinfo))
         is_og = self.is_og(member)
         embed = discord.Embed(title="OG Check")
         embed.set_author(name=member.name, icon_url=member.avatar_url)
