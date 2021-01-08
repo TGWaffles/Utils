@@ -1,12 +1,12 @@
 import os
 
-version_number = "1.10.9"
+version_number = "1.10.10"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
 
-extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech"]
+extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild"]
 
 guild_id = 725886999646437407
 error_channel_id = 795057163768037376
