@@ -31,9 +31,7 @@ class Monkey(commands.Cog):
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
         embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
         embed.timestamp = member.joined_at
-        members = await ctx.guild.fetch_members(limit=None).flatten()
-        members = [user for user in members if user.joined_at is not None]
-        members.sort(key=lambda x: x.joined_at)
+        members = self.bot.latest_joins[ctx.guild.id]
         members = [user.id for user in members]
         embed.add_field(name="Position", value="#{}".format(str(members.index(member.id) + 1)))
         await ctx.send(embed=embed)

@@ -6,6 +6,7 @@ import asyncio
 from discord.ext import commands
 from typing import Optional
 from main import UtilsBot
+from src.storage import config
 from src.checks.user_check import is_owner
 from src.checks.role_check import is_staff, is_high_staff
 from src.helpers.storage_helper import DataHelper
@@ -93,9 +94,7 @@ class Misc(commands.Cog):
     @is_owner()
     async def oldest(self, ctx):
         current_member = 0
-        members = await ctx.guild.fetch_members(limit=None).flatten()
-        members = [member for member in members if member.joined_at is not None]
-        members.sort(key=lambda x: x.joined_at)
+        members = self.bot.latest_joins[ctx.guild.id]
         leader_board = ""
         for member in members:
             current_member += 1
@@ -117,14 +116,29 @@ class Misc(commands.Cog):
         await ctx.send(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
                                                              f"Member count logging successfully {state.lower()}"))
 
-    async def members_loop(self):
+    async def update_members_vc(self):
         users_vc: discord.VoiceChannel = self.bot.get_channel(727202196600651858)
         data = DataHelper()
-        while True:
-            if data["members"]:
-                guild_members = users_vc.guild.member_count
-                await users_vc.edit(name="Total Users: {}".format(guild_members))
-            await asyncio.sleep(360)
+        if data["members"]:
+            guild_members = users_vc.guild.member_count
+            await users_vc.edit(name="Total Users: {}".format(guild_members))
+
+    async def on_member_change(self, member):
+        guild = member.guild
+        if guild.id == config.guild_id:
+            await self.update_members_vc()
+        members = await guild.fetch_members(limit=None).flatten()
+        members = [user for user in members if user.joined_at is not None]
+        members.sort(key=lambda x: x.joined_at)
+        self.bot.latest_joins[guild.id] = members
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        await self.on_member_change(member)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        await self.on_member_change(member)
 
 
 def setup(bot):

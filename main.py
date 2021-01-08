@@ -22,6 +22,7 @@ class UtilsBot(commands.Bot):
                          loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True)
         self.guild = None
         self.error_channel = None
+        self.latest_joins = {}
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod
@@ -76,8 +77,11 @@ def get_bot():
             embed.set_footer(text=last_commit_message)
             await original_msg.edit(embed=embed)
             os.remove("restart_info.json")
-        misc_cog = bot.get_cog("Misc")
-        await misc_cog.members_loop()
+        for guild in bot.guilds:
+            members = await guild.fetch_members(limit=None).flatten()
+            members = [user for user in members if user.joined_at is not None]
+            members.sort(key=lambda x: x.joined_at)
+            bot.latest_joins[guild.id] = members
 
     # noinspection PyUnusedLocal
     @bot.event
