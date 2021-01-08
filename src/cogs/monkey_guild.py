@@ -13,6 +13,7 @@ class Monkey(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
+        self.july = datetime.datetime
 
     def is_og(self, member: discord.Member):
         first_join_date = member.joined_at
@@ -24,6 +25,8 @@ class Monkey(commands.Cog):
     async def check_og(self, ctx, member: discord.Member = None):
         if member is None:
             member = ctx.message.author
+        await ctx.send(str(member.joined_at))
+        await ctx.send(str(member.joined_at.tzinfo))
         is_og = self.is_og(member)
         embed = discord.Embed(title="OG Check")
         embed.set_author(name=member.name, icon_url=member.avatar_url)
