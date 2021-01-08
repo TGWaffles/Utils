@@ -30,8 +30,9 @@ class Monkey(commands.Cog):
         embed = discord.Embed(title="OG Check")
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
+        embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
+        embed.timestamp = member.joined_at
         await ctx.send(embed=embed)
-
 
 
 def setup(bot):
