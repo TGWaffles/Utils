@@ -72,7 +72,7 @@ class Monkey(commands.Cog):
                     last_edit = datetime.datetime.now()
                 if str(author.id) not in message_member_ids.keys():
                     join_date = message.created_at.replace(tzinfo=datetime.timezone.utc)
-                    message_member_ids[str(author.id)] = join_date.utctimestamp()
+                    message_member_ids[str(author.id)] = join_date.timestamp()
         messages_done = discord.Embed(title="Finished Messages.", description="Finished messages. I will now start to "
                                                                               "apply the OG role to all deserving "
                                                                               "users.", colour=discord.Colour.orange())
