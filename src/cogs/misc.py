@@ -98,6 +98,7 @@ class Misc(commands.Cog):
         members.sort(key=lambda x: x.joined_at)
         leader_board = ""
         for member in members:
+            current_member += 1
             string_to_add = "{}: {} - {}\n".format(current_member, member.name,
                                                    member.joined_at.strftime("%Y-%m-%d %H:%M"))
             if len(leader_board + string_to_add) > 2048:
