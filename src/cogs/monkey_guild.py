@@ -21,7 +21,6 @@ class Monkey(commands.Cog):
         return first_join_date < self.july
 
     @commands.command(pass_context=True)
-    @is_owner()
     @monkey_check()
     async def check_og(self, ctx, member: discord.Member = None):
         if member is None:
@@ -33,6 +32,16 @@ class Monkey(commands.Cog):
         embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
         embed.timestamp = member.joined_at
         await ctx.send(embed=embed)
+
+    @commands.command(pass_context=True)
+    @is_owner()
+    @monkey_check()
+    async def test(self, ctx, channel: discord.TextChannel):
+        async for message in channel.history(limit=1, oldest_first=True):
+            embed = discord.Embed(description=message.clean_content)
+            embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+            await ctx.send(embed=embed)
+            return
 
 
 def setup(bot):
