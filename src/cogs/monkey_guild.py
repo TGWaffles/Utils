@@ -59,7 +59,7 @@ class Monkey(commands.Cog):
         processing_message = await ctx.send(embed=start_embed)
         last_edit = datetime.datetime.now()
         for channel in ctx.guild.text_channels:
-            async for message in channel.history(limit=None, before=self.july.replace(tzinfo=None)):
+            async for message in channel.history(limit=None, before=self.july.replace(tzinfo=None), oldest_first=True):
                 author = message.author
                 if (datetime.datetime.now() - last_edit).total_seconds() > 1:
                     embed = discord.Embed(title="Processing messages",
