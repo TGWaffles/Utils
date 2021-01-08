@@ -18,7 +18,7 @@ class Monkey(commands.Cog):
     def is_og(self, member: discord.Member):
         first_join_date = member.joined_at
         # noinspection SpellCheckingInspection
-        first_join_date.tzinfo = datetime.timezone.utc
+        first_join_date.replace(tzinfo=datetime.timezone.utc)
         return first_join_date < self.july
 
     @commands.command(pass_context=True)
