@@ -130,7 +130,7 @@ class Misc(commands.Cog):
         guild = member.guild
         if guild.id == config.guild_id:
             await self.update_members_vc()
-        self.bot.latest_joins[guild.id] = self.bot.get_sorted_members(guild)
+        self.bot.latest_joins[guild.id] = await self.bot.get_sorted_members(guild)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
