@@ -183,8 +183,11 @@ class Hypixel(commands.Cog):
         offline_members.sort(key=lambda x: float(x["bedwars_level"]))
         online_members.sort(key=lambda x: float(x["bedwars_level"]))
         member_dicts = offline_members + online_members
+        pending_tasks = []
         for channel in all_channels.keys():
-            self.bot.loop.create_task(self.send_embeds(channel, set(all_channels[channel]), member_dicts))
+            pending_tasks.append(self.bot.loop.create_task(
+                self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
+        await asyncio.gather(*pending_tasks)
 
     @commands.Cog.listener()
     async def on_message(self, message):
