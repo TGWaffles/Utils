@@ -31,7 +31,8 @@ class Hypixel(commands.Cog):
         if member_online:
             status = await self.hypixel.get_player_status(user_uuid)
             return {"name": player.displayname,
-                    "level": player.level, "last_logout": player.lastLogout.replace(tzinfo=datetime.timezone.utc),
+                    "level": player.level, "last_logout": datetime.datetime.fromtimestamp(player.lastLogout.timestamp(),
+                                                                                          datetime.timezone.utc),
                     "online": member_online,
                     "bedwars_level": get_level_from_xp(experience),
                     "bedwars_winstreak": player.stats["Bedwars"]["winstreak"],
@@ -39,7 +40,8 @@ class Hypixel(commands.Cog):
                     "mode": status.mode, "map": status.map, "uuid": user_uuid}
         else:
             return {"name": player.displayname,
-                    "level": player.level, "last_logout": player.lastLogout.replace(tzinfo=datetime.timezone.utc),
+                    "level": player.level, "last_logout": datetime.datetime.fromtimestamp(player.lastLogout.timestamp(),
+                                                                                          datetime.timezone.utc),
                     "online": member_online,
                     "bedwars_level": get_level_from_xp(experience),
                     "bedwars_winstreak": player.stats["Bedwars"]["winstreak"], "uuid": user_uuid}
