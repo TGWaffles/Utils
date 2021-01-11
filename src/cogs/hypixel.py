@@ -156,9 +156,8 @@ class Hypixel(commands.Cog):
             if member["uuid"] in channel_members:
                 our_members.append(member)
         channel = await self.bot.fetch_channel(channel_id)
-        history = await channel.history(limit=None).flatten()
-        editable_messages = [message for message in history if
-                             message.author == self.bot.user]
+        history = await channel.history(limit=None, oldest_first=True).flatten()
+        editable_messages = [message for message in history if message.author == self.bot.user]
         if len(editable_messages) != len(our_members):
             await channel.purge(limit=None)
             new_messages = True
