@@ -153,8 +153,11 @@ class Hypixel(commands.Cog):
             if member["uuid"] in channel_members:
                 our_members.append(member)
         channel = await self.bot.fetch_channel(channel_id)
-        editable_messages = [message for message in await channel.history(limit=None).flatten() if
+        history = await channel.history(limit=None).flatten()
+        print(history)
+        editable_messages = [message for message in history if
                              message.author == self.bot.user]
+        print(editable_messages)
         if len(editable_messages) != len(our_members):
             print("{} is not equal to {}!".format(len(editable_messages), len(our_members)))
             await channel.purge(limit=None)
