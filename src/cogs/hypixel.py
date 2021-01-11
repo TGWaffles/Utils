@@ -109,7 +109,8 @@ class Hypixel(commands.Cog):
             return
         return uuid
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, name="add", description="Adds a player to your server's hypixel channel!",
+                      aliases=["hadd", "hypixel_add", "hypixeladd"])
     @is_staff()
     async def add(self, ctx, username: str):
         uuid = await self.uuid_from_identifier(ctx, username)
@@ -129,7 +130,9 @@ class Hypixel(commands.Cog):
                                                                           mcuuid.api.GetPlayerData(uuid).username,
                                                                           channel.mention)))
 
-    @commands.command()
+    @commands.command(pass_context=True, name="remove", description="Removes a player to your server's "
+                                                                    "hypixel channel!",
+                      aliases=["hremove", "hypixel_remove", "hypixelremove"])
     @is_staff()
     async def remove(self, ctx, username: str):
         uuid = await self.uuid_from_identifier(ctx, username)
