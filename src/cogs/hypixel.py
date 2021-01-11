@@ -156,6 +156,7 @@ class Hypixel(commands.Cog):
         editable_messages = [message for message in await channel.history(limit=None).flatten() if
                              message.author == self.bot.user]
         if len(editable_messages) != len(our_members):
+            print("{} is not equal to {}!".format(len(editable_messages), len(our_members)))
             await channel.purge(limit=None)
             new_messages = True
         else:
