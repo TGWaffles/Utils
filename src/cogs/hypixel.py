@@ -67,6 +67,7 @@ class Hypixel(commands.Cog):
         return member_embed
 
     @commands.command(pass_context=True)
+    @is_staff()
     async def hypixel_channel(self, ctx, channel: discord.TextChannel):
         sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to make {} "
                                                                                 "the text channel for hypixel "
@@ -92,7 +93,6 @@ class Hypixel(commands.Cog):
             return
 
     async def uuid_from_identifier(self, ctx, identifier):
-        print("Getting uuid")
         if mcuuid.tools.is_valid_mojang_uuid(identifier):
             uuid = identifier
         elif mcuuid.tools.is_valid_minecraft_username(identifier):
@@ -113,10 +113,8 @@ class Hypixel(commands.Cog):
     @is_staff()
     async def add(self, ctx, username: str):
         uuid = await self.uuid_from_identifier(ctx, username)
-        print("gotten uuid")
         if uuid is None:
             return
-        print("Getting channel info")
         all_channels = self.data.get("hypixel_channels", {})
         for channel_id in all_channels.keys():
             channel = self.bot.get_channel(int(channel_id))
@@ -155,8 +153,6 @@ class Hypixel(commands.Cog):
             if member["uuid"] in channel_members:
                 our_members.append(member)
         channel = await self.bot.fetch_channel(channel_id)
-        print(channel_id)
-        print(channel)
         editable_messages = [message for message in await channel.history(limit=None).flatten() if
                              message.author == self.bot.user]
         if len(editable_messages) != len(our_members):
@@ -181,7 +177,6 @@ class Hypixel(commands.Cog):
                 member_uuids.add(member_uuid)
         member_dicts = []
         for member_uuid in member_uuids:
-            print(member_uuid)
             member_dicts.append(await self.get_user_stats(member_uuid))
         offline_members = [member for member in member_dicts if not member["online"]]
         online_members = [member for member in member_dicts if member["online"]]
@@ -196,7 +191,7 @@ class Hypixel(commands.Cog):
         if message.author == self.bot.user:
             pass
         all_channels = self.data.get("hypixel_channels", {}).keys()
-        if message.channel.id in all_channels:
+        if str(message.channel.id) in all_channels:
             await message.delete()
 
 
