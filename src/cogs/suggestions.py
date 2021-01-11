@@ -18,7 +18,7 @@ class Suggestions(commands.Cog):
         if not message.content.lower().startswith("suggest "):
             if self.allow_messages and is_staff():
                 return
-            await message.channel.send(embed=self.bot.create_error_embed(
+            await message.reply(embed=self.bot.create_error_embed(
                 messages.new_suggestion_format.format(message.author.mention)), delete_after=10.0)
             await message.delete()
             return
@@ -46,18 +46,18 @@ class Suggestions(commands.Cog):
         try:
             suggestion_id = int(message.content.split(" ")[1])
         except ValueError:
-            await message.channel.send(messages.invalid_message_id.format(message.content.split(" ")[1]))
+            await message.reply(messages.invalid_message_id.format(message.content.split(" ")[1]))
             return
         try:
             suggestion_message = await self.suggestions_channel.fetch_message(suggestion_id)
         except discord.NotFound:
-            await message.channel.send(messages.id_not_found)
+            await message.reply(messages.id_not_found)
             return
         if suggestion_message.author.id != self.bot.user.id:
-            await message.channel.send(messages.bot_not_author)
+            await message.reply(messages.bot_not_author)
             return
         if len(suggestion_message.embeds) < 1:
-            await message.channel.send(messages.no_embed)
+            await message.reply(messages.no_embed)
             return
         reason = message.content.partition(" ")[2].partition(" ")[2]
         positive_reaction = [x for x in suggestion_message.reactions if str(x.emoji) == "✅"][0]
@@ -86,7 +86,7 @@ class Suggestions(commands.Cog):
             except Exception as e:
                 await self.bot.error_channel.send(embed=self.bot.create_error_embed(e))
 
-        await message.channel.send(messages.suggestion_channel_feedback.format(suggestion_embed.description,
+        await message.reply(messages.suggestion_channel_feedback.format(suggestion_embed.description,
                                                                                ("Denied.", "Accepted!")[accepted],
                                                                                reason))
 

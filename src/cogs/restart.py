@@ -15,7 +15,7 @@ class Restart(commands.Cog):
     @commands.command(pass_context=True)
     @is_owner()
     async def update(self, ctx: commands.Context):
-        reply_message = await ctx.send(embed=self.bot.create_processing_embed("Updating", "Downloading update..."))
+        reply_message = await ctx.reply(embed=self.bot.create_processing_embed("Updating", "Downloading update..."))
         git_pull = Popen(["git", "pull"])
         waited = 0
         while git_pull.poll() is None:
@@ -34,7 +34,7 @@ class Restart(commands.Cog):
     @commands.command(pass_context=True)
     @is_high_staff()
     async def restart(self, ctx: commands.Context):
-        reply_message = await ctx.send(embed=self.bot.create_processing_embed("Restarting", "Restarting..."))
+        reply_message = await ctx.reply(embed=self.bot.create_processing_embed("Restarting", "Restarting..."))
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Restart Complete!",
                                          "Restarted successfully!")
         self.bot.restart()

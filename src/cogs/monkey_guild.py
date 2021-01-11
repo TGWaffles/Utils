@@ -45,7 +45,7 @@ class Monkey(commands.Cog):
         members = self.bot.latest_joins[ctx.guild.id]
         members = [user.id for user in members]
         embed.add_field(name="Position", value="#{}".format(str(members.index(member.id) + 1)))
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(pass_context=True)
     @is_owner()
@@ -55,7 +55,7 @@ class Monkey(commands.Cog):
         start_embed = discord.Embed(title="Doing all OGs.", description="I will now start to process all messages "
                                                                         "until the 1st of July.",
                                     colour=discord.Colour.orange())
-        processing_message = await ctx.send(embed=start_embed)
+        processing_message = await ctx.reply(embed=start_embed)
         last_edit = datetime.datetime.now()
         for channel in ctx.guild.text_channels:
             async for message in channel.history(limit=None, before=self.july.replace(tzinfo=None), oldest_first=True):
@@ -122,7 +122,7 @@ class Monkey(commands.Cog):
         async for message in channel.history(limit=1, oldest_first=True):
             embed = discord.Embed(description=message.clean_content)
             embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-            await ctx.send(embed=embed)
+            await ctx.reply(embed=embed)
             return
 
 

@@ -41,11 +41,11 @@ class Misc(commands.Cog):
         embed = discord.Embed(colour=colour, title=title, description=description, timestamp=datetime.datetime.utcnow())
         embed.set_author(name=ctx.message.author.name, icon_url=ctx.message.author.avatar_url)
         if len(fields) % 2 != 0:
-            await ctx.send(embed=self.bot.create_error_embed("Fields were not even."))
+            await ctx.reply(embed=self.bot.create_error_embed("Fields were not even."))
             return
         for i in range(0, len(fields), 2):
             embed.add_field(name=fields[i], value=fields[i + 1], inline=False)
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
         await ctx.message.delete(delay=5)
 
     @commands.command(name="error_channel", description="Sets the bot error message channel for this guild.")
@@ -60,7 +60,7 @@ class Misc(commands.Cog):
     @commands.command(pass_context=True)
     async def ping(self, ctx):
         before = datetime.datetime.now()
-        sent_message: discord.Message = await ctx.send("Pong!")
+        sent_message: discord.Message = await ctx.reply("Pong!")
         after = datetime.datetime.now()
         milliseconds_to_send = round((after - before).total_seconds() * 1000)
         message: discord.Message = ctx.message
@@ -106,7 +106,7 @@ class Misc(commands.Cog):
                 break
             leader_board = leader_board + string_to_add
         embed = discord.Embed(title="First Join Leaderboard", colour=discord.Colour.green(), description=leader_board)
-        await ctx.send(embed=embed)
+        await ctx.reply(embed=embed)
 
     @commands.command(pass_context=True)
     @is_high_staff()
@@ -115,7 +115,7 @@ class Misc(commands.Cog):
         enabled = not data.get("members", False)
         data["members"] = enabled
         state = ("Disabled", "Enabled")[enabled]
-        await ctx.send(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
+        await ctx.reply(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
                                                              f"Member count logging successfully {state.lower()}"))
 
     async def update_members_vc(self):

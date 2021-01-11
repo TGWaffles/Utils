@@ -6,7 +6,7 @@ import os
 
 from pydub import effects
 from io import BytesIO
-from gtts import lang
+import gtts.lang
 from discord.ext import commands
 from main import UtilsBot
 from src.checks.role_check import is_high_staff
@@ -29,14 +29,14 @@ class TTS(commands.Cog):
     async def disconnect(self, ctx):
         voice_clients = [x for x in self.bot.voice_clients if x.guild.id == ctx.guild.id]
         if len(voice_clients) == 0:
-            await ctx.send(messages.no_voice_clients)
+            await ctx.reply(messages.no_voice_clients)
             return
         try:
             await voice_clients[0].disconnect()
         except Exception as e:
-            await ctx.send(embed=self.bot.create_error_embed("Error disconnecting from vc: {}".format(e)))
+            await ctx.reply(embed=self.bot.create_error_embed("Error disconnecting from vc: {}".format(e)))
             return
-        await ctx.send(embed=self.bot.create_completed_embed("Disconnect success.", "Disconnected from voice."))
+        await ctx.reply(embed=self.bot.create_completed_embed("Disconnect success.", "Disconnected from voice."))
 
     @commands.command(pass_context=True, name="speak_perms",
                       description="Gives other people access to the !speak command.")
@@ -46,12 +46,12 @@ class TTS(commands.Cog):
         changer_list = all_guilds.get(str(ctx.guild.id), [])
         if member.id in changer_list:
             changer_list.remove(member.id)
-            await ctx.send(embed=self.bot.create_completed_embed("Perms Revoked",
-                                                                 f"Revoked {member.display_name}'s permissions!"))
+            await ctx.reply(embed=self.bot.create_completed_embed("Perms Revoked",
+                                                                  f"Revoked {member.display_name}'s permissions!"))
         else:
             changer_list.append(member.id)
-            await ctx.send(embed=self.bot.create_completed_embed("Perms Granted",
-                                                                 f"Given {member.display_name} permissions!"))
+            await ctx.reply(embed=self.bot.create_completed_embed("Perms Granted",
+                                                                  f"Given {member.display_name} permissions!"))
         all_guilds[str(ctx.guild.id)] = changer_list
         self.data["speak_changer"] = all_guilds
 
@@ -64,12 +64,12 @@ class TTS(commands.Cog):
         speaking_list = all_guilds.get(str(ctx.guild.id), [])
         if member.id in speaking_list:
             speaking_list.remove(member.id)
-            await ctx.send(embed=self.bot.create_completed_embed("Disabled TTS", f"Removed {member.display_name} from "
-                                                                                 f"the TTS list"))
+            await ctx.reply(embed=self.bot.create_completed_embed("Disabled TTS", f"Removed {member.display_name} from "
+                                                                                  f"the TTS list"))
         else:
             speaking_list.append(member.id)
-            await ctx.send(embed=self.bot.create_completed_embed("Enabled TTS", f"Added {member.display_name} to the "
-                                                                                f"TTS list."))
+            await ctx.reply(embed=self.bot.create_completed_embed("Enabled TTS", f"Added {member.display_name} to the "
+                                                                                 f"TTS list."))
         all_guilds[str(ctx.guild.id)] = speaking_list
         self.data["speaking"] = all_guilds
 
@@ -81,21 +81,21 @@ class TTS(commands.Cog):
         all_guilds = self.data.get("speak_speeds", {})
         all_guilds[str(ctx.guild.id)] = new_speed
         self.data["speak_speeds"] = all_guilds
-        await ctx.send(embed=self.bot.create_completed_embed("Speed Changed!", "New speed in here is {}. "
-                                                                               "(default 1.0)".format(new_speed)))
+        await ctx.reply(embed=self.bot.create_completed_embed("Speed Changed!", "New speed in here is {}. "
+                                                                                "(default 1.0)".format(new_speed)))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def lang(self, ctx, new_lang: str):
         new_lang = new_lang.lower()
-        if new_lang not in lang.tts_langs().keys():
+        if new_lang not in gtts.lang.tts_langs().keys():
             lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
             description = "**Available Languages**"
             field_to_add_to = 0
             left_field_text = ""
             middle_field_text = ""
             right_field_text = ""
-            for short, long in lang.tts_langs().items():
+            for short, long in gtts.lang.tts_langs().items():
                 if field_to_add_to == 0:
                     left_field_text += "**{}** - {}\n".format(short, long)
                 elif field_to_add_to == 1:
@@ -114,8 +114,8 @@ class TTS(commands.Cog):
         server_languages[ctx.guild.id] = new_lang
         self.data["server_languages"] = server_languages
         print(self.data["server_languages"])
-        await ctx.send(embed=self.bot.create_completed_embed("Language changed!",
-                                                             f"Changed voice language to {new_lang}"))
+        await ctx.reply(embed=self.bot.create_completed_embed("Language changed!",
+                                                              f"Changed voice language to {new_lang}"))
 
     async def speak_message(self, message):
         member = message.author

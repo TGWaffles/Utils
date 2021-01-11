@@ -19,16 +19,16 @@ class Purge(commands.Cog):
         bulk = True
         check = check_pinned
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
-            await ctx.send(embed=self.bot.create_error_embed(messages.purge_limit))
+            await ctx.reply(embed=self.bot.create_error_embed(messages.purge_limit))
             return
         if ctx.message.author.id == config.owner_id and disable_bulk:
             bulk = False
             check = lambda x: True
         if amount is None:
-            await ctx.send(embed=self.bot.create_error_embed(messages.no_purge_amount))
+            await ctx.reply(embed=self.bot.create_error_embed(messages.no_purge_amount))
             return
         if amount == -1:
-            sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
+            sent = await ctx.reply(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
                                                                                     "clear the whole channel...?"))
             try:
                 await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
@@ -37,7 +37,7 @@ class Purge(commands.Cog):
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
             if amount > config.confirm_amount:
-                sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
+                sent = await ctx.reply(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
                                                                                         "clear **{}** messages?\n"
                                                                                         "(type \"yes\" to confirm)".
                                                                              format(amount)))
