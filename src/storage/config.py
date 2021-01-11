@@ -1,12 +1,13 @@
 import os
 
-version_number = "1.14.1dev1"
+version_number = "1.14.1dev2"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
 
-extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild"]
+extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
+              "hypixel"]
 
 guild_id = 725886999646437407
 error_channel_id = 795057163768037376
