@@ -76,10 +76,10 @@ class TTS(commands.Cog):
     @speak_changer_check()
     async def speed(self, ctx, new_speed: float):
         all_guilds = self.data.get("speak_speeds", {})
-        all_guilds[str(str(ctx.guild.id))] = new_speed
+        all_guilds[str(ctx.guild.id)] = new_speed
         self.data["speak_speeds"] = all_guilds
-        await ctx.send(self.bot.create_completed_embed("Speed Changed!", "New speed in here is {}. "
-                                                                         "(default 1.25)".format(new_speed)))
+        await ctx.send(embed=self.bot.create_completed_embed("Speed Changed!", "New speed in here is {}. "
+                                                                               "(default 1.25)".format(new_speed)))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
