@@ -2,6 +2,7 @@ import discord
 import datetime
 import asyncio
 import asyncpixel
+import asyncpixel.exceptions.exceptions
 import mcuuid.tools
 import mcuuid.api
 
@@ -180,7 +181,12 @@ class Hypixel(commands.Cog):
                 member_uuids.add(member_uuid)
         member_dicts = []
         for member_uuid in member_uuids:
-            member_dicts.append(await self.get_user_stats(member_uuid))
+            while True:
+                try:
+                    member_dicts.append(await self.get_user_stats(member_uuid))
+                    break
+                except asyncpixel.exceptions.exceptions.RateLimitError:
+                    await asyncio.sleep(0.5)
         offline_members = [member for member in member_dicts if not member["online"]]
         online_members = [member for member in member_dicts if member["online"]]
         offline_members.sort(key=lambda x: float(x["bedwars_level"]))
