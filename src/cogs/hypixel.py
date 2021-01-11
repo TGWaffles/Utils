@@ -109,7 +109,7 @@ class Hypixel(commands.Cog):
     @commands.command(pass_context=True)
     @is_staff()
     async def add(self, ctx, username: str):
-        uuid = await self.uuid_from_identifier(username)
+        uuid = await self.uuid_from_identifier(ctx, username)
         if uuid is None:
             return
         all_channels = self.data.get("hypixel_channels", {})
