@@ -174,8 +174,8 @@ class Hypixel(commands.Cog):
     async def update_hypixel_info(self):
         all_channels = self.data.get("hypixel_channels", {}).copy()
         member_uuids = set()
-        for channel in all_channels:
-            for member_uuid in channel:
+        for _, members in all_channels.items():
+            for member_uuid in members:
                 member_uuids.add(member_uuid)
         member_dicts = []
         for member_uuid in member_uuids:
