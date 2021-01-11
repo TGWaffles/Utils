@@ -94,7 +94,7 @@ class TTS(commands.Cog):
             for short, long in lang.tts_langs().items():
                 description += "**{}** - {}\n".format(short, long)
             lang_embed.description = description
-            await ctx.reply(lang_embed)
+            await ctx.reply(embed=lang_embed)
             return
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
