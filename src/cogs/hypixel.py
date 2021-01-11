@@ -83,13 +83,16 @@ class Hypixel(commands.Cog):
                 await message.delete()
             await processing.edit(embed=self.bot.create_processing_embed(
                 "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
-            self.data.get("hypixel_channels", {})[str(channel.id)] = []
+            all_channels = self.data.get("hypixel_channels", {})
+            all_channels[str(channel.id)] = []
+            self.data["hypixel_channels"] = all_channels
             await processing.edit(embed=self.bot.create_completed_embed("Added Channel!",
                                                                         "Channel added for hypixel info."))
         except asyncio.TimeoutError:
             return
 
     async def uuid_from_identifier(self, ctx, identifier):
+        print("Getting uuid")
         if mcuuid.tools.is_valid_mojang_uuid(identifier):
             uuid = identifier
         elif mcuuid.tools.is_valid_minecraft_username(identifier):
@@ -110,8 +113,10 @@ class Hypixel(commands.Cog):
     @is_staff()
     async def add(self, ctx, username: str):
         uuid = await self.uuid_from_identifier(ctx, username)
+        print("gotten uuid")
         if uuid is None:
             return
+        print("Getting channel info")
         all_channels = self.data.get("hypixel_channels", {})
         for channel_id in all_channels.keys():
             channel = self.bot.get_channel(int(channel_id))
