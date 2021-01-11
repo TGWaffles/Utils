@@ -167,7 +167,7 @@ class Hypixel(commands.Cog):
         for member in our_members:
             embed = await self.get_user_embed(member)
             if new_messages:
-                await self.bot.get_channel(channel_id).send()
+                await channel.send(embed=embed)
             else:
                 await editable_messages[i].edit(embed=embed)
                 i += 1
