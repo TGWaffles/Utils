@@ -91,7 +91,7 @@ class TTS(commands.Cog):
         if new_lang not in lang.tts_langs().keys():
             lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
             description = "**Available Languages**\n\n"
-            for short, long in lang.tts_langs():
+            for short, long in lang.tts_langs().items():
                 description += "**{}** - {}\n".format(short, long)
             lang_embed.description = description
             await ctx.reply(lang_embed)

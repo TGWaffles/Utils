@@ -131,7 +131,7 @@ def get_bot():
             guild_error_channel_id = data.get("guild_error_channels", {}).get(str(ctx.guild.id), 795057163768037376)
             error_channel = bot.get_channel(guild_error_channel_id)
             await error_channel.send(embed=embed)
-            bot.restart()
+            # bot.restart()
         except Exception as e:
             print("Error in sending error to discord. Error was {}".format(error))
             print("Error sending to discord was {}".format(e))
