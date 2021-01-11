@@ -90,10 +90,23 @@ class TTS(commands.Cog):
         new_lang = new_lang.lower()
         if new_lang not in lang.tts_langs().keys():
             lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
-            description = "**Available Languages**\n\n"
+            description = "**Available Languages**"
+            field_to_add_to = 0
+            left_field_text = ""
+            middle_field_text = ""
+            right_field_text = ""
             for short, long in lang.tts_langs().items():
-                description += "**{}** - {}\n".format(short, long)
+                if field_to_add_to == 0:
+                    left_field_text += "**{}** - {}\n".format(short, long)
+                elif field_to_add_to == 1:
+                    middle_field_text += "**{}** - {}\n".format(short, long)
+                else:
+                    right_field_text += "**{}** - {}\n".format(short, long)
+                    field_to_add_to = 0
             lang_embed.description = description
+            lang_embed.add_field(name='\u200b', value=left_field_text)
+            lang_embed.add_field(name='\u200b', value=middle_field_text)
+            lang_embed.add_field(name='\u200b', value=right_field_text)
             await ctx.reply(embed=lang_embed)
             return
         server_languages = self.data.get("server_languages", {})
