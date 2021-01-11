@@ -1,6 +1,9 @@
 import discord
 import datetime
 import asyncio
+import asyncpixel
+import mcuuid.tools
+import mcuuid.api
 
 from src.storage import config, messages
 from discord.ext import commands
@@ -9,11 +12,58 @@ from src.checks.role_check import is_staff
 from src.checks.user_check import is_owner
 from src.checks.guild_check import monkey_check
 from src.checks.message_check import check_reply
+from src.helpers.storage_helper import DataHelper
+from src.helpers.hypixel_helper import *
 
 
 class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
+        self.data = DataHelper()
+        self.hypixel = asyncpixel.Client("e823fbc4-e526-4fbb-bf15-37e543aebdd6")
+
+    async def get_user_stats(self, user_uuid):
+        player = await self.hypixel.get_player(user_uuid)
+        member_online = bool(player.lastLogout < player.lastLogin)
+        experience = player.stats["Bedwars"]["Experience"]
+        if member_online:
+            status = await self.hypixel.get_player_status(user_uuid)
+            return {"name": player.displayname,
+                                   "level": player.level, "last_logout": player.lastLogout,
+                                   "online": member_online,
+                                   "bedwars_level": get_level_from_xp(experience),
+                                   "bedwars_winstreak": player.stats["Bedwars"]["winstreak"],
+                                   "game": status.gameType,
+                                   "mode": status.mode, "map": status.map}
+        else:
+            return {"name": player.displayname,
+                            "level": player.level, "last_logout": player.lastLogout,
+                            "online": member_online,
+                            "bedwars_level": get_level_from_xp(experience),
+                            "bedwars_winstreak": player.stats["Bedwars"]["winstreak"]}
+
+    async def get_user_embed(self, user_uuid):
+        member = await self.get_user_stats(user_uuid)
+        member_embed = discord.Embed(title=member["name"], color=((discord.Colour.red(),
+                                                                   discord.Colour.green())[int(member["online"])]),
+                                     timestamp=datetime.datetime.utcnow())
+        if member["online"]:
+            if member["mode"] is None:
+                game_text = "{}: LOBBY".format(member["game"])
+            else:
+                try:
+                    game_text = "{}: {} ({})".format(member["game"], member["mode"], member["map"]["map"])
+                except KeyError:
+                    game_text = "{}: {}".format(member["game"], member["mode"])
+            member_embed.add_field(name="Current Game", value=game_text)
+        else:
+            member_embed.add_field(name="Last Online", value=member["last_logout"].strftime("%Y/%m/%d %H:%M"))
+            member_embed.timestamp = member["last_logout"]
+
+        # member_embed.add_field(name="Hypixel Level", value=member["level"])
+        member_embed.add_field(name="| Bedwars Level", value="| {}".format(member["bedwars_level"]))
+        member_embed.add_field(name="| Bedwars Winstreak", value="| {}".format(member["bedwars_winstreak"]))
+        return member_embed
 
     @commands.command(pass_context=True)
     async def hypixel_channel(self, ctx, channel: discord.TextChannel):
@@ -21,11 +71,37 @@ class Hypixel(commands.Cog):
                                                                                 "the text channel for hypixel "
                                                                                 "updates? \n "
                                                                                 "(THIS DELETES ALL CONTENTS) \n"
-                                                                                "Type \"yes\" if you're sure."))
+                                                                                "Type \"yes\" if you're sure.".format(
+                                                                                                    channel.mention)))
         try:
+            await sent.delete()
+            processing = await ctx.message.send(embed=self.bot.create_processing_embed(
+                "Converting {}".format(channel.name), "Deleting all prior messages."))
+            async for message in channel.history(limit=None):
+                await message.delete()
+            await processing.edit(embed=self.bot.create_processing_embed(
+                "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
             await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
+            self.data["hypixel_channels"][str(channel.id)] = []
+            await processing.edit(embed=self.bot.create_completed_embed("Added Channel!",
+                                                                        "Channel added for hypixel info."))
         except asyncio.TimeoutError:
             return
+
+    @commands.command(pass_context=True)
+    async def add(self, ctx, username: str):
+        if mcuuid.tools.is_valid_mojang_uuid(username):
+            uuid = username
+        elif mcuuid.tools.is_valid_minecraft_username(username):
+            uuid = mcuuid.api.GetPlayerData(username).uuid
+        else:
+            await ctx.send(self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                           delete_after=10)
+            await ctx.message.delete()
+            return
+        try:
+            player = await self.get_user_stats(uuid)
+        except TypeError:
 
 
 def setup(bot):
