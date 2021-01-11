@@ -155,6 +155,10 @@ class Hypixel(commands.Cog):
             if member["uuid"] in channel_members:
                 our_members.append(member)
         channel = self.bot.get_channel(channel_id)
+        while channel is None:
+            channel = self.bot.get_channel(channel_id)
+            print(channel_id)
+            print(channel)
         print(channel_id)
         print(channel)
         editable_messages = [message for message in await channel.history(limit=None).flatten() if
