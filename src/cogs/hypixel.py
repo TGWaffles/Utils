@@ -97,11 +97,17 @@ class Hypixel(commands.Cog):
 
     async def uuid_from_identifier(self, ctx, identifier):
         print("Checking {}".format(identifier))
-        if mcuuid.tools.is_valid_mojang_uuid(identifier):
-            uuid = identifier
-        elif mcuuid.tools.is_valid_minecraft_username(identifier):
-            uuid = mcuuid.api.GetPlayerData(identifier).uuid
-        else:
+        failed = False
+        try:
+            if mcuuid.tools.is_valid_mojang_uuid(identifier):
+                uuid = identifier
+            elif mcuuid.tools.is_valid_minecraft_username(identifier):
+                uuid = mcuuid.api.GetPlayerData(identifier).uuid
+            else:
+                failed = True
+        except AttributeError:
+            failed = True
+        if failed:
             print("Invalid.")
             await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(identifier)),
                             delete_after=10)
