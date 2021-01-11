@@ -6,6 +6,7 @@ import os
 
 from pydub import effects
 from io import BytesIO
+from gtts import lang
 from discord.ext import commands
 from main import UtilsBot
 from src.checks.role_check import is_high_staff
@@ -86,6 +87,15 @@ class TTS(commands.Cog):
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def lang(self, ctx, new_lang: str):
+        new_lang = new_lang.lower()
+        if new_lang not in lang.tts_langs().keys():
+            lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
+            description = "**Available Languages**\n\n"
+            for short, long in lang.tts_langs():
+                description += "**{}** - {}\n".format(short, long)
+            lang_embed.description = description
+            await ctx.reply(lang_embed)
+            return
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
         self.data["server_languages"] = server_languages
@@ -108,7 +118,7 @@ class TTS(commands.Cog):
             voice_client = await voice_channel.connect()
         server_languages = self.data.get("server_languages", {})
         lang = server_languages.get(str(message.guild.id), "en")
-        speed = self.data.get("speak_speeds", {}).get(str(message.guild.id), 1.25)
+        speed = self.data.get("speak_speeds", {}).get(str(message.guild.id), 1.0)
         with concurrent.futures.ProcessPoolExecutor() as pool:
             output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, message.clean_content,
                                                                        lang, speed))

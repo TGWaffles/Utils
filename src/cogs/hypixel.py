@@ -29,18 +29,18 @@ class Hypixel(commands.Cog):
         if member_online:
             status = await self.hypixel.get_player_status(user_uuid)
             return {"name": player.displayname,
-                                   "level": player.level, "last_logout": player.lastLogout,
-                                   "online": member_online,
-                                   "bedwars_level": get_level_from_xp(experience),
-                                   "bedwars_winstreak": player.stats["Bedwars"]["winstreak"],
-                                   "game": status.gameType,
-                                   "mode": status.mode, "map": status.map}
+                    "level": player.level, "last_logout": player.lastLogout,
+                    "online": member_online,
+                    "bedwars_level": get_level_from_xp(experience),
+                    "bedwars_winstreak": player.stats["Bedwars"]["winstreak"],
+                    "game": status.gameType,
+                    "mode": status.mode, "map": status.map}
         else:
             return {"name": player.displayname,
-                            "level": player.level, "last_logout": player.lastLogout,
-                            "online": member_online,
-                            "bedwars_level": get_level_from_xp(experience),
-                            "bedwars_winstreak": player.stats["Bedwars"]["winstreak"]}
+                    "level": player.level, "last_logout": player.lastLogout,
+                    "online": member_online,
+                    "bedwars_level": get_level_from_xp(experience),
+                    "bedwars_winstreak": player.stats["Bedwars"]["winstreak"]}
 
     async def get_user_embed(self, user_uuid):
         member = await self.get_user_stats(user_uuid)
@@ -72,7 +72,7 @@ class Hypixel(commands.Cog):
                                                                                 "updates? \n "
                                                                                 "(THIS DELETES ALL CONTENTS) \n"
                                                                                 "Type \"yes\" if you're sure.".format(
-                                                                                                    channel.mention)))
+            channel.mention)))
         try:
             await sent.delete()
             processing = await ctx.message.send(embed=self.bot.create_processing_embed(
@@ -88,20 +88,57 @@ class Hypixel(commands.Cog):
         except asyncio.TimeoutError:
             return
 
-    @commands.command(pass_context=True)
-    async def add(self, ctx, username: str):
-        if mcuuid.tools.is_valid_mojang_uuid(username):
-            uuid = username
-        elif mcuuid.tools.is_valid_minecraft_username(username):
-            uuid = mcuuid.api.GetPlayerData(username).uuid
+    async def uuid_from_identifier(self, ctx, identifier):
+        if mcuuid.tools.is_valid_mojang_uuid(identifier):
+            uuid = identifier
+        elif mcuuid.tools.is_valid_minecraft_username(identifier):
+            uuid = mcuuid.api.GetPlayerData(identifier).uuid
         else:
-            await ctx.send(self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
-                           delete_after=10)
+            await ctx.reply(self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                            delete_after=10)
             await ctx.message.delete()
             return
         try:
-            player = await self.get_user_stats(uuid)
+            await self.get_user_stats(uuid)
         except TypeError:
+            await ctx.reply(embed=self.bot.create_error_embed("That player is not a valid Hypixel Bedwars Player!"))
+            return
+        return uuid
+
+
+    @commands.command(pass_context=True)
+    @is_staff()
+    async def add(self, ctx, username: str):
+        uuid = await self.uuid_from_identifier(username)
+        if uuid is None:
+            return
+        all_channels = self.data["hypixel_channels"]
+        for channel_id in all_channels.keys():
+            channel = self.bot.get_channel(int(channel_id))
+            if channel.guild == ctx.guild:
+                all_channels[channel_id].append(uuid)
+                self.data["hypixel_channels"] = all_channels
+                await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
+                                                                      "User {} has been added to {}.".format(
+                                                                          mcuuid.api.GetPlayerData(uuid).username,
+                                                                          channel.mention)))
+
+    async def remove(self, ctx, username: str):
+        uuid = await self.uuid_from_identifier(ctx, username)
+        if uuid is None:
+            return
+        all_channels = self.data["hypixel_channels"]
+        for channel_id in all_channels.keys():
+            channel = self.bot.get_channel(int(channel_id))
+            if uuid in self.data["hypixel_channels"][channel_id]:
+                all_channels[channel_id].remove(uuid)
+                self.data["hypixel_channels"] = all_channels
+                await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
+                                                                      "User {} has been removed from {}.".format(
+                                                                          mcuuid.api.GetPlayerData(uuid).username,
+                                                                          channel.mention)))
+
+
 
 
 def setup(bot):
