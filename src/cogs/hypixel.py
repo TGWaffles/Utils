@@ -73,16 +73,16 @@ class Hypixel(commands.Cog):
                                                                                 "updates? \n "
                                                                                 "(THIS DELETES ALL CONTENTS) \n"
                                                                                 "Type \"yes\" if you're sure.".format(
-            channel.mention)))
+                                                                                    channel.mention)))
         try:
+            await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
             await sent.delete()
-            processing = await ctx.message.send(embed=self.bot.create_processing_embed(
+            processing = await ctx.send(embed=self.bot.create_processing_embed(
                 "Converting {}".format(channel.name), "Deleting all prior messages."))
             async for message in channel.history(limit=None):
                 await message.delete()
             await processing.edit(embed=self.bot.create_processing_embed(
                 "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
-            await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
             self.data.get("hypixel_channels", {})[str(channel.id)] = []
             await processing.edit(embed=self.bot.create_completed_embed("Added Channel!",
                                                                         "Channel added for hypixel info."))
