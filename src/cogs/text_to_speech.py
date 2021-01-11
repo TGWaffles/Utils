@@ -75,6 +75,8 @@ class TTS(commands.Cog):
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def speed(self, ctx, new_speed: float):
+        if new_speed < 0:
+            await ctx.reply(embed=self.bot.create_error_embed("A speed less than 0 makes no sense."))
         all_guilds = self.data.get("speak_speeds", {})
         all_guilds[str(ctx.guild.id)] = new_speed
         self.data["speak_speeds"] = all_guilds
