@@ -179,6 +179,7 @@ class Hypixel(commands.Cog):
                 member_uuids.add(member_uuid)
         member_dicts = []
         for member_uuid in member_uuids:
+            print(member_uuid)
             member_dicts.append(await self.get_user_stats(member_uuid))
         offline_members = [member for member in member_dicts if not member["online"]]
         online_members = [member for member in member_dicts if member["online"]]
