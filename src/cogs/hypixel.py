@@ -174,6 +174,7 @@ class Hypixel(commands.Cog):
 
     @tasks.loop(seconds=5, count=None)
     async def update_hypixel_info(self):
+        print("Started new loop!")
         all_channels = self.data.get("hypixel_channels", {}).copy()
         member_uuids = set()
         for _, members in all_channels.items():
@@ -191,7 +192,9 @@ class Hypixel(commands.Cog):
         for channel in all_channels.keys():
             pending_tasks.append(self.bot.loop.create_task(
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
+        print("Finished processing now waiting for tasks...")
         await asyncio.gather(*pending_tasks)
+        print("Finished waiting!")
 
     @commands.Cog.listener()
     async def on_message(self, message):
