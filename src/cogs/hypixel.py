@@ -96,13 +96,16 @@ class Hypixel(commands.Cog):
             return
 
     async def uuid_from_identifier(self, ctx, identifier):
+        print("Checking {}".format(identifier))
         if mcuuid.tools.is_valid_mojang_uuid(identifier):
             uuid = identifier
         elif mcuuid.tools.is_valid_minecraft_username(identifier):
             uuid = mcuuid.api.GetPlayerData(identifier).uuid
         else:
-            await ctx.reply(self.bot.create_error_embed("Invalid username or uuid {}!".format(identifier)),
+            print("Invalid.")
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(identifier)),
                             delete_after=10)
+            print("Returning")
             await ctx.message.delete()
             return
         try:
@@ -124,7 +127,7 @@ class Hypixel(commands.Cog):
             channel = self.bot.get_channel(int(channel_id))
             if channel.guild == ctx.guild:
                 if uuid in all_channels[str(channel_id)]:
-                    await ctx.reply(self.bot.create_error_embed("Player already in channel!"))
+                    await ctx.reply(embed=self.bot.create_error_embed("Player already in channel!"))
                     return
                 all_channels[str(channel_id)].append(uuid)
                 self.data["hypixel_channels"] = all_channels
