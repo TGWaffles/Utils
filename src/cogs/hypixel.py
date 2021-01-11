@@ -121,10 +121,10 @@ class Hypixel(commands.Cog):
         for channel_id in all_channels.keys():
             channel = self.bot.get_channel(int(channel_id))
             if channel.guild == ctx.guild:
-                if uuid in all_channels[channel_id]:
+                if uuid in all_channels[str(channel_id)]:
                     await ctx.reply(self.bot.create_error_embed("Player already in channel!"))
                     return
-                all_channels[channel_id].append(uuid)
+                all_channels[str(channel_id)].append(uuid)
                 self.data["hypixel_channels"] = all_channels
                 await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
                                                                       "User {} has been added to {}.".format(
@@ -142,8 +142,8 @@ class Hypixel(commands.Cog):
         all_channels = self.data.get("hypixel_channels", {})
         for channel_id in all_channels.keys():
             channel = self.bot.get_channel(int(channel_id))
-            if uuid in self.data.get("hypixel_channels", {})[channel_id]:
-                all_channels[channel_id].remove(uuid)
+            if uuid in self.data.get("hypixel_channels", {})[str(channel_id)]:
+                all_channels[str(channel_id)].remove(uuid)
                 self.data["hypixel_channels"] = all_channels
                 await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
                                                                       "User {} has been removed from {}.".format(
