@@ -7,6 +7,7 @@ from main import UtilsBot
 from src.checks.role_check import is_staff
 from src.storage import config, messages
 from src.checks.message_check import check_reply, check_pinned
+from typing import Optional
 
 
 class Purge(commands.Cog):
@@ -15,7 +16,7 @@ class Purge(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["clear", "clean", "wipe", "delete"])
     @is_staff()
-    async def purge(self, ctx, amount: int = None, disable_bulk: bool = False):
+    async def purge(self, ctx, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
         bulk = True
         check = check_pinned
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
@@ -24,6 +25,8 @@ class Purge(commands.Cog):
         if ctx.message.author.id == config.owner_id and disable_bulk:
             bulk = False
             check = lambda x: True
+        if member is not None:
+            check = lambda x: check(x) and x.author.id == member.id
         if amount is None:
             await ctx.reply(embed=self.bot.create_error_embed(messages.no_purge_amount))
             return
