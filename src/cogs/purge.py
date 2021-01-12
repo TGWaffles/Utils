@@ -41,7 +41,8 @@ class Purge(commands.Cog):
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
             if amount > config.confirm_amount:
-                true_amount = ctx.message.channel.history(check=check, limit=amount).flatten()
+                true_amount = [message for message in ctx.message.channel.history(limit=amount).flatten()
+                               if check(message)]
                 if true_amount < amount:
                     to_send = "{} of {}".format(true_amount, amount)
                 else:
