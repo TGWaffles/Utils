@@ -26,7 +26,8 @@ class Purge(commands.Cog):
             bulk = False
             check = lambda x: True
         if member is not None:
-            check = lambda x: check(x) and x.author.id == member.id
+            old_check = check
+            check = lambda x: old_check(x) and x.author.id == member.id
         if amount is None:
             await ctx.reply(embed=self.bot.create_error_embed(messages.no_purge_amount))
             return
