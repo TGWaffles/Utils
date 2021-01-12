@@ -33,7 +33,7 @@ class Purge(commands.Cog):
             return
         if amount == -1:
             sent = await ctx.reply(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
-                                                                                    "clear the whole channel...?"))
+                                                                                     "clear the whole channel...?"))
             try:
                 await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
                 await ctx.message.channel.purge(limit=None, bulk=bulk, check=check)
@@ -41,10 +41,15 @@ class Purge(commands.Cog):
                 await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
         else:
             if amount > config.confirm_amount:
+                true_amount = ctx.message.channel.history(check=check, limit=amount).flatten()
+                if true_amount < amount:
+                    to_send = "{} of {}".format(true_amount, amount)
+                else:
+                    to_send = amount
                 sent = await ctx.reply(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
-                                                                                        "clear **{}** messages?\n"
-                                                                                        "(type \"yes\" to confirm)".
-                                                                             format(amount)))
+                                                                                         "clear **{}** messages?\n"
+                                                                                         "(type \"yes\" to confirm)".
+                                                                              format(to_send)))
                 try:
                     await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
                     try:
