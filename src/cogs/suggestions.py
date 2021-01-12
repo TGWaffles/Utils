@@ -81,7 +81,7 @@ class Suggestions(commands.Cog):
         suggestion_embed.set_field_at(3, name="Status", value=("Denied.", "Accepted!")[accepted], inline=False)
         suggestion_embed.set_author(name=self.bot.get_user(author_id).name,
                                     icon_url=("https://cdn.discordapp.com/emojis/787035973287542854.png",
-                                              "https://cdn.discordapp.com/emojis/787035973287542854.png")[accepted])
+                                              "https://cdn.discordapp.com/emojis/787034785583333426.png")[accepted])
         suggestion_embed.colour = (discord.Colour.red(), discord.Colour.green())[accepted]
         await suggestion_message.edit(embed=suggestion_embed)
         send_to_author = await self.send_acceptance_messages(positive_reaction.users, message_to_send, author_id)
