@@ -34,7 +34,8 @@ class Suggestions(commands.Cog):
         suggestion_embed.add_field(name="Suggestion ID", value="Processing...", inline=False)
         sent_message = await self.suggestions_channel.send(embed=suggestion_embed)
         suggestion_embed.set_field_at(3, name="Suggestion ID", value=sent_message.id, inline=False)
-        suggestion_embed.set_image(url="https://cdn.discordapp.com/emojis/787036714337566730.png")
+        suggestion_embed.set_author(name=author.name,
+                                    icon_url="https://cdn.discordapp.com/emojis/787036714337566730.png")
         await sent_message.edit(embed=suggestion_embed)
         await sent_message.add_reaction("✅")
         await sent_message.add_reaction("❌")
@@ -78,8 +79,9 @@ class Suggestions(commands.Cog):
             ("Denied", "Accepted")[accepted],
             message.author.mention), inline=True)
         suggestion_embed.set_field_at(3, name="Status", value=("Denied.", "Accepted!")[accepted], inline=False)
-        suggestion_embed.set_image(url=("https://cdn.discordapp.com/emojis/787035973287542854.png",
-                                        "https://cdn.discordapp.com/emojis/787035973287542854.png")[accepted])
+        suggestion_embed.set_author(name=self.bot.get_user(author_id).name,
+                                    icon_url=("https://cdn.discordapp.com/emojis/787035973287542854.png",
+                                              "https://cdn.discordapp.com/emojis/787035973287542854.png")[accepted])
         suggestion_embed.colour = (discord.Colour.red(), discord.Colour.green())[accepted]
         await suggestion_message.edit(embed=suggestion_embed)
         send_to_author = await self.send_acceptance_messages(positive_reaction.users, message_to_send, author_id)
