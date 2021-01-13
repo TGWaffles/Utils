@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.15.9"
+version_number = "1.15.10"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -21,7 +21,8 @@ lexi_role_id = 725895255198531675
 high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, head_mod_role_id, lexi_role_id]
 
 # Settings for the Suggestions cog
-suggestions_channel_id = 725920625956225055
+suggestions_channel_id = 798972358878167080
+archive_channel_id = 725920625956225055
 suggestions_decisions_id = 727563806762598450
 
 # Settings for audit/general reactions cog
