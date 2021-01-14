@@ -22,6 +22,7 @@ class Hypixel(commands.Cog):
         self.bot: UtilsBot = bot
         self.data = DataHelper()
         self.hypixel = asyncpixel.Client("e823fbc4-e526-4fbb-bf15-37e543aebdd6")
+        self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
         self.update_hypixel_info.start()
 
     async def get_user_stats(self, user_uuid):
