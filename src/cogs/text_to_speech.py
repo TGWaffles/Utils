@@ -126,28 +126,11 @@ class TTS(commands.Cog):
     async def speak_id_content(self, member_id, content):
         member_id = int(member_id)
         print("Speaking for {}, {}".format(member_id, content))
-        member = None
         async for guild in self.bot.fetch_guilds(limit=None):
-            print(guild)
-            for channel in await guild.fetch_channels():
-                if not isinstance(channel, discord.VoiceChannel):
-                    continue
-                print(channel)
-                if member_id in [x.id for x in channel.members]:
-                    member = await guild.fetch_member(member_id)
-                    break
-                else:
-                    print([x.id for x in channel.members])
-                    print(member_id)
-                print(channel.voice_states)
-                print("not in here!")
-            if member is not None:
-                break
-            print("not this guild.")
-        print("member: {}".format(member))
-        if member is None:
-            return
-        await self.speak_content_in_channel(member, content)
+            member = await guild.fetch_member(member_id)
+            speak_return = await self.speak_content_in_channel(member, content)
+            if speak_return is not None:
+                return
 
     async def speak_content_in_channel(self, member, content):
         if member.voice is None or member.voice.channel is None:
@@ -175,6 +158,7 @@ class TTS(commands.Cog):
             pass
         while voice_client.is_playing():
             await asyncio.sleep(0.5)
+        return True
 
     @commands.Cog.listener()
     async def on_message(self, message):
