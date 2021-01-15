@@ -127,7 +127,10 @@ class TTS(commands.Cog):
         member_id = int(member_id)
         print("Speaking for {}, {}".format(member_id, content))
         async for guild in self.bot.fetch_guilds(limit=None):
-            member = await guild.fetch_member(member_id)
+            try:
+                member = await guild.fetch_member(member_id)
+            except discord.errors.NotFound:
+                continue
             speak_return = await self.speak_content_in_channel(member, content)
             if speak_return is not None:
                 return
