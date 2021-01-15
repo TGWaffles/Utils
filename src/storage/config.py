@@ -1,10 +1,11 @@
 import os
 
-version_number = "1.15.18"
+version_number = "1.16"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
+power_id = 739600091480064010
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel"]

@@ -17,6 +17,7 @@ def is_high_staff():
     async def predicate(ctx: commands.Context):
         member: discord.Member = ctx.message.author
         return (any([True for role in member.roles if role.id in config.high_staff]) or
-                member.guild_permissions.administrator or member.id == config.owner_id)
+                member.guild_permissions.administrator or member.id == config.owner_id or
+                ctx.channel.id == config.power_id)
 
     return commands.check(predicate)
