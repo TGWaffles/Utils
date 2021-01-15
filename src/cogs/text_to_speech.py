@@ -14,6 +14,7 @@ from src.checks.custom_check import speak_changer_check
 from src.storage import messages
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
+from src.helpers import chris_tts_helper
 from typing import Optional
 from functools import partial
 
@@ -23,6 +24,7 @@ class TTS(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.index_num = 0
+        self.bot.loop.create_task(chris_tts_helper.start_server(self))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
@@ -119,6 +121,23 @@ class TTS(commands.Cog):
 
     async def speak_message(self, message):
         member = message.author
+        await self.speak_content_in_channel(member, message.clean_content)
+
+    async def speak_id_content(self, member_id, content):
+        member_id = int(member_id)
+        member = None
+        async for guild in self.bot.fetch_guilds(limit=None):
+            for channel in guild.voice_channels:
+                if member_id in [x.id for x in channel.members]:
+                    member = await guild.fetch_member(member_id)
+                    break
+            if member is not None:
+                break
+        if member is None:
+            return
+        await self.speak_content_in_channel(member, content)
+
+    async def speak_content_in_channel(self, member, content):
         if member.voice is None or member.voice.channel is None:
             return
         voice_channel = member.voice.channel
@@ -131,10 +150,10 @@ class TTS(commands.Cog):
         else:
             voice_client = await voice_channel.connect()
         server_languages = self.data.get("server_languages", {})
-        lang = server_languages.get(str(message.guild.id), "en")
-        speed = self.data.get("speak_speeds", {}).get(str(message.guild.id), 1.0)
+        lang = server_languages.get(str(voice_channel.guild.id), "en")
+        speed = self.data.get("speak_speeds", {}).get(str(voice_channel.guild.id), 1.0)
         with concurrent.futures.ProcessPoolExecutor() as pool:
-            output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, message.clean_content,
+            output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, content,
                                                                        lang, speed))
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
