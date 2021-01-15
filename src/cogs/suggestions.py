@@ -86,7 +86,7 @@ class Suggestions(commands.Cog):
                                     icon_url=("https://cdn.discordapp.com/emojis/787035973287542854.png",
                                               "https://cdn.discordapp.com/emojis/787034785583333426.png")[accepted])
         suggestion_embed.colour = (discord.Colour.red(), discord.Colour.green())[accepted]
-        suggestion_embed.timestamp = datetime.datetime(year=2020, month=1, day=13)
+        suggestion_embed.timestamp = datetime.datetime.utcnow()
         await suggestion_message.edit(embed=suggestion_embed)
         send_to_author = await self.send_acceptance_messages(positive_reaction.users, message_to_send, author_id)
         if send_to_author:
@@ -96,8 +96,8 @@ class Suggestions(commands.Cog):
                 await self.bot.error_channel.send(embed=self.bot.create_error_embed(e))
 
         await message.reply(messages.suggestion_channel_feedback.format(suggestion_embed.description,
-                                                                               ("Denied.", "Accepted!")[accepted],
-                                                                               reason))
+                                                                        ("Denied.", "Accepted!")[accepted],
+                                                                        reason))
 
     async def send_acceptance_messages(self, users_generator, text, author_id):
         async for user in users_generator():
@@ -134,7 +134,6 @@ class Suggestions(commands.Cog):
                 continue
             embed = message.embeds[0]
             if embed.timestamp != discord.Embed.Empty:
-                print("Checking embed... {}".format(embed.author))
                 if (datetime.datetime.utcnow() - embed.timestamp).days >= 1:
                     plus_reactions = [reaction for reaction in message.reactions if reaction.emoji == "✅"][0].count - 1
                     negative_reactions = [reaction for reaction in message.reactions
@@ -142,8 +141,8 @@ class Suggestions(commands.Cog):
                     embed.add_field(name="✅", value=plus_reactions, inline=True)
                     embed.add_field(name="❌", value=negative_reactions, inline=True)
                     await self.archive_channel.send(embed=embed)
+                    await message.delete()
                 else:
-                    print("Nope!")
                     continue
 
 
