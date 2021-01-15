@@ -2,7 +2,7 @@ from src.storage import config, messages
 import discord
 import datetime
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 from main import UtilsBot
 from src.checks.role_check import is_staff
 from src.checks.guild_check import monkey_check
@@ -13,7 +13,9 @@ class Suggestions(commands.Cog):
         self.bot: UtilsBot = bot
         self.suggestions_channel: discord.TextChannel = self.bot.get_channel(config.suggestions_channel_id)
         self.decisions_channel: discord.TextChannel = self.bot.get_channel(config.suggestions_decisions_id)
+        self.archive_channel: discord.TextChannel = self.bot.get_channel(config.archive_channel_id)
         self.allow_messages = False
+        self.check_suggestions.start()
 
     async def handle_channel_message(self, message):
         if not message.content.lower().startswith("suggest "):
@@ -84,7 +86,7 @@ class Suggestions(commands.Cog):
                                     icon_url=("https://cdn.discordapp.com/emojis/787035973287542854.png",
                                               "https://cdn.discordapp.com/emojis/787034785583333426.png")[accepted])
         suggestion_embed.colour = (discord.Colour.red(), discord.Colour.green())[accepted]
-        suggestion_embed.timestamp = datetime.datetime.utcnow()
+        suggestion_embed.timestamp = datetime.datetime(year=2020, month=1, day=13)
         await suggestion_message.edit(embed=suggestion_embed)
         send_to_author = await self.send_acceptance_messages(positive_reaction.users, message_to_send, author_id)
         if send_to_author:
@@ -124,6 +126,25 @@ class Suggestions(commands.Cog):
     @monkey_check()
     async def allowtext(self, ctx):
         self.allow_messages = not self.allow_messages
+
+    @tasks.loop(seconds=30)
+    async def check_suggestions(self):
+        async for message in self.suggestions_channel.history(oldest_first=True, limit=None):
+            if len(message.embeds) == 0:
+                continue
+            embed = message.embeds[0]
+            if embed.timestamp is not None:
+                print("Checking embed... {}".format(embed.author))
+                if (datetime.datetime.utcnow() - embed.timestamp.replace(tzinfo=datetime.timezone.utc)).days >= 1:
+                    plus_reactions = [reaction for reaction in message.reactions if reaction.emoji == "✅"][0].count - 1
+                    negative_reactions = [reaction for reaction in message.reactions
+                                          if reaction.emoji == "❌"][0].count - 1
+                    embed.add_field(name="✅", value=plus_reactions, inline=True)
+                    embed.add_field(name="❌", value=negative_reactions, inline=True)
+                    await self.archive_channel.send(embed=embed)
+                else:
+                    print("Nope!")
+                    continue
 
 
 def setup(bot):
