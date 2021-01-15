@@ -133,7 +133,7 @@ class Suggestions(commands.Cog):
             if len(message.embeds) == 0:
                 continue
             embed = message.embeds[0]
-            if embed.timestamp is not None:
+            if embed.timestamp != discord.Embed.Empty:
                 print("Checking embed... {}".format(embed.author))
                 if (datetime.datetime.utcnow() - embed.timestamp.replace(tzinfo=datetime.timezone.utc)).days >= 1:
                     plus_reactions = [reaction for reaction in message.reactions if reaction.emoji == "✅"][0].count - 1
