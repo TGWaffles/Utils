@@ -23,6 +23,7 @@ class Hypixel(commands.Cog):
         self.data = DataHelper()
         self.hypixel = asyncpixel.Client("e823fbc4-e526-4fbb-bf15-37e543aebdd6")
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
+        self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
 
     async def get_user_stats(self, user_uuid):
@@ -97,7 +98,6 @@ class Hypixel(commands.Cog):
             return
 
     async def uuid_from_identifier(self, ctx, identifier):
-        print("Checking {}".format(identifier))
         failed = False
         try:
             if mcuuid.tools.is_valid_mojang_uuid(identifier):
@@ -109,10 +109,8 @@ class Hypixel(commands.Cog):
         except AttributeError:
             failed = True
         if failed:
-            print("Invalid.")
             await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(identifier)),
                             delete_after=10)
-            print("Returning")
             await ctx.message.delete()
             return
         try:

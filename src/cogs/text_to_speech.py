@@ -115,7 +115,6 @@ class TTS(commands.Cog):
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
         self.data["server_languages"] = server_languages
-        print(self.data["server_languages"])
         await ctx.reply(embed=self.bot.create_completed_embed("Language changed!",
                                                               f"Changed voice language to {new_lang}"))
 
@@ -130,7 +129,6 @@ class TTS(commands.Cog):
                 member = await guild.fetch_member(member_id)
             except discord.errors.NotFound:
                 continue
-            print(member)
             speak_return = await self.speak_content_in_channel(member, content)
             if speak_return is not None:
                 return
