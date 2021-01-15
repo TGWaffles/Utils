@@ -139,6 +139,7 @@ class TTS(commands.Cog):
                 else:
                     print([x.id for x in channel.members])
                     print(member_id)
+                print(channel.voice_states)
                 print("not in here!")
             if member is not None:
                 break
