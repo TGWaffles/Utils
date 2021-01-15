@@ -135,7 +135,7 @@ class Suggestions(commands.Cog):
             embed = message.embeds[0]
             if embed.timestamp != discord.Embed.Empty:
                 print("Checking embed... {}".format(embed.author))
-                if (datetime.datetime.utcnow() - embed.timestamp.replace(tzinfo=datetime.timezone.utc)).days >= 1:
+                if (datetime.datetime.utcnow() - embed.timestamp).days >= 1:
                     plus_reactions = [reaction for reaction in message.reactions if reaction.emoji == "✅"][0].count - 1
                     negative_reactions = [reaction for reaction in message.reactions
                                           if reaction.emoji == "❌"][0].count - 1
