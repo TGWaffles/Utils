@@ -19,8 +19,7 @@ class UtilsBot(commands.Bot):
         intents = discord.Intents.all()
         intents.members = True
         super().__init__(command_prefix=config.bot_prefix, description=config.description,
-                         loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True,
-                         chunk_guilds_at_startup=True)
+                         loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True)
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
