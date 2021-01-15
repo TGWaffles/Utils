@@ -1,5 +1,6 @@
 from src.storage import config, messages
 import discord
+import datetime
 
 from discord.ext import commands
 from main import UtilsBot
@@ -83,6 +84,7 @@ class Suggestions(commands.Cog):
                                     icon_url=("https://cdn.discordapp.com/emojis/787035973287542854.png",
                                               "https://cdn.discordapp.com/emojis/787034785583333426.png")[accepted])
         suggestion_embed.colour = (discord.Colour.red(), discord.Colour.green())[accepted]
+        suggestion_embed.timestamp = datetime.datetime.utcnow()
         await suggestion_message.edit(embed=suggestion_embed)
         send_to_author = await self.send_acceptance_messages(positive_reaction.users, message_to_send, author_id)
         if send_to_author:
