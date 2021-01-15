@@ -126,7 +126,7 @@ class TTS(commands.Cog):
     async def speak_id_content(self, member_id, content):
         member_id = int(member_id)
         print("Speaking for {}, {}".format(member_id, content))
-        for guild in self.bot.guilds(limit=None):
+        for guild in self.bot.guilds:
             print("Trying {}".format(guild))
             try:
                 member = await guild.fetch_member(member_id)
