@@ -1,5 +1,4 @@
 import asyncio
-import src.cogs.text_to_speech as tts
 
 
 def get_protocol(bot):
@@ -12,7 +11,7 @@ def get_protocol(bot):
     return ReceiveChrisProtocol
 
 
-async def start_server(bot: tts.TTS):
+async def start_server(bot):
     loop = bot.bot.loop
     server = await loop.create_server(get_protocol(bot), '0.0.0.0', 43022)
     async with server:
