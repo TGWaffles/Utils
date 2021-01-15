@@ -129,7 +129,7 @@ class TTS(commands.Cog):
         member = None
         async for guild in self.bot.fetch_guilds(limit=None):
             print(guild)
-            async for channel in guild.fetch_channels():
+            for channel in await guild.fetch_channels():
                 if not isinstance(channel, discord.VoiceChannel):
                     continue
                 print(channel)
