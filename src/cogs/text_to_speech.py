@@ -129,7 +129,9 @@ class TTS(commands.Cog):
         member = None
         async for guild in self.bot.fetch_guilds(limit=None):
             print(guild)
-            for channel in guild.voice_channels:
+            async for channel in guild.fetch_channels():
+                if not isinstance(channel, discord.VoiceChannel):
+                    continue
                 print(channel)
                 if member_id in [x.id for x in channel.members]:
                     member = await guild.fetch_member(member_id)
