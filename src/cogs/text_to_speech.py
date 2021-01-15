@@ -136,6 +136,9 @@ class TTS(commands.Cog):
                 if member_id in [x.id for x in channel.members]:
                     member = await guild.fetch_member(member_id)
                     break
+                else:
+                    print([x.id for x in channel.members])
+                    print(member_id)
                 print("not in here!")
             if member is not None:
                 break
