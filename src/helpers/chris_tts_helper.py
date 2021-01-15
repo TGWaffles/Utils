@@ -6,7 +6,7 @@ def get_protocol(bot):
         def data_received(self, data: bytes) -> None:
             message = data.decode()
             member_id, content = message.split("\n\n\n")
-            bot.loop.create_task(bot.speak_id_content(int(member_id), content))
+            bot.bot.loop.create_task(bot.speak_id_content(int(member_id), content))
 
     return ReceiveChrisProtocol
 
