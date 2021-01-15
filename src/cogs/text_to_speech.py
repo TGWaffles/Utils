@@ -125,6 +125,7 @@ class TTS(commands.Cog):
 
     async def speak_id_content(self, member_id, content):
         member_id = int(member_id)
+        print("Speaking for {}, {}".format(member_id, content))
         member = None
         async for guild in self.bot.fetch_guilds(limit=None):
             for channel in guild.voice_channels:
@@ -133,6 +134,7 @@ class TTS(commands.Cog):
                     break
             if member is not None:
                 break
+        print("member: {}".format(member))
         if member is None:
             return
         await self.speak_content_in_channel(member, content)
