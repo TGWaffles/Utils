@@ -128,12 +128,16 @@ class TTS(commands.Cog):
         print("Speaking for {}, {}".format(member_id, content))
         member = None
         async for guild in self.bot.fetch_guilds(limit=None):
+            print(guild)
             for channel in guild.voice_channels:
+                print(channel)
                 if member_id in [x.id for x in channel.members]:
                     member = await guild.fetch_member(member_id)
                     break
+                print("not in here!")
             if member is not None:
                 break
+            print("not this guild.")
         print("member: {}".format(member))
         if member is None:
             return
