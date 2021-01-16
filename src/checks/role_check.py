@@ -4,11 +4,15 @@ from src.storage import config
 from discord.ext import commands
 
 
+def is_staff_backend(member):
+    return (config.staff_role_id in [role.id for role in member.roles] or member.guild_permissions.administrator
+            or member.id == config.owner_id)
+
+
 def is_staff():
-    async def predicate(ctx: commands.Context):
+    async def predicate(ctx):
         member: discord.Member = ctx.message.author
-        return (config.staff_role_id in [role.id for role in member.roles] or member.guild_permissions.administrator
-                or member.id == config.owner_id)
+        return is_staff_backend(member)
 
     return commands.check(predicate)
 

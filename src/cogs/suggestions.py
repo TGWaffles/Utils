@@ -4,7 +4,7 @@ import datetime
 
 from discord.ext import commands, tasks
 from main import UtilsBot
-from src.checks.role_check import is_staff
+from src.checks.role_check import is_staff, is_staff_backend
 from src.checks.guild_check import monkey_check
 
 
@@ -48,11 +48,14 @@ class Suggestions(commands.Cog):
             return
         accepted = int(message.content.lower().startswith("accept"))
         message_to_send = messages.suggestion_changed
-        try:
-            suggestion_id = int(message.content.split(" ")[1])
-        except ValueError:
-            await message.reply(messages.invalid_message_id.format(message.content.split(" ")[1]))
-            return
+        if message.reference is not None:
+            suggestion_id = message.reference.message_id
+        else:
+            try:
+                suggestion_id = int(message.content.split(" ")[1])
+            except ValueError:
+                await message.reply(messages.invalid_message_id.format(message.content.split(" ")[1]))
+                return
         try:
             suggestion_message = await self.suggestions_channel.fetch_message(suggestion_id)
         except discord.NotFound:
@@ -95,9 +98,13 @@ class Suggestions(commands.Cog):
             except Exception as e:
                 await self.bot.error_channel.send(embed=self.bot.create_error_embed(e))
 
-        await message.reply(messages.suggestion_channel_feedback.format(suggestion_embed.description,
-                                                                        ("Denied.", "Accepted!")[accepted],
-                                                                        reason))
+        sent_message = await message.reply(messages.suggestion_channel_feedback.format(suggestion_embed.description,
+                                                                                       ("Denied.", "Accepted!")[
+                                                                                           accepted],
+                                                                                       reason))
+        await sent_message.delete(delay=20)
+        await message.delete(delay=20)
+        return True
 
     async def send_acceptance_messages(self, users_generator, text, author_id):
         async for user in users_generator():
@@ -112,13 +119,14 @@ class Suggestions(commands.Cog):
     @commands.Cog.listener()
     @monkey_check()
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author.bot or message.channel not in \
+                (self.decisions_channel, self.suggestions_channel, self.archive_channel):
             return
-        if message.channel == self.suggestions_channel:
+        return_val = None
+        if message.channel == self.decisions_channel and is_staff_backend(message.author):
+            return_val = await self.handle_decision_message(message)
+        if message.channel == self.suggestions_channel and return_val is None:
             await self.handle_channel_message(message)
-
-        elif message.channel == self.decisions_channel:
-            await self.handle_decision_message(message)
 
     # noinspection SpellCheckingInspection,PyUnusedLocal
     @commands.command(pass_context=True)
