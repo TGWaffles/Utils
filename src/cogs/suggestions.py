@@ -49,10 +49,16 @@ class Suggestions(commands.Cog):
         accepted = int(message.content.lower().startswith("accept"))
         message_to_send = messages.suggestion_changed
         if message.reference is not None:
+            try:
+                _ = int(message.content.split(" ")[1])
+                reason = message.content.partition(" ")[2].partition(" ")[2]
+            except ValueError:
+                reason = message.content.partition(" ")[2]
             suggestion_id = message.reference.message_id
         else:
             try:
                 suggestion_id = int(message.content.split(" ")[1])
+                reason = message.content.partition(" ")[2].partition(" ")[2]
             except ValueError:
                 await message.reply(messages.invalid_message_id.format(message.content.split(" ")[1]))
                 return
@@ -67,7 +73,6 @@ class Suggestions(commands.Cog):
         if len(suggestion_message.embeds) < 1:
             await message.reply(messages.no_embed)
             return
-        reason = message.content.partition(" ")[2].partition(" ")[2]
         positive_reaction = [x for x in suggestion_message.reactions if str(x.emoji) == "✅"][0]
         suggestion_embed: discord.Embed = suggestion_message.embeds[0]
         message_to_send = message_to_send.format(suggestion_embed.description, ("denied", "accepted")[accepted],
