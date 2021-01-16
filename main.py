@@ -6,6 +6,7 @@ import os
 import datetime
 import subprocess
 
+from pretty_help import PrettyHelp
 from discord.ext import commands
 from src.storage import config
 from src.helpers.storage_helper import DataHelper
@@ -19,7 +20,8 @@ class UtilsBot(commands.Bot):
         intents = discord.Intents.all()
         intents.members = True
         super().__init__(command_prefix=config.bot_prefix, description=config.description,
-                         loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True)
+                         loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True,
+                         help_command=PrettyHelp(color=discord.Colour.blue()))
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
