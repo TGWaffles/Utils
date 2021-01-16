@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.16.8"
+version_number = "1.16.81"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -24,7 +24,8 @@ high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, he
 # Settings for the Suggestions cog
 suggestions_channel_id = 798972358878167080
 archive_channel_id = 725920625956225055
-suggestions_decisions_id = 727563806762598450
+# suggestions_decisions_id = 727563806762598450
+suggestions_decisions_id = 798972358878167080
 
 # Settings for audit/general reactions cog
 fast_forward_emoji = u"\u23E9"
