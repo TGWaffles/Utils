@@ -14,6 +14,7 @@ from src.helpers import chris_tts_helper
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
 from src.storage import messages
+from src.storage import config
 
 
 class TTS(commands.Cog):
@@ -126,7 +127,8 @@ class TTS(commands.Cog):
         for member_id in speaking_list:
             try:
                 member = ctx.guild.get_member(member_id)
-                if member_id in guild_perms:
+                if (member.guild_permissions.administrator or
+                        member_id in guild_perms or ctx.author.id == config.owner_id):
                     embed.description += "{} (has permission to add others)\n".format(member.mention)
                 else:
                     embed.description += "{}\n".format(member.mention)
