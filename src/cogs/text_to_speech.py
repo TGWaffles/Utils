@@ -1,22 +1,19 @@
-import discord
 import asyncio
 import concurrent.futures
-import pydub
-import os
+from functools import partial
+from typing import Optional
 
-from pydub import effects
-from io import BytesIO
+import discord
 import gtts.lang
 from discord.ext import commands
+
 from main import UtilsBot
-from src.checks.role_check import is_high_staff
 from src.checks.custom_check import speak_changer_check
-from src.storage import messages
+from src.checks.role_check import is_high_staff
+from src.helpers import chris_tts_helper
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
-from src.helpers import chris_tts_helper
-from typing import Optional
-from functools import partial
+from src.storage import messages
 
 
 class TTS(commands.Cog):
@@ -117,6 +114,30 @@ class TTS(commands.Cog):
         self.data["server_languages"] = server_languages
         await ctx.reply(embed=self.bot.create_completed_embed("Language changed!",
                                                               f"Changed voice language to {new_lang}"))
+
+    @commands.command(pass_context=True)
+    @speak_changer_check()
+    async def speakers(self, ctx):
+        all_guilds = self.data.get("speaking", {})
+        speaking_list = all_guilds.get(str(ctx.guild.id), [])
+        all_perms = self.data.get("speak_changer", {})
+        guild_perms = all_perms.get(str(ctx.guild.id), [])
+        embed = discord.Embed(title="Speaking Users", description="", colour=discord.Colour.green())
+        for member_id in speaking_list:
+            member = ctx.guild.get_member(member_id)
+            if member_id in guild_perms:
+                embed.description.append("{} (has permission to add others)\n".format(member.mention))
+            else:
+                embed.description.append("{}\n")
+        await ctx.reply(embed=embed)
+
+    @commands.command(pass_context=True)
+    @is_high_staff()
+    async def reset_speakers(self, ctx):
+        all_guilds = self.data.get("speaking", {})
+        all_guilds[str(ctx.guild.id)] = []
+        self.data["speaking"] = all_guilds
+        await ctx.reply(self.bot.create_completed_embed("Reset All Speakers", "No one has speak enabled."))
 
     async def speak_message(self, message):
         member = message.author
