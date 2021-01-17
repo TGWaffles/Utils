@@ -124,11 +124,14 @@ class TTS(commands.Cog):
         guild_perms = all_perms.get(str(ctx.guild.id), [])
         embed = discord.Embed(title="Speaking Users", description="", colour=discord.Colour.green())
         for member_id in speaking_list:
-            member = ctx.guild.get_member(member_id)
-            if member_id in guild_perms:
-                embed.description += "{} (has permission to add others)\n".format(member.mention)
-            else:
-                embed.description += "{}\n".format(member.mention)
+            try:
+                member = ctx.guild.get_member(member_id)
+                if member_id in guild_perms:
+                    embed.description += "{} (has permission to add others)\n".format(member.mention)
+                else:
+                    embed.description += "{}\n".format(member.mention)
+            except AttributeError:
+                pass
         await ctx.reply(embed=embed)
 
     @commands.command(pass_context=True)
