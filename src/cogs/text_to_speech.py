@@ -126,9 +126,9 @@ class TTS(commands.Cog):
         for member_id in speaking_list:
             member = ctx.guild.get_member(member_id)
             if member_id in guild_perms:
-                embed.description.append("{} (has permission to add others)\n".format(member.mention))
+                embed.description += "{} (has permission to add others)\n".format(member.mention)
             else:
-                embed.description.append("{}\n")
+                embed.description += "{}\n".format(member.mention)
         await ctx.reply(embed=embed)
 
     @commands.command(pass_context=True)
