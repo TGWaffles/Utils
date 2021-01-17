@@ -128,9 +128,6 @@ class TTS(commands.Cog):
             try:
                 member = ctx.guild.get_member(member_id)
                 if member.guild_permissions.administrator or member_id in guild_perms or member_id == config.owner_id:
-                    print(member.guild_permissions.administrator)
-                    print(member_id in guild_perms)
-                    print(ctx.author.id == config.owner_id)
                     embed.description += "{} (has permission to add others)\n".format(member.mention)
                 else:
                     embed.description += "{}\n".format(member.mention)
