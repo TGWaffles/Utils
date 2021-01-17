@@ -127,8 +127,7 @@ class TTS(commands.Cog):
         for member_id in speaking_list:
             try:
                 member = ctx.guild.get_member(member_id)
-                if (member.guild_permissions.administrator or
-                        member_id in guild_perms or ctx.author.id == config.owner_id):
+                if member.guild_permissions.administrator or member_id in guild_perms or member_id == config.owner_id:
                     print(member.guild_permissions.administrator)
                     print(member_id in guild_perms)
                     print(ctx.author.id == config.owner_id)
