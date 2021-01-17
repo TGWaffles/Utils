@@ -144,7 +144,7 @@ class TTS(commands.Cog):
         all_guilds = self.data.get("speaking", {})
         all_guilds[str(ctx.guild.id)] = []
         self.data["speaking"] = all_guilds
-        await ctx.reply(self.bot.create_completed_embed("Reset All Speakers", "No one has speak enabled."))
+        await ctx.reply(embed=self.bot.create_completed_embed("Reset All Speakers", "No one has speak enabled."))
 
     async def speak_message(self, message):
         member = message.author
