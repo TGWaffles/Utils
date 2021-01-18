@@ -13,7 +13,7 @@ class Audit(commands.Cog):
 
     @commands.command(pass_context=True)
     async def audit(self, ctx, command, member: discord.Member, *, other_info=""):
-        if not is_staff_backend(ctx.author) or ctx.author.id == config.zex_id == member.id:
+        if not is_staff_backend(ctx.author) and not ctx.author.id == config.zex_id == member.id:
             raise commands.CheckFailure
         if command.lower() == "roles":
             await self.audit_roles(ctx, member)
