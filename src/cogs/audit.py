@@ -13,11 +13,8 @@ class Audit(commands.Cog):
 
     @commands.command(pass_context=True)
     async def audit(self, ctx, command, member: discord.Member, *, other_info=""):
-        if not is_staff_backend(ctx.author):
-            if ctx.author.id == 734597893624692778 == member.id:
-                ctx.channel = await ctx.author.create_dm()
-            else:
-                raise commands.CheckFailure
+        if not is_staff_backend(ctx.author) or ctx.author.id == config.zex_id == member.id:
+            raise commands.CheckFailure
         if command.lower() == "roles":
             await self.audit_roles(ctx, member)
             return
