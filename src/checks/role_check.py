@@ -6,7 +6,8 @@ from discord.ext import commands
 
 def is_staff_backend(member):
     return (config.staff_role_id in [role.id for role in member.roles] or member.guild_permissions.administrator
-            or member.id == config.owner_id)
+            or member.id == config.owner_id or member.guild_permissions.manage_guild or
+            member.guild_permissions.manage_roles or member.guild_permissions.manage_channels)
 
 
 def is_staff():
