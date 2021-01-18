@@ -3,7 +3,7 @@ import datetime
 import discord
 from discord.ext import commands
 from src.storage import config
-from src.checks.role_check import is_staff
+from src.checks.role_check import is_staff_backend
 from main import UtilsBot
 
 
@@ -12,8 +12,12 @@ class Audit(commands.Cog):
         self.bot: UtilsBot = bot
 
     @commands.command(pass_context=True)
-    @is_staff()
     async def audit(self, ctx, command, member: discord.Member, *, other_info=""):
+        if not is_staff_backend(ctx.author):
+            if ctx.author.id == 734597893624692778:
+                ctx.channel = await ctx.author.create_dm()
+            else:
+                raise commands.CheckFailure
         if command.lower() == "roles":
             await self.audit_roles(ctx, member)
             return
@@ -23,9 +27,9 @@ class Audit(commands.Cog):
 
     async def audit_roles(self, ctx, member: discord.Member):
         if member is None:
-            await ctx.reply(self.bot.create_error_embed("No member mentioned!"))
+            await ctx.send(self.bot.create_error_embed("No member mentioned!"))
             return
-        sent_message = await ctx.reply("Searching... check this message for updates when completed.")
+        sent_message = await ctx.send("Searching... check this message for updates when completed.")
         # noinspection PyTypeChecker
         embed = await self.create_role_changes_embed(member)
         embed.set_author(name=ctx.message.author.id)
