@@ -116,7 +116,7 @@ class Hypixel(commands.Cog):
         try:
             # noinspection PyUnboundLocalVariable
             await self.get_user_stats(uuid)
-        except TypeError:
+        except (TypeError, KeyError):
             await ctx.reply(embed=self.bot.create_error_embed("That player is not a valid Hypixel Bedwars Player!"))
             return
         return uuid
