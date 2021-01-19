@@ -115,16 +115,6 @@ class Monkey(commands.Cog):
         data = DataHelper()
         data["og_messages"] = message_member_ids
 
-    @commands.command(pass_context=True)
-    @is_owner()
-    @monkey_check()
-    async def test(self, ctx, channel: discord.TextChannel):
-        async for message in channel.history(limit=1, oldest_first=True):
-            embed = discord.Embed(description=message.clean_content)
-            embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-            await ctx.reply(embed=embed)
-            return
-
 
 def setup(bot):
     cog = Monkey(bot)
