@@ -1,28 +1,28 @@
-import discord
-import datetime
 import asyncio
+import datetime
+
 import asyncpixel
 import asyncpixel.exceptions.exceptions
-import mcuuid.tools
+import discord
 import mcuuid.api
-
-from src.storage import config, messages
+import mcuuid.tools
 from discord.ext import commands, tasks
+
 from main import UtilsBot
-from src.checks.role_check import is_staff
-from src.checks.user_check import is_owner
-from src.checks.guild_check import monkey_check
 from src.checks.message_check import check_reply
-from src.helpers.storage_helper import DataHelper
+from src.checks.role_check import is_staff
 from src.helpers.hypixel_helper import *
+from src.helpers.storage_helper import DataHelper
 
 
 class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.data = DataHelper()
+        # noinspection PyUnresolvedReferences
         self.hypixel = asyncpixel.Client("e823fbc4-e526-4fbb-bf15-37e543aebdd6")
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
+        self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
 
@@ -114,6 +114,7 @@ class Hypixel(commands.Cog):
             await ctx.message.delete()
             return
         try:
+            # noinspection PyUnboundLocalVariable
             await self.get_user_stats(uuid)
         except TypeError:
             await ctx.reply(embed=self.bot.create_error_embed("That player is not a valid Hypixel Bedwars Player!"))
