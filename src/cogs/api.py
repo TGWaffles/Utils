@@ -11,7 +11,9 @@ from src.helpers.storage_helper import DataHelper
 def get_protocol(bot):
     class ReceiveAPIMessage(asyncio.Protocol):
         def data_received(self, data: bytes) -> None:
-            json_content = json.loads(data.decode())
+            received_message = data.decode()
+            print(received_message)
+            json_content = json.loads(received_message)
             storage = DataHelper()
             if json_content.get("key", "") not in storage.get("api_keys", {}).keys():
                 return
