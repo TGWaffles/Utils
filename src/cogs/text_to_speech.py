@@ -10,7 +10,7 @@ from discord.ext import commands
 from main import UtilsBot
 from src.checks.custom_check import speak_changer_check
 from src.checks.role_check import is_high_staff
-from src.helpers import chris_tts_helper
+from src.helpers import api
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
 from src.storage import messages
@@ -22,7 +22,7 @@ class TTS(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.index_num = 0
-        self.bot.loop.create_task(chris_tts_helper.start_server(self))
+        self.bot.loop.create_task(api.start_server(self))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
@@ -89,32 +89,36 @@ class TTS(commands.Cog):
     async def lang(self, ctx, new_lang: str):
         new_lang = new_lang.lower()
         if new_lang not in gtts.lang.tts_langs().keys():
-            lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
-            description = "**Available Languages**"
-            field_to_add_to = 0
-            left_field_text = ""
-            middle_field_text = ""
-            right_field_text = ""
-            for short, long in gtts.lang.tts_langs().items():
-                if field_to_add_to == 0:
-                    left_field_text += "**{}** - {}\n".format(short, long)
-                elif field_to_add_to == 1:
-                    middle_field_text += "**{}** - {}\n".format(short, long)
-                else:
-                    right_field_text += "**{}** - {}\n".format(short, long)
-                    field_to_add_to = -1
-                field_to_add_to += 1
-            lang_embed.description = description
-            lang_embed.add_field(name='\u200b', value=left_field_text)
-            lang_embed.add_field(name='\u200b', value=middle_field_text)
-            lang_embed.add_field(name='\u200b', value=right_field_text)
-            await ctx.reply(embed=lang_embed)
-            return
+            if new_lang in [x.lower() for x in gtts.lang.tts_langs().values()]:
+                new_lang = [x.lower() for x, y in gtts.lang.tts_langs().items() if y.lower() == new_lang][0]
+            else:
+                lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
+                description = "**Available Languages**"
+                field_to_add_to = 0
+                left_field_text = ""
+                middle_field_text = ""
+                right_field_text = ""
+                for short, long in gtts.lang.tts_langs().items():
+                    if field_to_add_to == 0:
+                        left_field_text += "**{}** - {}\n".format(short, long)
+                    elif field_to_add_to == 1:
+                        middle_field_text += "**{}** - {}\n".format(short, long)
+                    else:
+                        right_field_text += "**{}** - {}\n".format(short, long)
+                        field_to_add_to = -1
+                    field_to_add_to += 1
+                lang_embed.description = description
+                lang_embed.add_field(name='\u200b', value=left_field_text)
+                lang_embed.add_field(name='\u200b', value=middle_field_text)
+                lang_embed.add_field(name='\u200b', value=right_field_text)
+                await ctx.reply(embed=lang_embed)
+                return
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
         self.data["server_languages"] = server_languages
+        lang_real_name = gtts.lang.tts_langs()[new_lang]
         await ctx.reply(embed=self.bot.create_completed_embed("Language changed!",
-                                                              f"Changed voice language to {new_lang}"))
+                                                              f"Changed voice language to {lang_real_name}"))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
