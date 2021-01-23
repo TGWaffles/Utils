@@ -43,7 +43,10 @@ class API(commands.Cog):
         key = secrets.token_urlsafe(16)
         storage = DataHelper()
         all_keys = storage.get("api_keys", {})
-        all_keys[ctx.author.id] = key
+        for old_key in all_keys.keys():
+            if all_keys[old_key] == str(ctx.author.id):
+                del all_keys[old_key]
+        all_keys[key] = ctx.author.id
         storage["api_keys"] = all_keys
         await ctx.author.send("Your API key is: {}".format(key))
 
