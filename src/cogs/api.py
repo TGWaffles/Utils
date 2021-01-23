@@ -37,7 +37,7 @@ class API(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    def api_key(self, ctx):
+    async def api_key(self, ctx):
         await ctx.reply(embed=self.bot.create_completed_embed("Generated API Key",
                                                               "I have DM'd you your api key."))
         key = secrets.token_urlsafe(16)
