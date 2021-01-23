@@ -10,7 +10,7 @@ from discord.ext import commands
 from main import UtilsBot
 from src.checks.custom_check import speak_changer_check
 from src.checks.role_check import is_high_staff
-from src.helpers import api
+from src.cogs import api
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
 from src.storage import messages
