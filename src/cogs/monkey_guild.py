@@ -152,14 +152,14 @@ class Monkey(commands.Cog):
                                     delete_after=5)
                 await message.delete()
                 return
-            if numbers_in_message[0] != previous_number + 1:
+            if previous_number + 1 not in numbers_in_message:
                 await message.reply(embed=self.bot.create_error_embed("{}'s not the next number, {}".format(
                     numbers_in_message[0],
                     message.author.mention)), delete_after=7)
                 await message.delete()
                 return
             else:
-                self.previous_counting_number = numbers_in_message[0]
+                self.previous_counting_number += 1
 
 
 def setup(bot):
