@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.18.4"
+version_number = "1.18.5"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"

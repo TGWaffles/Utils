@@ -1,6 +1,7 @@
 import datetime
 
 import discord
+import re
 from discord.ext import commands
 
 from main import UtilsBot
@@ -121,10 +122,6 @@ class Monkey(commands.Cog):
         if message.author.id == self.bot.user.id:
             return
         if message.channel.id == config.counting_channel_id:
-            try:
-                attempted_number = int(message.clean_content)
-            except ValueError:
-                return
             previous_messages = [x for x in await message.channel.history(limit=15).flatten()
                                  if not x.author.id == self.bot.user.id]
             previous_message = previous_messages[1]
@@ -135,8 +132,8 @@ class Monkey(commands.Cog):
                 return
             if self.previous_counting_number is None:
                 try:
-                    previous_number = int(previous_message.clean_content)
-                except ValueError:
+                    previous_number = re.findall(r"\d+", previous_message.clean_content)[0]
+                except IndexError:
                     await message.reply(embed=self.bot.create_error_embed("Failed to detect previous number. "
                                                                           "Deleting both."), delete_after=7)
                     await message.delete()
@@ -144,13 +141,25 @@ class Monkey(commands.Cog):
                     return
             else:
                 previous_number = self.previous_counting_number
-            if attempted_number != previous_number + 1:
-                await message.reply(embed=self.bot.create_error_embed("That's not the next number, {}".format(
+            numbers_in_message = [int(x) for x in re.findall(r"\d+", message.clean_content)]
+            if len(numbers_in_message) == 0:
+                await message.reply(embed=self.bot.create_error_embed("That doesn't appear to have been a number."),
+                                    delete_after=5)
+                await message.delete()
+                return
+            elif len(numbers_in_message) > 1 and self.previous_counting_number + 2 in numbers_in_message:
+                await message.reply(embed=self.bot.create_error_embed("Only one number per message, please!"),
+                                    delete_after=5)
+                await message.delete()
+                return
+            if numbers_in_message[0] != previous_number + 1:
+                await message.reply(embed=self.bot.create_error_embed("{}'s not the next number, {}".format(
+                    numbers_in_message[0],
                     message.author.mention)), delete_after=7)
                 await message.delete()
                 return
             else:
-                self.previous_counting_number = attempted_number
+                self.previous_counting_number = numbers_in_message[0]
 
 
 def setup(bot):
