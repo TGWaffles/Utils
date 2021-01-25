@@ -155,8 +155,8 @@ class Monkey(commands.Cog):
             if previous_number + 1 not in numbers_in_message:
                 await message.reply(embed=self.bot.create_error_embed("{}'s not the next number, {} "
                                                                       "(I'm looking for {})".format(
-                                                                        numbers_in_message[0], message.author.mention,
-                                                                        previous_number + 1)), delete_after=7)
+                    numbers_in_message[0], message.author.mention,
+                    previous_number + 1)), delete_after=7)
                 await message.delete()
                 return
             else:
@@ -167,16 +167,23 @@ class Monkey(commands.Cog):
         if after.channel.id != config.counting_channel_id or before.author.id == self.bot.user.id:
             return
         previous_messages = [x for x in await before.channel.history(limit=15, before=before).flatten()
-                             if not x.author.id == self.bot.user.id]
+                             if x.author.id != self.bot.user.id and x.author.id != before.author.id]
         previous_message = previous_messages[1]
-        previous_number = int(re.findall(r"\d+", previous_message.clean_content)[0])
+        if (await before.channel.history(limit=1, before=before).flatten()[0] == after and
+                self.previous_counting_number is not None):
+            previous_number = self.previous_counting_number - 1
+        else:
+            previous_number = int(re.findall(r"\d+", previous_message.clean_content)[0])
+        searching_for_number = previous_number + 1
         numbers_in_message = [int(x) for x in re.findall(r"\d+", before.clean_content)]
         try:
             closest_number = numbers_in_message[min(range(len(numbers_in_message)),
-                                                    key=lambda i: abs(numbers_in_message[i] - previous_number))]
+                                                    key=lambda i: abs(numbers_in_message[i] - searching_for_number))]
             numbers_in_edited_message = [int(x) for x in re.findall(r"\d+", after.clean_content)]
             assert closest_number in numbers_in_edited_message
         except (ValueError, IndexError, AssertionError):
+            if await before.channel.history(limit=1, before=before).flatten()[0] == after:
+                self.previous_counting_number = previous_number
             await after.reply(embed=self.bot.create_error_embed("Message was edited. \n\n"
                                                                 "You removed the number that kept this message valid, "
                                                                 "so it will now be deleted."), delete_after=7)
