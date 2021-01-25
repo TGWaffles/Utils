@@ -153,9 +153,10 @@ class Monkey(commands.Cog):
                 await message.delete()
                 return
             if previous_number + 1 not in numbers_in_message:
-                await message.reply(embed=self.bot.create_error_embed("{}'s not the next number, {}".format(
-                    numbers_in_message[0],
-                    message.author.mention)), delete_after=7)
+                await message.reply(embed=self.bot.create_error_embed("{}'s not the next number, {} "
+                                                                      "(I'm looking for {})".format(
+                                                                        numbers_in_message[0], message.author.mention,
+                                                                        previous_number + 1)), delete_after=7)
                 await message.delete()
                 return
             else:
@@ -172,7 +173,7 @@ class Monkey(commands.Cog):
         numbers_in_message = [int(x) for x in re.findall(r"\d+", before.clean_content)]
         try:
             closest_number = numbers_in_message[min(range(len(numbers_in_message)),
-                                                    key=lambda i: abs(numbers_in_message[i]-previous_number))]
+                                                    key=lambda i: abs(numbers_in_message[i] - previous_number))]
             numbers_in_edited_message = [int(x) for x in re.findall(r"\d+", after.clean_content)]
             assert closest_number in numbers_in_edited_message
         except (ValueError, IndexError, AssertionError):
@@ -180,8 +181,6 @@ class Monkey(commands.Cog):
                                                                 "You removed the number that kept this message valid, "
                                                                 "so it will now be deleted."), delete_after=7)
             await after.delete()
-
-
 
 
 def setup(bot):
