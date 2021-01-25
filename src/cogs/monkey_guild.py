@@ -147,7 +147,7 @@ class Monkey(commands.Cog):
                                     delete_after=5)
                 await message.delete()
                 return
-            elif len(numbers_in_message) > 1 and self.previous_counting_number + 2 in numbers_in_message:
+            elif len(numbers_in_message) > 1 and previous_number + 2 in numbers_in_message:
                 await message.reply(embed=self.bot.create_error_embed("Only one number per message, please!"),
                                     delete_after=5)
                 await message.delete()
