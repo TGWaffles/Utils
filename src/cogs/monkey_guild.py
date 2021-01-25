@@ -159,7 +159,7 @@ class Monkey(commands.Cog):
                 await message.delete()
                 return
             else:
-                self.previous_counting_number += 1
+                self.previous_counting_number = previous_number + 1
 
 
 def setup(bot):
