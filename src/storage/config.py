@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.18.1dev1"
+version_number = "1.18.2"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -27,6 +27,7 @@ suggestions_channel_id = 798972358878167080
 archive_channel_id = 725920625956225055
 # suggestions_decisions_id = 727563806762598450
 suggestions_decisions_id = 798972358878167080
+counting_channel_id = 773952078404911123
 
 # Settings for audit/general reactions cog
 fast_forward_emoji = u"\u23E9"

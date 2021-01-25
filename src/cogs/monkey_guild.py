@@ -7,12 +7,14 @@ from main import UtilsBot
 from src.checks.guild_check import monkey_check
 from src.checks.user_check import is_owner
 from src.helpers.storage_helper import DataHelper
+from src.storage import config
 
 
 class Monkey(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
+        self.previous_counting_number = None
 
     def is_og(self, member: discord.Member):
         first_join_date = member.joined_at
@@ -113,6 +115,36 @@ class Monkey(commands.Cog):
         await processing_message.edit(embed=embed)
         data = DataHelper()
         data["og_messages"] = message_member_ids
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.id == self.bot.user.id:
+            return
+        if message.channel.id == config.counting_channel_id:
+            try:
+                attempted_number = int(message.clean_content)
+            except ValueError:
+                return
+            if self.previous_counting_number is None:
+                previous_messages = await message.channel.history(limit=3).flatten()
+                previous_message = previous_messages[1]
+                try:
+                    previous_number = int(previous_message)
+                except ValueError:
+                    await message.reply(embed=self.bot.create_error_embed("Failed to detect previous number. "
+                                                                          "Deleting both."), delete_after=7)
+                    await message.delete(delay=5)
+                    await previous_message.delete()
+                    return
+            else:
+                previous_number = self.previous_counting_number
+            if attempted_number != previous_number + 1:
+                await message.reply(embed=self.bot.create_error_embed("That's not the next number, {}".format(
+                    message.author.mention)), delete_after=7)
+                await message.delete(delay=5)
+                return
+            else:
+                self.previous_counting_number = attempted_number
 
 
 def setup(bot):
