@@ -163,7 +163,7 @@ class Monkey(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if after.channel.id != config.counting_channel_id or before.user.id == self.bot.user.id:
+        if after.channel.id != config.counting_channel_id or before.author.id == self.bot.user.id:
             return
         previous_messages = [x for x in await before.channel.history(limit=15, before=before).flatten()
                              if not x.author.id == self.bot.user.id]
