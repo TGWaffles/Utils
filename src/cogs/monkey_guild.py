@@ -128,8 +128,13 @@ class Monkey(commands.Cog):
             if self.previous_counting_number is None:
                 previous_messages = await message.channel.history(limit=3).flatten()
                 previous_message = previous_messages[1]
+                if previous_message.author.id == message.author.id:
+                    await message.reply(embed=self.bot.create_error_embed("You can't send two numbers in a row!"),
+                                        delete_after=7)
+                    await message.delete(delay=5)
+                    return
                 try:
-                    previous_number = int(previous_message)
+                    previous_number = int(previous_message.clean_content)
                 except ValueError:
                     await message.reply(embed=self.bot.create_error_embed("Failed to detect previous number. "
                                                                           "Deleting both."), delete_after=7)
