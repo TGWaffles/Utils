@@ -169,7 +169,7 @@ class Monkey(commands.Cog):
         previous_messages = [x for x in await before.channel.history(limit=15, before=before).flatten()
                              if x.author.id != self.bot.user.id and x.author.id != before.author.id]
         previous_message = previous_messages[1]
-        if ((await before.channel.history(limit=1, before=before).flatten())[0] == after and
+        if ((await before.channel.history(limit=1).flatten())[0] == after and
                 self.previous_counting_number is not None):
             previous_number = self.previous_counting_number - 1
         else:
@@ -182,7 +182,7 @@ class Monkey(commands.Cog):
             numbers_in_edited_message = [int(x) for x in re.findall(r"\d+", after.clean_content)]
             assert closest_number in numbers_in_edited_message
         except (ValueError, IndexError, AssertionError):
-            if (await before.channel.history(limit=1, before=before).flatten())[0] == after:
+            if (await before.channel.history(limit=1).flatten())[0] == after:
                 self.previous_counting_number = previous_number
             await after.reply(embed=self.bot.create_error_embed("Message was edited. \n\n"
                                                                 "You removed the number that kept this message valid, "
