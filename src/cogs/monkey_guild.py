@@ -125,20 +125,21 @@ class Monkey(commands.Cog):
                 attempted_number = int(message.clean_content)
             except ValueError:
                 return
+            previous_messages = [x for x in await message.channel.history(limit=15).flatten()
+                                 if not x.author.id == self.bot.user.id]
+            previous_message = previous_messages[1]
+            if previous_message.author.id == message.author.id:
+                await message.reply(embed=self.bot.create_error_embed("You can't send two numbers in a row!"),
+                                    delete_after=7)
+                await message.delete()
+                return
             if self.previous_counting_number is None:
-                previous_messages = await message.channel.history(limit=3).flatten()
-                previous_message = previous_messages[1]
-                if previous_message.author.id == message.author.id:
-                    await message.reply(embed=self.bot.create_error_embed("You can't send two numbers in a row!"),
-                                        delete_after=7)
-                    await message.delete(delay=5)
-                    return
                 try:
                     previous_number = int(previous_message.clean_content)
                 except ValueError:
                     await message.reply(embed=self.bot.create_error_embed("Failed to detect previous number. "
                                                                           "Deleting both."), delete_after=7)
-                    await message.delete(delay=5)
+                    await message.delete()
                     await previous_message.delete()
                     return
             else:
@@ -146,7 +147,7 @@ class Monkey(commands.Cog):
             if attempted_number != previous_number + 1:
                 await message.reply(embed=self.bot.create_error_embed("That's not the next number, {}".format(
                     message.author.mention)), delete_after=7)
-                await message.delete(delay=5)
+                await message.delete()
                 return
             else:
                 self.previous_counting_number = attempted_number
