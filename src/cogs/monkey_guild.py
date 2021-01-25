@@ -169,7 +169,7 @@ class Monkey(commands.Cog):
         previous_messages = [x for x in await before.channel.history(limit=15, before=before).flatten()
                              if x.author.id != self.bot.user.id and x.author.id != before.author.id]
         previous_message = previous_messages[1]
-        if (await before.channel.history(limit=1, before=before).flatten()[0] == after and
+        if ((await before.channel.history(limit=1, before=before).flatten())[0] == after and
                 self.previous_counting_number is not None):
             previous_number = self.previous_counting_number - 1
         else:
