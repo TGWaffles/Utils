@@ -170,10 +170,12 @@ class Monkey(commands.Cog):
         previous_message = previous_messages[1]
         previous_number = int(re.findall(r"\d+", previous_message.clean_content)[0])
         numbers_in_message = [int(x) for x in re.findall(r"\d+", before.clean_content)]
-        closest_number = numbers_in_message[min(range(len(numbers_in_message)),
-                                                key=lambda i: abs(numbers_in_message[i]-previous_number))]
-        numbers_in_edited_message = [int(x) for x in re.findall(r"\d+", after.clean_content)]
-        if closest_number not in numbers_in_edited_message:
+        try:
+            closest_number = numbers_in_message[min(range(len(numbers_in_message)),
+                                                    key=lambda i: abs(numbers_in_message[i]-previous_number))]
+            numbers_in_edited_message = [int(x) for x in re.findall(r"\d+", after.clean_content)]
+            assert closest_number in numbers_in_edited_message
+        except (ValueError, IndexError, AssertionError):
             await after.reply(embed=self.bot.create_error_embed("Message was edited. \n\n"
                                                                 "You removed the number that kept this message valid, "
                                                                 "so it will now be deleted."), delete_after=7)
