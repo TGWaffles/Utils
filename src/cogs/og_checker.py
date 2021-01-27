@@ -151,7 +151,7 @@ class OGCog(commands.Cog):
 
     @commands.command()
     @is_high_staff()
-    async def set_og_date(self, ctx, og_date: str):
+    async def set_og_date(self, ctx, *, og_date: str):
         set_date = dateparser.parse(og_date)
         if set_date is None:
             await ctx.reply(embed=self.bot.create_error_embed("That couldn't be interpreted as a valid date."))
