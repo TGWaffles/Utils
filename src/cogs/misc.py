@@ -156,7 +156,9 @@ class Misc(commands.Cog):
         self.current_presence += 1
         if self.current_presence > len(possible_presences) - 1:
             self.current_presence = 0
+        print("Changing presence :)")
         await self.bot.change_presence(status=discord.Status.online, activity=activity)
+        print("Presence changed.")
 
 
 def setup(bot):
