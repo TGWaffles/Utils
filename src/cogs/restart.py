@@ -1,10 +1,12 @@
 import asyncio
+import discord
 from subprocess import Popen
 
 from discord.ext import commands
 
 from src.checks.user_check import is_owner
-from src.checks.role_check import is_high_staff
+from src.checks.custom_check import restart_check
+from src.helpers.storage_helper import DataHelper
 from main import UtilsBot
 
 
@@ -32,7 +34,7 @@ class Restart(commands.Cog):
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
 
     @commands.command(pass_context=True)
-    @is_high_staff()
+    @restart_check()
     async def restart(self, ctx: commands.Context):
         reply_message = await ctx.reply(embed=self.bot.create_processing_embed("Restarting", "Restarting..."))
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Restart Complete!",
@@ -40,8 +42,24 @@ class Restart(commands.Cog):
         self.bot.restart()
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
 
+    @commands.command()
+    @is_owner()
+    async def restart_perms(self, ctx, member: discord.Member):
+        data = DataHelper()
+        restart_users = data.get("restart_perms", [])
+        if str(member.id) in restart_users:
+            restart_users.remove(str(member.id))
+            await ctx.reply(self.bot.create_completed_embed("Perms Removed!", "Taken {}'s permissions to"
+                                                                              "restart the bot.".format(
+                                                                                    member.mention)))
+        else:
+            restart_users.append(member.id)
+            await ctx.reply(self.bot.create_completed_embed("Perms Granted!",
+                                                            "Given {} permission to restart the bot.".format(
+                                                                member.mention)))
+        data["restart_perms"] = restart_users
+
 
 def setup(bot):
     cog = Restart(bot)
     bot.add_cog(cog)
-

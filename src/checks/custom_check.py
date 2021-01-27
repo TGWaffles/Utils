@@ -12,3 +12,12 @@ def speak_changer_check():
                 or ctx.author.id == config.owner_id)
 
     return commands.check(predicate)
+
+
+def restart_check():
+    async def predicate(ctx):
+        data = DataHelper()
+        restart_users = data.get("restart_perms", [])
+        return str(ctx.author.id) in restart_users or ctx.author.id == config.owner_id
+
+    return commands.check(predicate)
