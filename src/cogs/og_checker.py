@@ -22,6 +22,9 @@ class OGCog(commands.Cog):
         first_join_date = member.joined_at
         # noinspection SpellCheckingInspection
         first_join_date = first_join_date.replace(tzinfo=datetime.timezone.utc)
+        print(first_join_date)
+        print(og_date)
+        print(first_join_date < og_date)
         return first_join_date < og_date
 
     @commands.command(pass_context=True)
