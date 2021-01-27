@@ -35,7 +35,7 @@ class OGCog(commands.Cog):
         message_time = None
         data = DataHelper()
         all_guilds = data.get("og_messages", {})
-        og_messages = all_guilds.get(str(member.guild.id))
+        og_messages = all_guilds.get(str(member.guild.id), {})
         if str(member.id) in og_messages.keys():
             is_og = True
             message_time = datetime.datetime.utcfromtimestamp(og_messages.get(str(member.id), 0))
