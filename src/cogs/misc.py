@@ -146,10 +146,10 @@ class Misc(commands.Cog):
     @tasks.loop(seconds=30, count=None)
     async def update_status(self):
         memory = psutil.virtual_memory()
-        used = memory.available // (1024 ** 3)
-        total = memory.total // (1024 ** 3)
+        used = memory.available // (1024 ** 2)
+        total = memory.total // (1024 ** 2)
         possible_presences = ["Current CPU load: {}%!".format(psutil.cpu_percent(None)),
-                              "Current RAM usage: {}GB/{}GB.".format(used, total),
+                              "Current RAM usage: {}MB/{}MB.".format(used, total),
                               "Total guild count: {}!".format(len(self.bot.guilds)),
                               "Owner: Thomas_Waffles#0001"]
         activity = discord.Game(name=possible_presences[self.current_presence])
