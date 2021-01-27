@@ -49,14 +49,14 @@ class Restart(commands.Cog):
         restart_users = data.get("restart_perms", [])
         if str(member.id) in restart_users:
             restart_users.remove(str(member.id))
-            await ctx.reply(self.bot.create_completed_embed("Perms Removed!", "Taken {}'s permissions to"
-                                                                              "restart the bot.".format(
-                                                                                    member.mention)))
+            await ctx.reply(embed=self.bot.create_completed_embed("Perms Removed!", "Taken {}'s permissions to"
+                                                                                    "restart the bot.".format(
+                                                                                        member.mention)))
         else:
             restart_users.append(member.id)
-            await ctx.reply(self.bot.create_completed_embed("Perms Granted!",
-                                                            "Given {} permission to restart the bot.".format(
-                                                                member.mention)))
+            await ctx.reply(embed=self.bot.create_completed_embed("Perms Granted!",
+                                                                  "Given {} permission to restart the bot.".format(
+                                                                      member.mention)))
         data["restart_perms"] = restart_users
 
 
