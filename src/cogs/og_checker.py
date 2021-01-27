@@ -61,6 +61,7 @@ class OGCog(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("There is no defined OG date in this guild!"))
             return
         og_date = datetime.datetime.utcfromtimestamp(self.data.get("og_dates", {}).get(str(ctx.guild.id), None))
+        og_date = og_date.replace(tzinfo=datetime.timezone.utc)
         if self.data.get("og_roles", {}).get(str(ctx.guild.id), None) is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no defined OG role for this guild!"))
             return
