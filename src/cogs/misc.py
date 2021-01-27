@@ -35,7 +35,7 @@ class Misc(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.current_presence = 0
-        await self.update_status.start()
+        self.update_status.start()
 
     @commands.command(pass_context=True)
     @is_staff()
