@@ -1,15 +1,16 @@
-import discord
 import datetime
-import webcolors
-import asyncio
-
-from discord.ext import commands
 from typing import Optional
+
+import discord
+import psutil
+import webcolors
+from discord.ext import commands, tasks
+
 from main import UtilsBot
-from src.storage import config
-from src.checks.user_check import is_owner
 from src.checks.role_check import is_staff, is_high_staff
+from src.checks.user_check import is_owner
 from src.helpers.storage_helper import DataHelper
+from src.storage import config
 
 
 def convert_colour(input_colour):
@@ -33,6 +34,8 @@ def convert_colour(input_colour):
 class Misc(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
+        self.current_presence = 0
+        await self.update_status.start()
 
     @commands.command(pass_context=True)
     @is_staff()
@@ -139,6 +142,22 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         await self.on_member_change(member)
+
+    @tasks.loop(seconds=30)
+    async def update_status(self):
+        memory = psutil.virtual_memory()
+        used = memory.available // (1024 ** 3)
+        total = memory.total // (1024 ** 3)
+        possible_presences = ["Current CPU load: {}%!".format(psutil.cpu_percent(None)),
+                              "Current RAM usage: {}GB/{}GB.".format(used, total),
+                              "Total guild count: {}!".format(len(self.bot.guilds)),
+                              "Owner: Thomas_Waffles#0001"]
+        activity = discord.Activity(type=discord.ActivityType.custom,
+                                    details=possible_presences[self.current_presence])
+        self.current_presence += 1
+        if self.current_presence > len(possible_presences) - 1:
+            self.current_presence = 0
+        await self.bot.change_presence(status=discord.Status.online, activity=activity)
 
 
 def setup(bot):
