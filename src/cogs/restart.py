@@ -53,7 +53,7 @@ class Restart(commands.Cog):
                                                                                     "restart the bot.".format(
                                                                                         member.mention)))
         else:
-            restart_users.append(member.id)
+            restart_users.append(str(member.id))
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Granted!",
                                                                   "Given {} permission to restart the bot.".format(
                                                                       member.mention)))
