@@ -131,7 +131,7 @@ class Misc(commands.Cog):
     async def on_member_change(self, member):
         print("processing member change")
         guild = member.guild
-        if guild.id == config.guild_id:
+        if guild.id == config.monkey_guild_id:
             await self.update_members_vc()
         self.bot.latest_joins[guild.id] = await self.bot.get_sorted_members(guild)
 

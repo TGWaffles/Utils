@@ -11,7 +11,7 @@ zex_id = 734597893624692778
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api"]
 
-guild_id = 725886999646437407
+monkey_guild_id = 725886999646437407
 error_channel_id = 795057163768037376
 staff_role_id = 726453086331338802
 mod_role_id = 725894916839964682

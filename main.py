@@ -34,9 +34,10 @@ class UtilsBot(commands.Bot):
 
     async def get_sorted_members(self, guild):
         members = await guild.fetch_members(limit=None).flatten()
-        if guild.id == config.guild_id:
+        if guild.id == config.monkey_guild_id:
             member_ids = [user.id for user in members]
-            og_messages = self.data.get("og_messages", {})
+            all_guilds = self.data.get("og_messages", {})
+            og_messages = all_guilds.get(str(guild.id), {})
             for user_id in og_messages.keys():
                 try:
                     member_object = members[member_ids.index(int(user_id))]
@@ -86,7 +87,7 @@ def get_bot():
     @bot.event
     async def on_ready():
         print("Ready!")
-        bot.guild = bot.get_guild(config.guild_id)
+        bot.guild = bot.get_guild(config.monkey_guild_id)
         bot.error_channel = bot.get_channel(config.error_channel_id)
         for extension_name in config.extensions:
             print("Loading cog named {}...".format(extension_name))
