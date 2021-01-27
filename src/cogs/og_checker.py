@@ -159,6 +159,7 @@ class OGCog(commands.Cog):
             return
         all_guilds = self.data.get("og_dates", {})
         all_guilds[str(ctx.guild.id)] = set_date.timestamp()
+        self.data["og_dates"] = all_guilds
         await ctx.reply(embed=self.bot.create_completed_embed("OG Date Set!",
                                                               "OG date was successfully set to: {}.".format(
                                                                   set_date.strftime("%Y-%m-%d %H:%M"))))
@@ -168,6 +169,7 @@ class OGCog(commands.Cog):
     async def set_og_role(self, ctx, og_role: discord.Role):
         all_guilds = self.data.get("og_roles", {})
         all_guilds[str(ctx.guild.id)] = og_role.id
+        self.data["og_roles"] = all_guilds
 
 
 def setup(bot):
