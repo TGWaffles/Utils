@@ -3,6 +3,7 @@ import datetime
 import dateparser
 import discord
 from discord.ext import commands
+from typing import Optional
 
 from main import UtilsBot
 from src.checks.role_check import is_high_staff
@@ -56,7 +57,7 @@ class OGCog(commands.Cog):
 
     @commands.command(pass_context=True)
     @is_owner()
-    async def all_ogs(self, ctx, reset: bool):
+    async def all_ogs(self, ctx, reset: Optional[bool]):
         if self.data.get("og_dates", {}).get(str(ctx.guild.id), None) is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no defined OG date in this guild!"))
             return
