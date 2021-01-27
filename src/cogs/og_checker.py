@@ -88,7 +88,7 @@ class OGCog(commands.Cog):
                 if str(author.id) not in message_member_ids.keys():
                     join_date = message.created_at.replace(tzinfo=datetime.timezone.utc)
                     message_member_ids[str(author.id)] = join_date.timestamp()
-        if reset:
+        if reset is not None and reset:
             starting_reset = discord.Embed(title="Finished messages.", description="I have processed messages. I will "
                                                                                    "now remove the OG role from all "
                                                                                    "members.",
