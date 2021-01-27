@@ -173,9 +173,9 @@ class OGCog(commands.Cog):
         all_guilds = self.data.get("og_roles", {})
         all_guilds[str(ctx.guild.id)] = og_role.id
         self.data["og_roles"] = all_guilds
-        await ctx.reply(self.bot.create_completed_embed("Set OG Role!",
-                                                        "OG Role has been set to {}!".format(
-                                                            og_role.mention)))
+        await ctx.reply(embed=self.bot.create_completed_embed("Set OG Role!",
+                                                              "OG Role has been set to {}!".format(
+                                                                  og_role.mention)))
 
 
 def setup(bot):
