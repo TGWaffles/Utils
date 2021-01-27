@@ -152,13 +152,11 @@ class Misc(commands.Cog):
                               "Current RAM usage: {}GB/{}GB.".format(used, total),
                               "Total guild count: {}!".format(len(self.bot.guilds)),
                               "Owner: Thomas_Waffles#0001"]
-        activity = discord.CustomActivity(name=possible_presences[self.current_presence])
+        activity = discord.Game(name=possible_presences[self.current_presence])
         self.current_presence += 1
         if self.current_presence > len(possible_presences) - 1:
             self.current_presence = 0
-        print("Changing presence :)")
         await self.bot.change_presence(status=discord.Status.online, activity=activity)
-        print("Presence changed.")
 
 
 def setup(bot):
