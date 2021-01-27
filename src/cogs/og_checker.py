@@ -18,6 +18,7 @@ class OGCog(commands.Cog):
     def is_og(self, member: discord.Member):
         assert str(member.guild.id) in self.data.get("og_dates", {}).keys()
         og_date = datetime.datetime.utcfromtimestamp(self.data.get("og_dates", {}).get(str(member.guild.id)))
+        og_date = og_date.replace(tzinfo=datetime.timezone.utc)
         first_join_date = member.joined_at
         # noinspection SpellCheckingInspection
         first_join_date = first_join_date.replace(tzinfo=datetime.timezone.utc)
