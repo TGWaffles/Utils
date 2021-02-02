@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.20.8"
+version_number = "1.20.9"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -39,6 +39,9 @@ backwards_arrow = u"\u25C0"
 both_arrow = u"\u2194"
 heart_emoji = u"\u2764"
 discord_emoji = "<:discord:784309400524292117>"
+c4_yellow = "<:c4yellow:806008963803381810>"
+c4_red = "<:c4red:806009125497864204>"
+c4_none = ":black_large_square:"
 
 
 # Settings for purge

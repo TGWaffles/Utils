@@ -29,7 +29,7 @@ def get_protocol(bot):
 
 async def start_server(bot):
     loop = bot.bot.loop
-    server = await loop.create_server(get_protocol(bot), '0.0.0.0', 2095)
+    server = await loop.create_server(get_protocol(bot), '0.0.0.0', 42132)
     async with server:
         await server.serve_forever()
 
