@@ -86,11 +86,11 @@ class TTS(commands.Cog):
 
     @commands.command(pass_context=True)
     @speak_changer_check()
-    async def lang(self, ctx, new_lang: str):
-        new_lang = new_lang.lower()
+    async def lang(self, ctx, in_lang: str):
+        new_lang = in_lang.lower()
         if new_lang not in gtts.lang.tts_langs().keys():
             if new_lang in [x.lower() for x in gtts.lang.tts_langs().values()]:
-                new_lang = [x.lower() for x, y in gtts.lang.tts_langs().items() if y.lower() == new_lang][0]
+                in_lang = [x.lower() for x, y in gtts.lang.tts_langs().items() if y.lower() == new_lang][0]
             else:
                 lang_embed = discord.Embed(title="Invalid Language", colour=discord.Colour.red())
                 description = "**Available Languages**"
@@ -113,6 +113,7 @@ class TTS(commands.Cog):
                 lang_embed.add_field(name='\u200b', value=right_field_text)
                 await ctx.reply(embed=lang_embed)
                 return
+        new_lang = in_lang
         server_languages = self.data.get("server_languages", {})
         server_languages[ctx.guild.id] = new_lang
         self.data["server_languages"] = server_languages
