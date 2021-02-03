@@ -11,6 +11,7 @@ from src.checks.role_check import is_staff, is_high_staff
 from src.checks.user_check import is_owner
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
+from src.cogs.og_checker import OGCog
 
 
 def convert_colour(input_colour):
@@ -131,8 +132,19 @@ class Misc(commands.Cog):
     async def on_member_change(self, member):
         print("processing member change")
         guild = member.guild
+        data = DataHelper()
         if guild.id == config.monkey_guild_id:
             await self.update_members_vc()
+        og_cog: OGCog = self.bot.get_cog("OGCog")
+        try:
+            is_og = await og_cog.check_og(member)
+            if is_og:
+                if data.get("og_roles", {}).get(str(member.guild.id), None) is not None:
+                    og_role = member.guild.get_role(data.get("og_roles", {}).get(str(member.guild.id), None))
+                    if og_role is not None:
+                        await member.add_roles(og_role)
+        except AssertionError:
+            pass
         self.bot.latest_joins[guild.id] = await self.bot.get_sorted_members(guild)
 
     @commands.Cog.listener()
