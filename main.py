@@ -113,7 +113,7 @@ def get_bot():
             embed = discord.Embed(title="MonkeyUtils experienced an error when running.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
             await bot.error_channel.send(embed=embed)
-            bot.restart()
+            # bot.restart()
         except Exception as e:
             print("Error in sending error to discord. Error was {}".format(format_exc()))
             print("Error sending to discord was {}".format(e))

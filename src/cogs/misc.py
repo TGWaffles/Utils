@@ -132,12 +132,18 @@ class Misc(commands.Cog):
     async def on_member_change(self, member):
         print("processing member change")
         guild = member.guild
-        data = DataHelper()
         if guild.id == config.monkey_guild_id:
             await self.update_members_vc()
+
+        self.bot.latest_joins[guild.id] = await self.bot.get_sorted_members(guild)
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        data = DataHelper()
+        await self.on_member_change(member)
         og_cog: OGCog = self.bot.get_cog("OGCog")
         try:
-            is_og = await og_cog.check_og(member)
+            is_og = og_cog.is_og(member)
             if is_og:
                 if data.get("og_roles", {}).get(str(member.guild.id), None) is not None:
                     og_role = member.guild.get_role(data.get("og_roles", {}).get(str(member.guild.id), None))
@@ -145,11 +151,6 @@ class Misc(commands.Cog):
                         await member.add_roles(og_role)
         except AssertionError:
             pass
-        self.bot.latest_joins[guild.id] = await self.bot.get_sorted_members(guild)
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        await self.on_member_change(member)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
