@@ -146,10 +146,8 @@ class Games(commands.Cog):
         embed.colour = discord.Colour.orange()
         if board.turn == ai_colour:
             embed.set_footer(text="It's the AI's turn!")
-        else:
-            embed.set_footer(text="It's {}'s turn!".format(player.name))
-        embed.set_image(url="attachment://image.png")
-        await player.send(file=player_file, embed=embed)
+            embed.set_image(url="attachment://image.png")
+            await player.send(file=player_file, embed=embed)
         if board.turn == ai_colour:
             thinking_message = await player.send(embed=self.bot.create_processing_embed("Thinking...",
                                                                                         "The bot is thinking. "
