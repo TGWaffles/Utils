@@ -241,7 +241,7 @@ class Games(commands.Cog):
                                                                       "the game you're making a move in."))
                 return
             elif len(players_games) > 1:
-                referenced_message = message.channel.fetch_message(message.reference.message_id)
+                referenced_message = await message.channel.fetch_message(message.reference.message_id)
                 if not referenced_message.author == self.bot.user:
                     await message.reply(embed=self.bot.create_error_embed("That is not a message that I sent!"))
                     return
