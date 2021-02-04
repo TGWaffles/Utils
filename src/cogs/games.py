@@ -19,7 +19,7 @@ class Games(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.data = DataHelper()
-        self.transport, self.engine = await chess.engine.popen_uci("/usr/games/stockfish")
+        self.transport, self.engine = None, None
 
     async def connect4_send_to_player(self, player, board: np.array, their_turn):
         board_embed = discord.Embed(title="Connect Four!", colour=discord.Colour.light_grey())
@@ -58,6 +58,8 @@ class Games(commands.Cog):
 
     @commands.command()
     async def chess_ai(self, ctx, difficulty: str = "easy"):
+        if self.engine is None:
+            self.transport, self.engine = await chess.engine.popen_uci("/usr/games/stockfish")
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
         difficulty = difficulty.lower()
