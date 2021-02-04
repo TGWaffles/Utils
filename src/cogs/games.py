@@ -212,9 +212,13 @@ class Games(commands.Cog):
                                                                            "as a valid move!"))
                 return
             if move not in board.legal_moves:
-                await turn_message.reply(embed=self.bot.create_error_embed("That move is NOT legal. Make sure that's "
-                                                                           "your piece, a valid move for that piece, "
-                                                                           "and that you're not in check."))
+                if board.is_check():
+                    await turn_message.reply(embed=self.bot.create_error_embed("That's not a legal move - "
+                                                                               "you're in check."))
+                else:
+                    await turn_message.reply(embed=self.bot.create_error_embed("That move is NOT legal. Make sure "
+                                                                               "that's your piece, and a valid move "
+                                                                               "for that piece."))
                 return
             board.push(move)
             all_games = self.data.get("ongoing_games", {})
