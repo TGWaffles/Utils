@@ -111,6 +111,12 @@ class Games(commands.Cog):
         player2_embed.set_author(name=game_id)
         player1_embed.set_image(url="attachment://image.png")
         player2_embed.set_image(url="attachment://image.png")
+        if board.turn == chess.WHITE:
+            player1_embed.set_footer(text="It's your turn to move!")
+            player2_embed.set_footer(text="It's {}'s turn to move!".format(player1.name))
+        else:
+            player1_embed.set_footer(text="It's {}'s turn to move!".format(player2.name))
+            player2_embed.set_footer(text="It's your turn to move!")
         print(9)
         await player1.send(file=player1_file, embed=player1_embed)
         await player2.send(file=player2_file, embed=player2_embed)
