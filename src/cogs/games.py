@@ -67,7 +67,9 @@ class Games(commands.Cog):
             return
         new_game = chess.Board()
         print(4)
-        white, black = random.choice([player1.id, player2.id])
+        both_ids = [player1.id, player2.id]
+        random.shuffle(both_ids)
+        white, black = both_ids
         game_id = "{}-{}".format(white, black)
         print(5)
         chess_games[game_id] = new_game.fen()
