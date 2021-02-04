@@ -147,6 +147,8 @@ class Games(commands.Cog):
             chess_games[game_id] = board.fen()
             all_games["chess_games"] = chess_games
             self.data["ongoing_games"] = all_games
+            if await self.check_game_over(game_id):
+                return
         if ai_colour == chess.BLACK:
             player_file, _ = self.get_board_images(board)
         else:
@@ -233,6 +235,7 @@ class Games(commands.Cog):
             player_embed.colour = discord.Colour.blue()
         player_embed.set_image(url="attachment://image.png")
         await player.send(file=player_file, embed=player_embed)
+        return True
 
     async def check_game_over(self, game_id, claiming_draw=False):
         all_games = self.data.get("ongoing_games", {})
@@ -243,8 +246,7 @@ class Games(commands.Cog):
         try:
             player1_id, player2_id = [int(x) for x in game_id.split("-")]
         except ValueError:
-            await self.ai_game_over(game_id, board)
-            return
+            return await self.ai_game_over(game_id, board)
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
         result = board.result()
