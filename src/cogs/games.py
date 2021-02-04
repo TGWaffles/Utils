@@ -204,7 +204,9 @@ class Games(commands.Cog):
             all_games["chess_games"] = chess_games
             self.data["ongoing_games"] = all_games
             if not self.check_game_over(game_id):
+                print("not game over, sending.")
                 await self.send_current_board_state(game_id)
+            print("Finished move checking, ig")
 
     async def parse_message(self, game_id, turn_message):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
