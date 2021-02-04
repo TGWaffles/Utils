@@ -112,8 +112,8 @@ class Games(commands.Cog):
         player1_embed.set_image(url="attachment://image.png")
         player2_embed.set_image(url="attachment://image.png")
         print(9)
-        await player1.send(file=player1_file)
-        await player2.send(file=player2_file)
+        await player1.send(file=player1_file, embed=player1_embed)
+        await player2.send(file=player2_file, embed=player2_embed)
         print(10)
 
 
