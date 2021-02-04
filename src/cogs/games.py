@@ -323,6 +323,8 @@ class Games(commands.Cog):
                               colour=discord.Colour.orange())
         if board.turn == chess.WHITE:
             embed.set_footer(text="It's {}'s turn!".format(self.bot.get_user(int(game_id.split("-")[0])).name))
+        else:
+            embed.set_footer(text="It's {}'s turn!".format(self.bot.get_user(int(game_id.split("-")[1])).name))
         embed.set_image(url="attachment://image.png")
         await ctx.send(file=rendered_board, embed=embed)
 
