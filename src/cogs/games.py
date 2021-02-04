@@ -54,19 +54,25 @@ class Games(commands.Cog):
 
     @commands.command()
     async def chess(self, ctx, player2: discord.Member):
+        print("1")
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
+        print(2)
         player1 = ctx.author
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
+        print(3)
         if possible_id_1 in chess_games or possible_id_2 in chess_games:
             await ctx.reply(embed=self.bot.create_error_embed("You already have a chess game with that person!"))
             return
         new_game = chess.Board()
+        print(4)
         white, black = random.choice([player1.id, player2.id])
         game_id = "{}-{}".format(white, black)
+        print(5)
         chess_games[game_id] = new_game.fen()
         self.data["ongoing_games"] = all_games
+        print(6)
         await self.send_current_board_state(game_id)
 
     async def send_current_board_state(self, game_id):
