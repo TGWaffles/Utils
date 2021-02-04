@@ -71,8 +71,8 @@ class Games(commands.Cog):
                                                               ", ".join(config.chess_difficulties.keys())))
             return
         for difficulty_level in config.chess_difficulties:
-            if "{}-{}".format(ctx.author.id, difficulty_level) in chess_games or "{}-{}".format(difficulty_level,
-                                                                                                ctx.author.id):
+            if ("{}-{}".format(ctx.author.id, difficulty_level) in chess_games
+                    or "{}-{}".format(difficulty_level, ctx.author.id) in chess_games):
                 await ctx.reply(embed=self.bot.create_error_embed("You already have an AI chess game!"))
                 return
         new_game = chess.Board()
