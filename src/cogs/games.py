@@ -129,11 +129,14 @@ class Games(commands.Cog):
             player_id = int(game_id.split("-")[0])
             difficulty_level = game_id.split("-")[1]
             ai_colour = chess.BLACK
+            player_file, _ = self.get_board_images(board)
         except ValueError:
             player_id = int(game_id.split("-")[1])
             difficulty_level = game_id.split("-")[0]
+            _, player_file = self.get_board_images(board)
             ai_colour = chess.WHITE
         player = self.bot.get_user(player_id)
+        await self.show_ai_board(player, player)
         thinking_message = None
         if board.turn == ai_colour:
             thinking_message = await player.send(embed=self.bot.create_processing_embed("Thinking...",
