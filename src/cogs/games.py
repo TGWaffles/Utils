@@ -139,6 +139,9 @@ class Games(commands.Cog):
             thinking_message = await player.send(embed=self.bot.create_processing_embed("Thinking...",
                                                                                         "The bot is thinking. "
                                                                                         "Please wait."))
+            if self.engine is None:
+                print("starting engine...")
+            self.transport, self.engine = await chess.engine.popen_uci("/usr/games/stockfish")
             limit = chess.engine.Limit(time=config.chess_difficulties[difficulty_level])
             result = await self.engine.play(board, limit)
             board.push(result.move)
@@ -479,6 +482,7 @@ class Games(commands.Cog):
             return
         if player1 == player2 and player1 is not None:
             await self.show_ai_board(ctx, player1)
+            return
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
