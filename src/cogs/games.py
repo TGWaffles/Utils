@@ -81,6 +81,10 @@ class Games(commands.Cog):
 
     @staticmethod
     def get_board_images(board):
+        try:
+            last_move = board.peek()
+        except IndexError:
+            last_move = None
         player1_oriented_svg = chess.svg.board(board=board, orientation=chess.WHITE, lastmove=last_move)
         player2_oriented_svg = chess.svg.board(board=board, orientation=chess.BLACK, lastmove=last_move)
         player1_png = BytesIO()
@@ -101,10 +105,6 @@ class Games(commands.Cog):
             return False
         board_fen = chess_games.get(game_id)
         board = chess.Board(fen=board_fen)
-        try:
-            last_move = board.peek()
-        except IndexError:
-            last_move = None
         print(8)
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
         player1 = self.bot.get_user(player1_id)
