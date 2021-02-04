@@ -1,5 +1,7 @@
 import discord
 import numpy as np
+import chess.svg
+import random
 
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
@@ -19,10 +21,10 @@ class Games(commands.Cog):
             for character in array:
                 board_embed.description += [config.c4_none, config.c4_red, config.c4_yellow][character]
             board_embed.description += "\n"
-        board_embed.add_field(name="Turn", "")
+        board_embed.add_field(name="Turn", value="It is " + ("NOT ", "")[their_turn] +"your turn!")
 
-
-    @commands.command(description="Play connect four!", aliases=["connectfour", "connect_four", "c4"])
+    @commands.command(description="Play connect four!", aliases=["connectfour", "connect_four", "c4"],
+                      enabled=False)
     async def connect4(self, ctx, player2: discord.Member):
         connect_four_games = self.data.get("ongoing_games", {}).get("connect_four", {})
         player1 = ctx.author
@@ -32,7 +34,6 @@ class Games(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("You already have a connect four game with that person!"))
             return
         game_board = np.array([[None] * 6] * 7)
-
 
     @staticmethod
     def get_kernels():
@@ -48,6 +49,24 @@ class Games(commands.Cog):
             if (convolve2d(board == player_id, kernel, mode="valid") == 4).any():
                 return True
         return False
+
+    @commands.command()
+    async def chess(self, ctx, player2: discord.Member):
+        chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        player1 = ctx.author
+        possible_id_1 = "{}-{}".format(player1.id, player2.id)
+        possible_id_2 = "{}-{}".format(player2.id, player1.id)
+        if possible_id_1 in chess_games or possible_id_2 in chess_games:
+            await ctx.reply(embed=self.bot.create_error_embed("You already have a chess game with that person!"))
+            return
+        new_game = chess.Board()
+        white, black = random.choice([player1.id, player2.id])
+        game_id = "{}-{}".format(white, black)
+        chess_games[game_id] = new_game.fen()
+
+    async def send_current_board_state(self, game_id):
+        
+
 
 
 

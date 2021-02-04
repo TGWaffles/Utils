@@ -144,11 +144,15 @@ class Misc(commands.Cog):
         og_cog: OGCog = self.bot.get_cog("OGCog")
         try:
             is_og = og_cog.is_og(member)
+            print("checking og for {}".format(member.name))
             if is_og:
+                print("IS OG!")
                 if data.get("og_roles", {}).get(str(member.guild.id), None) is not None:
                     og_role = member.guild.get_role(data.get("og_roles", {}).get(str(member.guild.id), None))
+                    print("Gotten OG role!")
                     if og_role is not None:
                         await member.add_roles(og_role)
+                        print("Added role!")
         except AssertionError:
             pass
 
