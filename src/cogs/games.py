@@ -136,8 +136,20 @@ class Games(commands.Cog):
             _, player_file = self.get_board_images(board)
             ai_colour = chess.WHITE
         player = self.bot.get_user(player_id)
-        await self.show_ai_board(player, player)
         thinking_message = None
+        if ai_colour == chess.WHITE:
+            embed = discord.Embed(title="Chess Game between {} AI (WHITE) and {} (BLACK)!".format(difficulty_level,
+                                                                                                  player.name))
+        else:
+            embed = discord.Embed(title="Chess Game between {} (WHITE) and {} AI (BLACK)!".format(player.name,
+                                                                                                  difficulty_level))
+        embed.colour = discord.Colour.orange()
+        if board.turn == ai_colour:
+            embed.set_footer(text="It's the AI's turn!")
+        else:
+            embed.set_footer(text="It's {}'s turn!".format(player.name))
+        embed.set_image(url="attachment://image.png")
+        await player.send(file=player_file, embed=embed)
         if board.turn == ai_colour:
             thinking_message = await player.send(embed=self.bot.create_processing_embed("Thinking...",
                                                                                         "The bot is thinking. "
