@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.22.6"
+version_number = "1.22.7"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -42,6 +42,12 @@ discord_emoji = "<:discord:784309400524292117>"
 c4_yellow = "<:c4yellow:806008963803381810>"
 c4_red = "<:c4red:806009125497864204>"
 c4_none = ":black_large_square:"
+
+
+chess_difficulties = {"easy": 0.5,
+                      "medium": 3,
+                      "hard": 10,
+                      "grandmaster": 30}
 
 
 # Settings for purge

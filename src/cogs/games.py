@@ -1,6 +1,7 @@
 import discord
 import numpy as np
 import chess.svg
+import chess.engine
 import random
 from typing import Optional
 from io import BytesIO
@@ -18,6 +19,7 @@ class Games(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.data = DataHelper()
+        self.transport, self.engine = await chess.engine.popen_uci("/usr/games/stockfish")
 
     async def connect4_send_to_player(self, player, board: np.array, their_turn):
         board_embed = discord.Embed(title="Connect Four!", colour=discord.Colour.light_grey())
@@ -53,6 +55,32 @@ class Games(commands.Cog):
             if (convolve2d(board == player_id, kernel, mode="valid") == 4).any():
                 return True
         return False
+
+    @commands.command()
+    async def chess_ai(self, ctx, difficulty: str = "easy"):
+        all_games = self.data.get("ongoing_games", {})
+        chess_games = all_games.get("chess_games", {})
+        difficulty = difficulty.lower()
+        player = ctx.author
+        if difficulty not in config.chess_difficulties:
+            await ctx.reply(embed=self.bot.create_error_embed("That difficulty is not available. "
+                                                              "Please choose from the following: " +
+                                                              ", ".join(config.chess_difficulties.keys())))
+            return
+        for difficulty_level in config.chess_difficulties:
+            if "{}-{}".format(ctx.author.id, difficulty_level) in chess_games or "{}-{}".format(difficulty_level,
+                                                                                                ctx.author.id):
+                await ctx.reply(embed=self.bot.create_error_embed("You already have an AI chess game!"))
+                return
+        new_game = chess.Board()
+        both_ids = [player.id, difficulty]
+        random.shuffle(both_ids)
+        white, black = both_ids
+        game_id = "{}-{}".format(white, black)
+        chess_games[game_id] = new_game.fen()
+        all_games["chess_games"] = chess_games
+        self.data["ongoing_games"] = all_games
+        await self.send_current_board_state(game_id)
 
     @commands.command()
     async def chess(self, ctx, player2: discord.Member):
@@ -92,6 +120,38 @@ class Games(commands.Cog):
         player2_file = discord.File(fp=player2_png, filename="image.png")
         return player1_file, player2_file
 
+    async def handle_ai_board_state(self, game_id, board):
+        try:
+            player_id = int(game_id.split("-")[0])
+            difficulty_level = game_id.split("-")[1]
+            ai_colour = chess.BLACK
+        except ValueError:
+            player_id = int(game_id.split("-")[1])
+            difficulty_level = game_id.split("-")[0]
+            ai_colour = chess.WHITE
+        player = self.bot.get_user(player_id)
+        thinking_message = None
+        if board.turn == ai_colour:
+            thinking_message = await player.send(embed=self.bot.create_processing_embed("Thinking...",
+                                                                                        "The bot is thinking. "
+                                                                                        "Please wait."))
+            limit = chess.engine.Limit(time=config.chess_difficulties[difficulty_level])
+            result = await self.engine.play(board, limit)
+            board.push(result.move)
+        if ai_colour == chess.BLACK:
+            player_file, _ = self.get_board_images(board)
+        else:
+            _, player_file = self.get_board_images(board)
+        player_embed = discord.Embed(title="Chess Game between {} and {} bot!".format(player.name, difficulty_level),
+                                     colour=discord.Colour.orange())
+        player_embed.set_image(url="attachment://image.png")
+        player_embed.set_author(name=game_id)
+        player_embed.set_footer(text="It's your turn to move!")
+        if thinking_message is None:
+            await player.send(file=player_file, embed=player_embed)
+        else:
+            await thinking_message.edit(file=player_file, embed=player_embed)
+
     async def send_current_board_state(self, game_id, board=None):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         if game_id not in chess_games:
@@ -99,7 +159,11 @@ class Games(commands.Cog):
         board_fen = chess_games.get(game_id)
         if board is None:
             board = chess.Board(fen=board_fen)
-        player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        try:
+            player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        except ValueError:
+            await self.handle_ai_board_state(game_id, board)
+            return
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
         player1_embed = discord.Embed(title="Chess Game between {} and {}!".format(player1.name, player2.name),
@@ -135,13 +199,44 @@ class Games(commands.Cog):
         all_players[str(player_id)] = current_player
         self.data["chess_scores"] = all_players
 
+    async def ai_game_over(self, game_id, board):
+        try:
+            player_file, _ = self.get_board_images(board)
+            player_id = int(game_id.split("-")[0])
+            difficulty_level = game_id.split("-")[1]
+            ai_colour = chess.BLACK
+        except ValueError:
+            _, player_file = self.get_board_images(board)
+            player_id = int(game_id.split("-")[0])
+            difficulty_level = game_id.split("-")[0]
+            ai_colour = chess.WHITE
+        result = board.result()
+        white_points, black_points = result.split("-")
+        player_embed = discord.Embed()
+        player = self.bot.get_user(player_id)
+        if white_points == "1" and ai_colour == chess.BLACK or black_points == "1" and ai_colour == chess.WHITE:
+            player_embed.title = messages.chess_win.format("{} AI".format(difficulty_level))
+            player_embed.colour = discord.Colour.green()
+        elif black_points == "1" and ai_colour == chess.BLACK or white_points == "1" and ai_colour == chess.WHITE:
+            player_embed.title = messages.chess_loss.format("{} AI".format(difficulty_level))
+            player_embed.colour = discord.Colour.red()
+        else:
+            player_embed.title = messages.chess_draw.format("{} AI".format(difficulty_level))
+            player_embed.colour = discord.Colour.blue()
+        player_embed.set_image(url="attachment://image.png")
+        await player.send(file=player_file, embed=player_embed)
+
     async def check_game_over(self, game_id, claiming_draw=False):
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
         board = chess.Board(fen=chess_games[game_id])
         if not board.is_game_over(claim_draw=claiming_draw):
             return False
-        player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        try:
+            player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        except ValueError:
+            await self.ai_game_over(game_id, board)
+            return
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
         result = board.result()
@@ -181,8 +276,15 @@ class Games(commands.Cog):
 
     async def handle_move(self, game_id, turn_message, board, move_info):
         split_into_spaces = move_info.split(" ")
-        white_id, black_id = [int(x) for x in game_id.split("-")]
-        player_colour = (chess.WHITE, chess.BLACK)[black_id == turn_message.author.id]
+        try:
+            white_id, black_id = [int(x) for x in game_id.split("-")]
+            player_colour = (chess.WHITE, chess.BLACK)[black_id == turn_message.author.id]
+        except ValueError:
+            try:
+                int(game_id.split("-")[0])
+                player_colour = chess.WHITE
+            except ValueError:
+                player_colour = chess.BLACK
         if len(split_into_spaces) == 1:
             try:
                 square = chess.parse_square(move_info)
@@ -237,13 +339,30 @@ class Games(commands.Cog):
             return
         await self.check_game_over(game_id, claiming_draw=True)
 
+    async def ai_resign(self, game_id, author, board):
+        try:
+            player_file, _ = self.get_board_images(board)
+            difficulty_level = game_id.split("-")[1]
+        except ValueError:
+            _, player_file = self.get_board_images(board)
+            difficulty_level = game_id.split("-")[0]
+        embed = discord.Embed(title="{} has resigned from the {} vs {} AI chess game.".format(author.name, author.name,
+                                                                                              difficulty_level),
+                              colour=discord.Colour.red())
+        embed.set_image(url="attachment://image.png")
+        await author.send(file=player_file, embed=embed)
+
     async def handle_resign(self, game_id, author, board):
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
         del chess_games[game_id]
         all_games["chess_games"] = chess_games
         self.data["ongoing_games"] = all_games
-        player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        try:
+            player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        except ValueError:
+            await self.ai_resign(game_id, author, board)
+            return
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
         player1_file, player2_file = self.get_board_images(board)
@@ -267,11 +386,14 @@ class Games(commands.Cog):
         board_fen = chess_games.get(game_id)
         board = chess.Board(fen=board_fen)
         turn_command = turn_message.content.partition(" ")[0].lower()
-        white_id, black_id = [int(x) for x in game_id.split("-")]
-        if ((turn_message.author.id == white_id and board.turn == chess.BLACK) or
-                (turn_message.author.id == black_id and board.turn == chess.WHITE)):
-            await turn_message.reply(embed=self.bot.create_error_embed("It is not your turn!"))
-            return True
+        try:
+            white_id, black_id = [int(x) for x in game_id.split("-")]
+            if ((turn_message.author.id == white_id and board.turn == chess.BLACK) or
+                    (turn_message.author.id == black_id and board.turn == chess.WHITE)):
+                await turn_message.reply(embed=self.bot.create_error_embed("It is not your turn!"))
+                return True
+        except ValueError:
+            pass
         if turn_command == "move":
             await self.handle_move(game_id, turn_message, board, turn_message.content.partition("move ")[2])
         elif turn_command == "resign":
@@ -300,11 +422,50 @@ class Games(commands.Cog):
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         await ctx.send(embed=embed)
 
+    async def show_ai_board(self, ctx):
+        chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        game_id = None
+        for difficulty_level in config.chess_difficulties:
+            if "{}-{}".format(ctx.author.id, difficulty_level) in chess_games:
+                game_id = "{}-{}".format(ctx.author.id, difficulty_level)
+                break
+            if "{}-{}".format(difficulty_level, ctx.author.id) in chess_games:
+                game_id = "{}-{}".format(difficulty_level, ctx.author.id)
+                break
+        if game_id is None:
+            await ctx.reply(embed=self.bot.create_error_embed("You don't have an AI game!"))
+            return
+        board = chess.Board(fen=chess_games[game_id])
+        try:
+            player_file, _ = self.get_board_images(board)
+            difficulty_level = game_id.split("-")[1]
+            ai_colour = chess.BLACK
+        except ValueError:
+            _, player_file = self.get_board_images(board)
+            difficulty_level = game_id.split("-")[0]
+            ai_colour = chess.WHITE
+        if ai_colour == chess.WHITE:
+            embed = discord.Embed(title="Chess Game between {} AI (WHITE) and {} (BLACK)!".format(difficulty_level,
+                                                                                                  ctx.author.name))
+        else:
+            embed = discord.Embed(title="Chess Game between {} (WHITE) and {} AI (BLACK)!".format(ctx.author.name,
+                                                                                                  difficulty_level))
+        embed.colour = discord.Colour.orange()
+        if board.turn == ai_colour:
+            embed.set_footer(text="It's the AI's turn!")
+        else:
+            embed.set_footer(text="It's {}'s turn!".format(ctx.author.name))
+        embed.set_image(url="attachment://image.png")
+        await ctx.send(file=player_file, embed=embed)
+
     @commands.command()
-    async def show_board(self, ctx, player1: discord.User, player2: Optional[discord.User]):
+    async def show_board(self, ctx, player1: Optional[discord.User], player2: Optional[discord.User]):
         if player2 is None:
             player2 = player1
             player1 = ctx.author
+        if player2 is None:
+            await self.show_ai_board(ctx)
+            return
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
