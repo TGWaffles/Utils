@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.21.1dev1"
+version_number = "1.21.2"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -9,7 +9,7 @@ power_id = 739600091480064010
 zex_id = 734597893624692778
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
-              "hypixel", "api", "og_checker"]
+              "hypixel", "api", "og_checker", "games"]
 
 monkey_guild_id = 725886999646437407
 error_channel_id = 795057163768037376

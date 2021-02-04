@@ -2,6 +2,8 @@ import discord
 import numpy as np
 import chess.svg
 import random
+from io import BytesIO
+from cairosvg import svg2png
 
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
@@ -52,7 +54,8 @@ class Games(commands.Cog):
 
     @commands.command()
     async def chess(self, ctx, player2: discord.Member):
-        chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        all_games = self.data.get("ongoing_games", {})
+        chess_games = all_games.get("chess_games", {})
         player1 = ctx.author
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
@@ -63,12 +66,38 @@ class Games(commands.Cog):
         white, black = random.choice([player1.id, player2.id])
         game_id = "{}-{}".format(white, black)
         chess_games[game_id] = new_game.fen()
+        self.data["ongoing_games"] = all_games
+        await self.send_current_board_state(game_id)
 
     async def send_current_board_state(self, game_id):
-        
-
-
-
+        chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        if game_id not in chess_games:
+            return False
+        board_fen = chess_games.get(game_id)
+        board = chess.Board(fen=board_fen)
+        try:
+            last_move = board.peek()
+        except IndexError:
+            last_move = None
+        player1_oriented_svg = chess.svg.board(board=board, orientation=chess.WHITE, lastmove=last_move)
+        player2_oriented_svg = chess.svg.board(board=board, orientation=chess.BLACK, lastmove=last_move)
+        player1_png = BytesIO()
+        player2_png = BytesIO()
+        svg2png(bytestring=player1_oriented_svg, write_to=player1_png)
+        svg2png(bytestring=player2_oriented_svg, write_to=player2_png)
+        player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        player1 = self.bot.get_user(player1_id)
+        player2 = self.bot.get_user(player2_id)
+        player1_file = discord.File(fp=player1_png, filename="image.png")
+        player2_file = discord.File(fp=player2_png, filename="image.png")
+        player1_embed = discord.Embed(title="Chess Game")
+        player2_embed = discord.Embed(title="Chess Game")
+        player1_embed.set_author(name=game_id)
+        player2_embed.set_author(name=game_id)
+        player1_embed.set_image(url="attachment://image.png")
+        player2_embed.set_image(url="attachment://image.png")
+        await player1.send(file=player1_file, embed=player1_embed)
+        await player2.send(file=player2_file, embed=player2_embed)
 
 
 def setup(bot):
