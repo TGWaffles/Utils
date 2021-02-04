@@ -73,6 +73,7 @@ class Games(commands.Cog):
         game_id = "{}-{}".format(white, black)
         print(5)
         chess_games[game_id] = new_game.fen()
+        all_games["chess_games"] = chess_games
         print(all_games)
         self.data["ongoing_games"] = all_games
         print(6)
