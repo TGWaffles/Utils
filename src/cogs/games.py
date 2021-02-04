@@ -151,10 +151,9 @@ class Games(commands.Cog):
         player_embed.set_image(url="attachment://image.png")
         player_embed.set_author(name=game_id)
         player_embed.set_footer(text="It's your turn to move!")
-        if thinking_message is None:
-            await player.send(file=player_file, embed=player_embed)
-        else:
-            await thinking_message.edit(file=player_file, embed=player_embed)
+        await player.send(file=player_file, embed=player_embed)
+        if thinking_message is not None:
+            await thinking_message.delete()
 
     async def send_current_board_state(self, game_id, board=None):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
