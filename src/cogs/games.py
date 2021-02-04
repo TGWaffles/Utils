@@ -130,7 +130,7 @@ class Games(commands.Cog):
     async def check_game_over(self, game_id, claiming_draw=False):
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
-        board = chess_games[game_id]
+        board = chess.Board(fen=chess_games[game_id])
         if not board.is_game_over():
             return False
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
