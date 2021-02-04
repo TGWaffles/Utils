@@ -98,9 +98,9 @@ class Games(commands.Cog):
         print(8)
         svg2png(bytestring=player1_oriented_svg, write_to=player1_png)
         svg2png(bytestring=player2_oriented_svg, write_to=player2_png)
-        with open("test.png", 'wb') as outfile:
-            outfile.write(player1_png.getbuffer().tobytes())
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        player1_png.seek(0)
+        player2_png.seek(0)
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
         player1_file = discord.File(fp=player1_png, filename="image.png")
