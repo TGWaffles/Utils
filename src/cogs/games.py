@@ -88,6 +88,7 @@ class Games(commands.Cog):
             last_move = board.peek()
         except IndexError:
             last_move = None
+        print(8)
         player1_oriented_svg = chess.svg.board(board=board, orientation=chess.WHITE, lastmove=last_move)
         player2_oriented_svg = chess.svg.board(board=board, orientation=chess.BLACK, lastmove=last_move)
         player1_png = BytesIO()
