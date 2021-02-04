@@ -305,6 +305,7 @@ class Games(commands.Cog):
             if piece is None or piece.color != player_colour:
                 await turn_message.reply(embed=self.bot.create_error_embed("That square doesn't contain one of your "
                                                                            "pieces!"))
+                return
             legal_squares = chess.SquareSet([move.to_square for move in board.legal_moves
                                              if move.from_square == square])
             board_svg = chess.svg.board(board=board, orientation=player_colour, squares=legal_squares)
@@ -432,15 +433,15 @@ class Games(commands.Cog):
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         await ctx.send(embed=embed)
 
-    async def show_ai_board(self, ctx):
+    async def show_ai_board(self, ctx, player):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         game_id = None
         for difficulty_level in config.chess_difficulties:
-            if "{}-{}".format(ctx.author.id, difficulty_level) in chess_games:
-                game_id = "{}-{}".format(ctx.author.id, difficulty_level)
+            if "{}-{}".format(player.id, difficulty_level) in chess_games:
+                game_id = "{}-{}".format(player.id, difficulty_level)
                 break
-            if "{}-{}".format(difficulty_level, ctx.author.id) in chess_games:
-                game_id = "{}-{}".format(difficulty_level, ctx.author.id)
+            if "{}-{}".format(difficulty_level, player.id) in chess_games:
+                game_id = "{}-{}".format(difficulty_level, player.id)
                 break
         if game_id is None:
             await ctx.reply(embed=self.bot.create_error_embed("You don't have an AI game!"))
@@ -456,15 +457,15 @@ class Games(commands.Cog):
             ai_colour = chess.WHITE
         if ai_colour == chess.WHITE:
             embed = discord.Embed(title="Chess Game between {} AI (WHITE) and {} (BLACK)!".format(difficulty_level,
-                                                                                                  ctx.author.name))
+                                                                                                  player.name))
         else:
-            embed = discord.Embed(title="Chess Game between {} (WHITE) and {} AI (BLACK)!".format(ctx.author.name,
+            embed = discord.Embed(title="Chess Game between {} (WHITE) and {} AI (BLACK)!".format(player.name,
                                                                                                   difficulty_level))
         embed.colour = discord.Colour.orange()
         if board.turn == ai_colour:
             embed.set_footer(text="It's the AI's turn!")
         else:
-            embed.set_footer(text="It's {}'s turn!".format(ctx.author.name))
+            embed.set_footer(text="It's {}'s turn!".format(player.name))
         embed.set_image(url="attachment://image.png")
         await ctx.send(file=player_file, embed=embed)
 
@@ -474,8 +475,10 @@ class Games(commands.Cog):
             player2 = player1
             player1 = ctx.author
         if player2 is None:
-            await self.show_ai_board(ctx)
+            await self.show_ai_board(ctx, ctx.author)
             return
+        if player1 == player2 and player1 is not None:
+            await self.show_ai_board(ctx, player1)
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
