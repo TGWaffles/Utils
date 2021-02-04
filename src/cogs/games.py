@@ -59,6 +59,7 @@ class Games(commands.Cog):
     @commands.command()
     async def chess_ai(self, ctx, difficulty: str = "easy"):
         if self.engine is None:
+            print("starting engine...")
             self.transport, self.engine = await chess.engine.popen_uci("/usr/games/stockfish")
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
@@ -123,6 +124,7 @@ class Games(commands.Cog):
         return player1_file, player2_file
 
     async def handle_ai_board_state(self, game_id, board):
+        print("handling board state...")
         try:
             player_id = int(game_id.split("-")[0])
             difficulty_level = game_id.split("-")[1]
