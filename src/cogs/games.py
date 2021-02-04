@@ -6,6 +6,7 @@ from io import BytesIO
 from cairosvg import svg2png
 
 from src.helpers.storage_helper import DataHelper
+from src.storage import messages
 from src.storage import config
 from discord.ext import commands
 from main import UtilsBot
@@ -78,6 +79,20 @@ class Games(commands.Cog):
         print(6)
         await self.send_current_board_state(game_id)
 
+    @staticmethod
+    def get_board_images(board):
+        player1_oriented_svg = chess.svg.board(board=board, orientation=chess.WHITE, lastmove=last_move)
+        player2_oriented_svg = chess.svg.board(board=board, orientation=chess.BLACK, lastmove=last_move)
+        player1_png = BytesIO()
+        player2_png = BytesIO()
+        svg2png(bytestring=player1_oriented_svg, write_to=player1_png)
+        svg2png(bytestring=player2_oriented_svg, write_to=player2_png)
+        player1_png.seek(0)
+        player2_png.seek(0)
+        player1_file = discord.File(fp=player1_png, filename="image.png")
+        player2_file = discord.File(fp=player2_png, filename="image.png")
+        return player1_file, player2_file
+
     async def send_current_board_state(self, game_id):
         print(7)
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
@@ -91,22 +106,11 @@ class Games(commands.Cog):
         except IndexError:
             last_move = None
         print(8)
-        player1_oriented_svg = chess.svg.board(board=board, orientation=chess.WHITE, lastmove=last_move)
-        player2_oriented_svg = chess.svg.board(board=board, orientation=chess.BLACK, lastmove=last_move)
-        player1_png = BytesIO()
-        player2_png = BytesIO()
-        print(8)
-        svg2png(bytestring=player1_oriented_svg, write_to=player1_png)
-        svg2png(bytestring=player2_oriented_svg, write_to=player2_png)
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
-        player1_png.seek(0)
-        player2_png.seek(0)
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
-        player1_file = discord.File(fp=player1_png, filename="image.png")
-        player2_file = discord.File(fp=player2_png, filename="image.png")
-        player1_embed = discord.Embed(title="Chess Game")
-        player2_embed = discord.Embed(title="Chess Game")
+        player1_embed = discord.Embed(title="Chess Game between {} and {}!".format(player1.name, player2.name))
+        player2_embed = discord.Embed(title="Chess Game between {} and {}!".format(player1.name, player2.name))
         player1_embed.set_author(name=game_id)
         player2_embed.set_author(name=game_id)
         player1_embed.set_image(url="attachment://image.png")
@@ -117,10 +121,145 @@ class Games(commands.Cog):
         else:
             player1_embed.set_footer(text="It's {}'s turn to move!".format(player2.name))
             player2_embed.set_footer(text="It's your turn to move!")
+        player1_file, player2_file = self.get_board_images(board)
         print(9)
         await player1.send(file=player1_file, embed=player1_embed)
         await player2.send(file=player2_file, embed=player2_embed)
         print(10)
+
+    async def check_game_over(self, game_id, claiming_draw=False):
+        all_games = self.data.get("ongoing_games", {})
+        chess_games = all_games.get("chess_games", {})
+        board = chess_games[game_id]
+        if not board.is_game_over():
+            return False
+        player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        player1 = self.bot.get_user(player1_id)
+        player2 = self.bot.get_user(player2_id)
+        result = board.result()
+        white_points, black_points = result.split("-")
+        player1_embed = discord.Embed()
+        player2_embed = discord.Embed()
+        if white_points == "1":
+            player1_embed.title = messages.chess_win.format(player2.name)
+            player2_embed.title = messages.chess_loss(player1.name)
+        elif black_points == "1":
+            player2_embed.title = messages.chess_win.format(player1.name)
+            player1_embed.title = messages.chess_loss(player2.name)
+        else:
+            player1_embed.title = messages.chess_draw.format(player2.name)
+            player2_embed.title = messages.chess_draw.format(player1.name)
+        player1_file, player2_file = self.get_board_images(board)
+        player1_embed.set_image(url="attachment://image.png")
+        player2_embed.set_image(url="attachment://image.png")
+        await player1.send(file=player1_file, embed=player1_embed)
+        await player2.send(file=player2_file, embed=player2_embed)
+        del chess_games[game_id]
+        all_games["chess_games"] = chess_games
+        self.data["ongoing_games"] = all_games
+        return True
+
+    async def handle_move(self, game_id, turn_message, board, move_info):
+        split_into_spaces = move_info.split(" ")
+        white_id, black_id = [int(x) for x in game_id.split("-")]
+        player_colour = (chess.WHITE, chess.BLACK)[black_id == turn_message.author.id]
+        if len(split_into_spaces) == 1:
+            try:
+                square = chess.parse_square(move_info)
+            except ValueError:
+                await turn_message.reply(embed=self.bot.create_error_embed(messages.invalid_chess_square))
+                return
+            piece = board.piece_at(square)
+            if piece is None or piece.color != player_colour:
+                await turn_message.reply(embed=self.bot.create_error_embed("That square doesn't contain one of your "
+                                                                           "pieces!"))
+            squares = board.attacks(square)
+            board_svg = chess.svg.board(board=board, orientation=player_colour, squares=squares)
+            board_png = BytesIO()
+            svg2png(bytestring=board_svg, write_to=board_png)
+            board_png.seek(0)
+            embed = discord.Embed(title="Possible moves for {} at {}".format(chess.piece_name(piece.piece_type),
+                                                                             chess.square_name(square)))
+            file = discord.File(fp=board_png, filename="image.png")
+            embed.set_image(url="attachment://image.png")
+            await turn_message.reply(file=file, embed=embed)
+            return
+        else:
+            move_uci = "".join(split_into_spaces)
+            try:
+                move = chess.Move.from_uci(move_uci)
+            except ValueError:
+                await turn_message.reply(embed=self.bot.create_error_embed("I couldn't interpret that "
+                                                                           "as a valid move!"))
+                return
+            if move not in board.legal_moves:
+                await turn_message.reply(embed=self.bot.create_error_embed("That move is NOT legal. Make sure that's "
+                                                                           "your piece, a valid move for that piece, "
+                                                                           "and that you're not in check."))
+                return
+            board.push(move)
+            all_games = self.data.get("ongoing_games", {})
+            chess_games = all_games.get("chess_games", {})
+            chess_games[game_id] = board.fen()
+            all_games["chess_games"] = chess_games
+            self.data["ongoing_games"] = all_games
+            if not self.check_game_over(game_id):
+                await self.send_current_board_state(game_id)
+
+    async def parse_message(self, game_id, turn_message):
+        chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        if game_id not in chess_games:
+            return False
+        board_fen = chess_games.get(game_id)
+        board = chess.Board(fen=board_fen)
+        turn_command = turn_message.content.partition(" ")[0].lower()
+        white_id, black_id = [int(x) for x in game_id.split("-")]
+        if ((turn_message.author.id == white_id and board.turn == chess.BLACK) or
+                (turn_message.author.id == black_id and board.turn == chess.WHITE)):
+            await turn_message.reply(embed=self.bot.create_error_embed("It is not your turn!"))
+            return True
+        if turn_command == "move":
+            await self.handle_move(game_id, turn_message, board, turn_message.content.partition("move ")[2])
+        elif turn_command == "resign":
+            pass
+        elif turn_command == "draw":
+            pass
+        else:
+            await turn_message.reply(embed=self.bot.create_error_embed(messages.invalid_chess_command))
+
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.guild is not None:
+            return
+        else:
+            chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+            game_ids = chess_games.keys()
+            players_games = [x for x in game_ids if str(message.author.id) in x]
+            if len(players_games) > 1 and message.reference is None:
+                await message.reply(embed=self.bot.create_error_embed("You have multiple games! Please **reply** to "
+                                                                      "the game you're making a move in."))
+                return
+            elif len(players_games) > 1:
+                referenced_message = message.channel.fetch_message(message.reference.message_id)
+                if not referenced_message.author == self.bot.user:
+                    await message.reply(embed=self.bot.create_error_embed("That is not a message that I sent!"))
+                    return
+                if len(referenced_message.embeds) == 0:
+                    await message.reply(embed=self.bot.create_error_embed("That message has no embeds!"))
+                    return
+                embed = referenced_message.embeds[0]
+                if embed.author == discord.Embed.Empty:
+                    await message.reply(embed=self.bot.create_error_embed("That's not a chess message."))
+                    return
+                game_id = embed.author.name
+            elif len(players_games) == 0:
+                await message.reply(embed=self.bot.create_error_embed("You currently don't have a chess game!"))
+                return
+            else:
+                game_id = players_games[0]
+            if not await self.parse_message(game_id, message):
+                await message.reply(embed=self.bot.create_error_embed("That game appears to be invalid."))
 
 
 def setup(bot):
