@@ -238,6 +238,11 @@ class Games(commands.Cog):
             player_embed.colour = discord.Colour.blue()
         player_embed.set_image(url="attachment://image.png")
         await player.send(file=player_file, embed=player_embed)
+        all_games = self.data.get("ongoing_games", {})
+        chess_games = all_games.get("chess_games", {})
+        del chess_games[game_id]
+        all_games["chess_games"] = chess_games
+        self.data["ongoing_games"] = all_games
         return True
 
     async def check_game_over(self, game_id, claiming_draw=False):
