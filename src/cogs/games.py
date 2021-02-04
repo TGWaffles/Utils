@@ -78,6 +78,7 @@ class Games(commands.Cog):
         await self.send_current_board_state(game_id)
 
     async def send_current_board_state(self, game_id):
+        print(7)
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         if game_id not in chess_games:
             return False
@@ -91,6 +92,7 @@ class Games(commands.Cog):
         player2_oriented_svg = chess.svg.board(board=board, orientation=chess.BLACK, lastmove=last_move)
         player1_png = BytesIO()
         player2_png = BytesIO()
+        print(8)
         svg2png(bytestring=player1_oriented_svg, write_to=player1_png)
         svg2png(bytestring=player2_oriented_svg, write_to=player2_png)
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
@@ -104,8 +106,10 @@ class Games(commands.Cog):
         player2_embed.set_author(name=game_id)
         player1_embed.set_image(url="attachment://image.png")
         player2_embed.set_image(url="attachment://image.png")
+        print(9)
         await player1.send(file=player1_file, embed=player1_embed)
         await player2.send(file=player2_file, embed=player2_embed)
+        print(10)
 
 
 def setup(bot):
