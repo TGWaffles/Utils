@@ -203,7 +203,7 @@ class Games(commands.Cog):
             chess_games[game_id] = board.fen()
             all_games["chess_games"] = chess_games
             self.data["ongoing_games"] = all_games
-            if not self.check_game_over(game_id):
+            if not await self.check_game_over(game_id):
                 print("not game over, sending.")
                 await self.send_current_board_state(game_id)
             print("Finished move checking, ig")
