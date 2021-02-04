@@ -2,6 +2,7 @@ import discord
 import numpy as np
 import chess.svg
 import random
+from typing import Optional
 from io import BytesIO
 from cairosvg import svg2png
 
@@ -91,12 +92,13 @@ class Games(commands.Cog):
         player2_file = discord.File(fp=player2_png, filename="image.png")
         return player1_file, player2_file
 
-    async def send_current_board_state(self, game_id):
+    async def send_current_board_state(self, game_id, board=None):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         if game_id not in chess_games:
             return False
         board_fen = chess_games.get(game_id)
-        board = chess.Board(fen=board_fen)
+        if board is None:
+            board = chess.Board(fen=board_fen)
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
@@ -227,7 +229,7 @@ class Games(commands.Cog):
             all_games["chess_games"] = chess_games
             self.data["ongoing_games"] = all_games
             if not await self.check_game_over(game_id):
-                await self.send_current_board_state(game_id)
+                await self.send_current_board_state(game_id, board)
 
     async def handle_draw(self, game_id, turn_message, board):
         if not board.can_claim_draw():
@@ -297,6 +299,32 @@ class Games(commands.Cog):
         embed.add_field(name="Games Drawn", value=str(draw_score), inline=True)
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def show_board(self, ctx, player1: discord.User, player2: Optional[discord.User]):
+        if player2 is None:
+            player2 = player1
+            player1 = ctx.author
+        chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        possible_id_1 = "{}-{}".format(player1.id, player2.id)
+        possible_id_2 = "{}-{}".format(player2.id, player1.id)
+        if possible_id_1 in chess_games:
+            board_fen = chess_games[possible_id_1]
+            game_id = possible_id_1
+        elif possible_id_2 in chess_games:
+            board_fen = chess_games[possible_id_2]
+            game_id = possible_id_2
+        else:
+            await ctx.reply(embed=self.bot.create_error_embed("There is no game between those two members!"))
+            return
+        board = chess.Board(fen=board_fen)
+        rendered_board, _ = self.get_board_images(board)
+        embed = discord.Embed(title="Chess Game between {} and {}!".format(player1.name, player2.name),
+                              colour=discord.Colour.orange())
+        if board.turn == chess.WHITE:
+            embed.set_footer(text="It's {}'s turn!".format(self.bot.get_user(int(game_id.split("-")[0])).name))
+        embed.set_image(url="attachment://image.png")
+        await ctx.send(file=rendered_board, embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):
