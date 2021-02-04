@@ -317,9 +317,12 @@ class Games(commands.Cog):
         else:
             await ctx.reply(embed=self.bot.create_error_embed("There is no game between those two members!"))
             return
+        player1_id, player2_id = [int(x) for x in game_id.split("-")]
+        if player2.id == player1_id:
+            player1, player2 = player2, player1
         board = chess.Board(fen=board_fen)
         rendered_board, _ = self.get_board_images(board)
-        embed = discord.Embed(title="Chess Game between {} and {}!".format(player1.name, player2.name),
+        embed = discord.Embed(title="Chess Game between {} (WHITE) and {} (BLACK)!".format(player1.name, player2.name),
                               colour=discord.Colour.orange())
         if board.turn == chess.WHITE:
             embed.set_footer(text="It's {}'s turn!".format(self.bot.get_user(int(game_id.split("-")[0])).name))
