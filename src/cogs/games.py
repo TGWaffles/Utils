@@ -251,6 +251,12 @@ class Games(commands.Cog):
         embed.set_image(url="attachment://image.png")
         await player1.send(file=player1_file, embed=embed)
         await player2.send(file=player2_file, embed=embed)
+        if author.id == player1_id:
+            self.mark_win_loss_draw(player1_id, 0)
+            self.mark_win_loss_draw(player2_id, 1)
+        elif author.id == player2.id:
+            self.mark_win_loss_draw(player1_id, 1)
+            self.mark_win_loss_draw(player2_id, 0)
 
     async def parse_message(self, game_id, turn_message):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
