@@ -55,28 +55,22 @@ class Games(commands.Cog):
 
     @commands.command()
     async def chess(self, ctx, player2: discord.Member):
-        print("1")
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
-        print(2)
         player1 = ctx.author
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
-        print(3)
         if possible_id_1 in chess_games or possible_id_2 in chess_games:
             await ctx.reply(embed=self.bot.create_error_embed("You already have a chess game with that person!"))
             return
         new_game = chess.Board()
-        print(4)
         both_ids = [player1.id, player2.id]
         random.shuffle(both_ids)
         white, black = both_ids
         game_id = "{}-{}".format(white, black)
-        print(5)
         chess_games[game_id] = new_game.fen()
         all_games["chess_games"] = chess_games
         self.data["ongoing_games"] = all_games
-        print(6)
         await self.send_current_board_state(game_id)
 
     @staticmethod
@@ -98,14 +92,11 @@ class Games(commands.Cog):
         return player1_file, player2_file
 
     async def send_current_board_state(self, game_id):
-        print(7)
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
-        print(chess_games)
         if game_id not in chess_games:
             return False
         board_fen = chess_games.get(game_id)
         board = chess.Board(fen=board_fen)
-        print(8)
         player1_id, player2_id = [int(x) for x in game_id.split("-")]
         player1 = self.bot.get_user(player1_id)
         player2 = self.bot.get_user(player2_id)
@@ -124,10 +115,8 @@ class Games(commands.Cog):
             player1_embed.set_footer(text="It's {}'s turn to move!".format(player2.name))
             player2_embed.set_footer(text="It's your turn to move!")
         player1_file, player2_file = self.get_board_images(board)
-        print(9)
         await player1.send(file=player1_file, embed=player1_embed)
         await player2.send(file=player2_file, embed=player2_embed)
-        print(10)
 
     def mark_win_loss_draw(self, player_id, has_won):
         all_players = self.data.get("chess_scores", {})
@@ -234,9 +223,7 @@ class Games(commands.Cog):
             all_games["chess_games"] = chess_games
             self.data["ongoing_games"] = all_games
             if not await self.check_game_over(game_id):
-                print("not game over, sending.")
                 await self.send_current_board_state(game_id)
-            print("Finished move checking, ig")
 
     async def handle_draw(self, game_id, turn_message, board):
         if not board.can_claim_draw():
@@ -281,7 +268,7 @@ class Games(commands.Cog):
             await self.handle_draw(game_id, turn_message, board)
         else:
             await turn_message.reply(embed=self.bot.create_error_embed(messages.invalid_chess_command))
-            return False
+            return True
         return True
 
     @commands.command()
