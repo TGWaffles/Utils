@@ -73,6 +73,7 @@ class Games(commands.Cog):
         game_id = "{}-{}".format(white, black)
         print(5)
         chess_games[game_id] = new_game.fen()
+        print(all_games)
         self.data["ongoing_games"] = all_games
         print(6)
         await self.send_current_board_state(game_id)
@@ -80,6 +81,7 @@ class Games(commands.Cog):
     async def send_current_board_state(self, game_id):
         print(7)
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
+        print(chess_games)
         if game_id not in chess_games:
             return False
         board_fen = chess_games.get(game_id)
