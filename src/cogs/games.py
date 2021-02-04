@@ -226,11 +226,12 @@ class Games(commands.Cog):
             pass
         else:
             await turn_message.reply(embed=self.bot.create_error_embed(messages.invalid_chess_command))
-
+            return False
+        return True
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.guild is not None:
+        if message.guild is not None or message.author == self.bot.user:
             return
         else:
             chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
