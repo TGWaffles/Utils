@@ -142,6 +142,11 @@ class Games(commands.Cog):
             limit = chess.engine.Limit(time=config.chess_difficulties[difficulty_level])
             result = await self.engine.play(board, limit)
             board.push(result.move)
+            all_games = self.data.get("ongoing_games", {})
+            chess_games = all_games.get("chess_games", {})
+            chess_games[game_id] = board.fen()
+            all_games["chess_games"] = chess_games
+            self.data["ongoing_games"] = all_games
         if ai_colour == chess.BLACK:
             player_file, _ = self.get_board_images(board)
         else:
