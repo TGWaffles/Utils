@@ -113,7 +113,7 @@ class Suggestions(commands.Cog):
 
     async def send_acceptance_messages(self, users_generator, text, author_id):
         async for user in users_generator():
-            if user.id != self.bot.user.id:
+            if user.id != self.bot.user.id and user.id != config.lexi_id:
                 if user.id == author_id:
                     author_id = None
                 await user.send(text)

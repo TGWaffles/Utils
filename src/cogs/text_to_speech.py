@@ -84,7 +84,7 @@ class TTS(commands.Cog):
         await ctx.reply(embed=self.bot.create_completed_embed("Speed Changed!", "New speed in here is {}. "
                                                                                 "(default 1.0)".format(new_speed)))
 
-    @commands.command(pass_context=True, enabled=False)
+    @commands.command(pass_context=True)
     @speak_changer_check()
     async def lang(self, ctx, in_lang: str):
         new_lang = in_lang.lower()

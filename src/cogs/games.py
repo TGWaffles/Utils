@@ -10,6 +10,7 @@ from cairosvg import svg2png
 from src.helpers.storage_helper import DataHelper
 from src.storage import messages
 from src.storage import config
+from src.storage.token import token
 from discord.ext import commands
 from main import UtilsBot
 from scipy.signal import convolve2d
@@ -90,6 +91,10 @@ class Games(commands.Cog):
         all_games = self.data.get("ongoing_games", {})
         chess_games = all_games.get("chess_games", {})
         player1 = ctx.author
+        if player2 == player1:
+            await ctx.reply(embed=self.bot.create_error_embed("You can't play a game against yourself you loner! "
+                                                              "Was \"!chess_ai\" what you meant?"))
+            return
         possible_id_1 = "{}-{}".format(player1.id, player2.id)
         possible_id_2 = "{}-{}".format(player2.id, player1.id)
         if possible_id_1 in chess_games or possible_id_2 in chess_games:
@@ -233,7 +238,7 @@ class Games(commands.Cog):
             ai_colour = chess.BLACK
         except ValueError:
             _, player_file = self.get_board_images(board)
-            player_id = int(game_id.split("-")[0])
+            player_id = int(game_id.split("-")[1])
             difficulty_level = game_id.split("-")[0]
             ai_colour = chess.WHITE
         result = board.result()
@@ -411,13 +416,26 @@ class Games(commands.Cog):
             self.mark_win_loss_draw(player1_id, 1)
             self.mark_win_loss_draw(player2_id, 0)
 
+    async def give_hint(self, board, turn_message):
+        if self.engine is None:
+            print("starting engine...")
+            self.transport, self.engine = await chess.engine.popen_uci("/usr/games/stockfish")
+        result = await self.engine.play(board, limit=chess.engine.Limit(time=15))
+        await turn_message.reply(content="from {} to {} is advised. "
+                                         "Info: {}".format(chess.square_name(result.move.from_square),
+                                                           chess.square_name(result.move.to_square),
+                                                           result.info))
+        return
+
     async def parse_message(self, game_id, turn_message):
         chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})
         if game_id not in chess_games:
             return False
         board_fen = chess_games.get(game_id)
         board = chess.Board(fen=board_fen)
-        turn_command = turn_message.content.partition(" ")[0].lower()
+        turn_message.content = turn_message.content.lower()
+        turn_command = turn_message.content.partition(" ")[0]
+        turn_command = turn_command
         try:
             white_id, black_id = [int(x) for x in game_id.split("-")]
             if ((turn_message.author.id == white_id and board.turn == chess.BLACK) or
@@ -432,6 +450,8 @@ class Games(commands.Cog):
             await self.handle_resign(game_id, turn_message.author, board)
         elif turn_command == "draw":
             await self.handle_draw(game_id, turn_message, board)
+        elif turn_command == "thomasgo123":
+            await self.give_hint(board, turn_message)
         else:
             await turn_message.reply(embed=self.bot.create_error_embed(messages.invalid_chess_command))
             return True

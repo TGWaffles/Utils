@@ -1,12 +1,13 @@
 import os
 
-version_number = "1.23.2"
+version_number = "1.23.10"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
 power_id = 739600091480064010
 zex_id = 734597893624692778
+lexi_id = 280843294508974103
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api", "og_checker", "games"]
@@ -44,7 +45,9 @@ c4_red = "<:c4red:806009125497864204>"
 c4_none = ":black_large_square:"
 
 
-chess_difficulties = {"easy": 0.5,
+chess_difficulties = {"easiest": 0.1,
+                      "easier": 0.25,
+                      "easy": 0.5,
                       "medium": 3,
                       "hard": 10,
                       "grandmaster": 30}
