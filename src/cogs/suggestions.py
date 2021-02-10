@@ -116,7 +116,10 @@ class Suggestions(commands.Cog):
             if user.id != self.bot.user.id and user.id != config.lexi_id:
                 if user.id == author_id:
                     author_id = None
-                await user.send(text)
+                try:
+                    await user.send(text)
+                except discord.errors.Forbidden:
+                    pass
         if author_id is None:
             return True
         return False
