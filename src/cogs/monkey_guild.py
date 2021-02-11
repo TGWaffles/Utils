@@ -212,7 +212,7 @@ class Monkey(commands.Cog):
             all_members = self.data.get("reapply_roles", {})
             if str(member.id) in all_members:
                 role_list = []
-                for role in all_members[member.id]:
+                for role in all_members[str(member.id)]:
                     role_list.append(member.guild.get_role(int(role)))
                 await member.add_roles(*role_list)
 
