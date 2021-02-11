@@ -1,10 +1,12 @@
 import re
 import discord
+import random
 
 from discord.ext import commands
 
 from main import UtilsBot
 from src.storage import config
+from src.checks.guild_check import sparky_check
 
 
 class Monkey(commands.Cog):
@@ -184,6 +186,17 @@ class Monkey(commands.Cog):
                                                                 "You removed the number that kept this message valid, "
                                                                 "so it will now be deleted."), delete_after=7)
             await after.delete()
+
+    @commands.command()
+    @sparky_check()
+    async def kick_roulette(self, ctx):
+        random_person = random.choice([member for member in ctx.channel.members if not member.bot and
+                                       not member.id == config.lexi_id])
+        channel = ctx.guild.text_channels[0]
+        invite = await channel.create_invite(max_uses=1, reason="Kick Roulette save")
+        await ctx.reply("Your kick roulette was: {}".format(random_person.mention))
+        random_person.send(content="You were chosen for kick roulette. The invite is: {}".format(invite.url))
+        await random_person.kick(reason="Kick Roulette.")
 
 
 def setup(bot):

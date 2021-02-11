@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.24.3"
+version_number = "1.24.4"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -13,6 +13,7 @@ extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_comman
               "hypixel", "api", "og_checker", "games"]
 
 monkey_guild_id = 725886999646437407
+sparky_guild_id = 771569246182440980
 error_channel_id = 795057163768037376
 staff_role_id = 726453086331338802
 mod_role_id = 725894916839964682

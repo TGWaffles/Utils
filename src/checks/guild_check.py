@@ -7,3 +7,10 @@ def monkey_check():
         return ctx.message.guild.id == config.monkey_guild_id
 
     return commands.check(predicate)
+
+
+def sparky_check():
+    async def predicate(ctx):
+        return ctx.message.guild.id == config.sparky_guild_id
+
+    return commands.check(predicate)
