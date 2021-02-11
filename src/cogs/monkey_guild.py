@@ -206,7 +206,7 @@ class Monkey(commands.Cog):
         await random_person.send(content="You were chosen for kick roulette. The invite is: {}".format(invite.url))
         await random_person.kick(reason="Kick Roulette.")
 
-    @commands.Cog.listener
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.guild.id == config.sparky_guild_id:
             all_members = self.data.get("reapply_roles", {})
