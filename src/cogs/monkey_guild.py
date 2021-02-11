@@ -7,6 +7,7 @@ from discord.ext import commands
 from main import UtilsBot
 from src.storage import config
 from src.checks.guild_check import sparky_check
+from src.helpers.storage_helper import DataHelper
 
 
 class Monkey(commands.Cog):
@@ -14,6 +15,7 @@ class Monkey(commands.Cog):
         self.bot: UtilsBot = bot
         # self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
         self.previous_counting_number = None
+        self.data = DataHelper()
 
     # def is_og(self, member: discord.Member):
     #     first_join_date = member.joined_at
@@ -193,10 +195,26 @@ class Monkey(commands.Cog):
         random_person = random.choice([member for member in ctx.channel.members if not member.bot and
                                        not member.id == config.lexi_id and not member == ctx.guild.owner])
         channel = ctx.guild.text_channels[0]
+        role_ids = []
+        for role in random_person.roles:
+            role_ids.append(role.id)
+        all_members = self.data.get("reapply_roles", {})
+        all_members[str(random_person.id)] = role_ids
+        self.data["reapply_roles"] = all_members
         invite = await channel.create_invite(max_uses=1, reason="Kick Roulette save")
         await ctx.reply("Your kick roulette was: {}".format(random_person.mention))
-        random_person.send(content="You were chosen for kick roulette. The invite is: {}".format(invite.url))
+        await random_person.send(content="You were chosen for kick roulette. The invite is: {}".format(invite.url))
         await random_person.kick(reason="Kick Roulette.")
+
+    @commands.Cog.listener
+    async def on_member_join(self, member):
+        if member.guild.id == config.sparky_guild_id:
+            all_members = self.data.get("reapply_roles", {})
+            if str(member.id) in all_members:
+                role_list = []
+                for role in all_members[member.id]:
+                    role_list.append(member.guild.get_role(int(role)))
+                await member.add_roles(*role_list)
 
 
 def setup(bot):
