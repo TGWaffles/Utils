@@ -225,7 +225,6 @@ class Monkey(commands.Cog):
                             await member.add_roles(member.guild.get_role(int(role)))
                         except:
                             print(role)
-                            print(role.id)
 
 
 def setup(bot):
