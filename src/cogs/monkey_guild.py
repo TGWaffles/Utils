@@ -213,7 +213,9 @@ class Monkey(commands.Cog):
             if str(member.id) in all_members:
                 role_list = []
                 for role in all_members[str(member.id)]:
-                    role_list.append(member.guild.get_role(int(role)))
+                    role = member.guild.get_role(int(role))
+                    if role is not None:
+                        role_list.append(role)
                 await member.add_roles(*role_list)
 
 
