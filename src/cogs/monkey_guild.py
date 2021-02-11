@@ -191,7 +191,7 @@ class Monkey(commands.Cog):
     @sparky_check()
     async def kick_roulette(self, ctx):
         random_person = random.choice([member for member in ctx.channel.members if not member.bot and
-                                       not member.id == config.lexi_id])
+                                       not member.id == config.lexi_id and not member == ctx.guild.owner])
         channel = ctx.guild.text_channels[0]
         invite = await channel.create_invite(max_uses=1, reason="Kick Roulette save")
         await ctx.reply("Your kick roulette was: {}".format(random_person.mention))
