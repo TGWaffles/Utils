@@ -8,6 +8,7 @@ from main import UtilsBot
 from src.storage import config
 from src.checks.guild_check import sparky_check
 from src.helpers.storage_helper import DataHelper
+from src.checks.user_check import is_kick_rouletter
 
 
 class Monkey(commands.Cog):
@@ -191,6 +192,7 @@ class Monkey(commands.Cog):
 
     @commands.command()
     @sparky_check()
+    @is_kick_rouletter()
     async def kick_roulette(self, ctx):
         random_person = random.choice([member for member in ctx.channel.members if not member.bot and
                                        not member.id == config.lexi_id and not member == ctx.guild.owner])
