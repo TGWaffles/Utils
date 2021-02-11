@@ -197,7 +197,8 @@ class Monkey(commands.Cog):
         channel = ctx.guild.text_channels[0]
         role_ids = []
         for role in random_person.roles:
-            role_ids.append(role.id)
+            if role.id != 771569246182440980:
+                role_ids.append(role.id)
         all_members = self.data.get("reapply_roles", {})
         all_members[str(random_person.id)] = role_ids
         self.data["reapply_roles"] = all_members
@@ -215,8 +216,13 @@ class Monkey(commands.Cog):
                 for role in all_members[str(member.id)]:
                     role = member.guild.get_role(int(role))
                     if role is not None:
+                        role_list.append(role)
+                try:
+                    await member.add_roles(*role_list)
+                except:
+                    for role in all_members[str(member.id)]:
                         try:
-                            await member.add_roles(role)
+                            await member.add_roles(member.guild.get_role(int(role)))
                         except:
                             print(role)
                             print(role.id)
