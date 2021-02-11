@@ -1,4 +1,5 @@
 import re
+import discord
 
 from discord.ext import commands
 
@@ -113,7 +114,7 @@ class Monkey(commands.Cog):
     #     data["og_messages"] = message_member_ids
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.author.id == self.bot.user.id:
             return
         if message.channel.id == config.counting_channel_id:

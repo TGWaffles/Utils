@@ -4,6 +4,7 @@ from typing import Optional
 import discord
 import psutil
 import webcolors
+import random
 from discord.ext import commands, tasks
 
 from main import UtilsBot
@@ -174,6 +175,12 @@ class Misc(commands.Cog):
         if self.current_presence > len(possible_presences) - 1:
             self.current_presence = 0
         await self.bot.change_presence(status=discord.Status.online, activity=activity)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if "@someone" in message.clean_content and not message.author.bot:
+            random_person = random.choice(message.guild.members)
+            await message.reply("Your @someone was: {}".format(random_person.mention))
 
 
 def setup(bot):
