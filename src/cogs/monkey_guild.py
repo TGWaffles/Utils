@@ -215,8 +215,11 @@ class Monkey(commands.Cog):
                 for role in all_members[str(member.id)]:
                     role = member.guild.get_role(int(role))
                     if role is not None:
-                        role_list.append(role)
-                await member.add_roles(*role_list)
+                        try:
+                            await member.add_roles(role)
+                        except:
+                            print(role)
+                            print(role.id)
 
 
 def setup(bot):
