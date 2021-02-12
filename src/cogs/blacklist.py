@@ -51,7 +51,10 @@ class Blacklist(commands.Cog):
         all_guilds = self.data.get("blacklist", {})
         this_guild_words = all_guilds.get(str(message.guild.id), [])
         for word in this_guild_words:
+            print(word)
+            print(content)
             if word in content:
+                print("it's in!")
                 await message.delete()
                 sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
                 try:
