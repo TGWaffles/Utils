@@ -42,7 +42,7 @@ class Blacklist(commands.Cog):
         def check(m):
             return m.author.id == config.lexibot_id and m.channel.id == message.channel.id
         try:
-            await self.bot.wait_for("message", check=check, timeout=1)
+            await self.bot.wait_for("message", check=check, timeout=0.4)
             return
         except asyncio.TimeoutError:
             pass
@@ -51,10 +51,7 @@ class Blacklist(commands.Cog):
         all_guilds = self.data.get("blacklist", {})
         this_guild_words = all_guilds.get(str(message.guild.id), [])
         for word in this_guild_words:
-            print(word)
-            print(content)
             if word in content:
-                print("it's in!")
                 await message.delete()
                 sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
                 try:
