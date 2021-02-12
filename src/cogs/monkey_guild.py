@@ -1,6 +1,7 @@
 import re
 import discord
 import random
+import asyncio
 
 from discord.ext import commands
 
@@ -222,12 +223,23 @@ class Monkey(commands.Cog):
                     if role is not None:
                         role_list.append(role)
                 try:
-                    await member.add_roles(*role_list)
-                except:
+                    attempts = 0
+                    while attempts < 3:
+                        try:
+                            await member.add_roles(*role_list)
+                            return
+                        except Exception as e:
+                            print(e)
+                            attempts += 1
+                        await asyncio.sleep(2)
+                    raise e
+                except Exception as e:
+                    print(e)
                     for role in all_members[str(member.id)]:
                         try:
                             await member.add_roles(member.guild.get_role(int(role)))
-                        except:
+                        except Exception as e:
+                            print(e)
                             print(role)
 
 
