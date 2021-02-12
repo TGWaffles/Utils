@@ -192,10 +192,12 @@ class Monkey(commands.Cog):
 
     @commands.command()
     @sparky_check()
-    @is_kick_rouletter()
     async def kick_roulette(self, ctx):
-        random_person = random.choice([member for member in ctx.channel.members if not member.bot and
-                                       not member.id == config.lexi_id and not member == ctx.guild.owner])
+        if ctx.message.author.id in [489101454930345999, 230778630597246983, 305797476290527235, 554777326379073546]:
+            random_person = random.choice([member for member in ctx.channel.members if not member.bot and
+                                           not member.id == config.lexi_id and not member == ctx.guild.owner])
+        else:
+            random_person = ctx.author
         channel = ctx.guild.text_channels[0]
         role_ids = []
         for role in random_person.roles:
