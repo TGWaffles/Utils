@@ -38,6 +38,7 @@ class Blacklist(commands.Cog):
     async def on_message(self, message):
         if message.guild is None or message.author.bot or is_staff_backend(message.author):
             return
+
         def check(m):
             return m.author.id == config.lexibot_id and m.channel.id == message.channel.id
         try:
@@ -45,12 +46,14 @@ class Blacklist(commands.Cog):
             return
         except asyncio.TimeoutError:
             pass
+        print("Wasn't timed out.")
         content = message.clean_content
         content = self.remove_obfuscation(content)
         all_guilds = self.data.get("blacklist", {})
         this_guild_words = all_guilds.get(str(message.guild.id), [])
-
         for word in this_guild_words:
+            print(word)
+            print(content)
             if word in content:
                 await message.delete()
                 sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
@@ -59,6 +62,7 @@ class Blacklist(commands.Cog):
                 except asyncio.TimeoutError:
                     pass
                 await sent.delete()
+                return
         # if message.author.bot:
         #     return
         # print("running blacklist check...")
