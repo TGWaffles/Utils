@@ -1,13 +1,13 @@
 import asyncio
-import datetime
+import homoglyphs as hg
 
-import discord
-from unidecode import unidecode
 from discord.ext import commands
-from src.storage import config
-from src.helpers.storage_helper import DataHelper
-from src.checks.role_check import is_staff, is_staff_backend
+from unidecode import unidecode
+
 from main import UtilsBot
+from src.checks.role_check import is_staff, is_staff_backend
+from src.helpers.storage_helper import DataHelper
+from src.storage import config
 
 
 class Blacklist(commands.Cog):
@@ -46,7 +46,7 @@ class Blacklist(commands.Cog):
             return
         except asyncio.TimeoutError:
             pass
-        content = message.clean_content
+        content = message.content
         content = self.remove_obfuscation(content)
         all_guilds = self.data.get("blacklist", {})
         this_guild_words = all_guilds.get(str(message.guild.id), [])
