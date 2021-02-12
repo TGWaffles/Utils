@@ -194,8 +194,11 @@ class Monkey(commands.Cog):
     @commands.command()
     @is_owner()
     async def give_roles_back(self, ctx):
+        message = await ctx.reply(embed=self.bot.create_completed_embed("Giving roles back", "Starting"))
         for member in ctx.guild.members:
+            print(member.name)
             await self.give_roles(member)
+        await message.edit(embed=self.bot.create_completed_embed("Given roles back!", "Completed."))
 
     async def give_roles(self, member):
         all_members = self.data.get("reapply_roles", {})
