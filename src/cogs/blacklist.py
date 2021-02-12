@@ -77,6 +77,7 @@ class Blacklist(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
+        message = after
         if message.guild is None or message.author.bot or is_staff_backend(message.author):
             return
 
