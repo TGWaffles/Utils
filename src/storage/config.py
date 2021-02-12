@@ -1,6 +1,6 @@
 import os
 
-version_number = "1.24.10"
+version_number = "1.25.0"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -8,6 +8,7 @@ owner_id = 230778630597246983
 power_id = 739600091480064010
 zex_id = 734597893624692778
 lexi_id = 280843294508974103
+lexibot_id = 730015197980262424
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api", "og_checker", "games"]
