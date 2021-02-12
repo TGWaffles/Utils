@@ -228,11 +228,6 @@ class Monkey(commands.Cog):
                         print(e)
                         print(role)
 
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        if member.guild.id == config.sparky_guild_id:
-            await self.give_roles(member)
-
 
 def setup(bot):
     cog = Monkey(bot)
