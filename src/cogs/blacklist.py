@@ -42,7 +42,7 @@ class Blacklist(commands.Cog):
         def check(m):
             return m.author.id == config.lexibot_id and m.channel.id == message.channel.id
         try:
-            await self.bot.wait_for("message", check=check, timeout=0.4)
+            await self.bot.wait_for("message", check=check, timeout=0.6)
             return
         except asyncio.TimeoutError:
             pass
