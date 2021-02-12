@@ -41,7 +41,7 @@ class Blacklist(commands.Cog):
         def check(m):
             return m.author.id == config.lexibot_id and m.channel.id == message.channel.id
         try:
-            await message.channel.wait_for("message", check=check, timeout=1)
+            await self.bot.wait_for("message", check=check, timeout=1)
             return
         except asyncio.TimeoutError:
             pass
@@ -55,7 +55,7 @@ class Blacklist(commands.Cog):
                 await message.delete()
                 sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
                 try:
-                    await message.channel.wait_for("message", check=check, timeout=10)
+                    await self.bot.wait_for("message", check=check, timeout=10)
                 except asyncio.TimeoutError:
                     pass
                 await sent.delete()
