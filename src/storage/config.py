@@ -11,7 +11,7 @@ lexi_id = 280843294508974103
 lexibot_id = 730015197980262424
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
-              "hypixel", "api", "og_checker", "games"]
+              "hypixel", "api", "og_checker", "games", "blacklist"]
 
 monkey_guild_id = 725886999646437407
 sparky_guild_id = 771569246182440980
