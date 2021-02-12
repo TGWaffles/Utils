@@ -34,11 +34,7 @@ class Blacklist(commands.Cog):
         all_guilds[str(ctx.guild.id)] = this_guild_words
         self.data["blacklist"] = all_guilds
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.guild is None or message.author.bot or is_staff_backend(message.author):
-            return
-
+    async def blacklist_check(self, message):
         def check(m):
             return m.author.id == config.lexibot_id and m.channel.id == message.channel.id
         try:
@@ -60,6 +56,13 @@ class Blacklist(commands.Cog):
                     pass
                 await sent.delete()
                 return
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.guild is None or message.author.bot or is_staff_backend(message.author):
+            return
+
+        await self.blacklist_check(message)
         # if message.author.bot:
         #     return
         # print("running blacklist check...")
@@ -71,6 +74,13 @@ class Blacklist(commands.Cog):
         # if "cantswim" in ''.join(filter(str.isalpha, contents)):
         #     print("it's in...")
         #     await message.delete()
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if message.guild is None or message.author.bot or is_staff_backend(message.author):
+            return
+
+        await self.blacklist_check(message)
 
 
 def setup(bot):
