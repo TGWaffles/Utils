@@ -9,7 +9,7 @@ from main import UtilsBot
 from src.storage import config
 from src.checks.guild_check import sparky_check
 from src.helpers.storage_helper import DataHelper
-from src.checks.user_check import is_kick_rouletter
+from src.checks.user_check import is_owner
 
 
 class Monkey(commands.Cog):
@@ -199,6 +199,9 @@ class Monkey(commands.Cog):
                                            not member.id == config.lexi_id and not member == ctx.guild.owner])
         else:
             random_person = ctx.author
+        await self.run_kick_roulette(ctx, random_person)
+
+    async def run_kick_roulette(self, ctx, random_person):
         channel = ctx.guild.text_channels[0]
         role_ids = []
         for role in random_person.roles:
@@ -211,6 +214,14 @@ class Monkey(commands.Cog):
         await ctx.reply("Your kick roulette was: {}".format(random_person.mention))
         await random_person.send(content="You were chosen for kick roulette. The invite is: {}".format(invite.url))
         await random_person.kick(reason="Kick Roulette.")
+
+    @commands.command()
+    @is_owner()
+    async def kick_roulette_all(self, ctx):
+        members = [member for member in ctx.channel.members if not member.bot and
+                   not member.id == config.lexi_id and not member == ctx.guild.owner]
+        for member in members:
+            await self.run_kick_roulette(ctx, member)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
