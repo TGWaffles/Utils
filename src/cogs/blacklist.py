@@ -17,7 +17,7 @@ class Blacklist(commands.Cog):
 
     @staticmethod
     def remove_obfuscation(input_string: str):
-        return unidecode(input_string.replace(" ", ""))
+        return unidecode(input_string.replace(" ", "").lower())
 
     @commands.command()
     @is_staff()
@@ -46,14 +46,11 @@ class Blacklist(commands.Cog):
             return
         except asyncio.TimeoutError:
             pass
-        print("Wasn't timed out.")
         content = message.clean_content
         content = self.remove_obfuscation(content)
         all_guilds = self.data.get("blacklist", {})
         this_guild_words = all_guilds.get(str(message.guild.id), [])
         for word in this_guild_words:
-            print(word)
-            print(content)
             if word in content:
                 await message.delete()
                 sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
