@@ -192,66 +192,43 @@ class Monkey(commands.Cog):
             await after.delete()
 
     @commands.command()
-    @sparky_check()
-    async def kick_roulette(self, ctx):
-        if ctx.message.author.id in [489101454930345999, 230778630597246983, 305797476290527235, 554777326379073546]:
-            random_person = random.choice([member for member in ctx.channel.members if not member.bot and
-                                           not member.id == config.lexi_id and not member == ctx.guild.owner])
-        else:
-            random_person = ctx.author
-        await self.run_kick_roulette(ctx, random_person)
-
-    async def run_kick_roulette(self, ctx, random_person):
-        channel = ctx.guild.text_channels[0]
-        role_ids = []
-        for role in random_person.roles:
-            if role.id != 771569246182440980:
-                role_ids.append(role.id)
-        all_members = self.data.get("reapply_roles", {})
-        all_members[str(random_person.id)] = role_ids
-        self.data["reapply_roles"] = all_members
-        invite = await channel.create_invite(max_uses=1, reason="Kick Roulette save")
-        await ctx.reply("Your kick roulette was: {}".format(random_person.mention))
-        await random_person.send(content="You were chosen for kick roulette. The invite is: {}".format(invite.url))
-        await random_person.kick(reason="Kick Roulette.")
-
-    @commands.command()
     @is_owner()
-    async def kick_roulette_all(self, ctx):
-        members = [member for member in ctx.channel.members if not member.bot and
-                   not member.id == config.lexi_id and not member == ctx.guild.owner]
-        for member in members:
-            await self.run_kick_roulette(ctx, member)
+    async def give_roles_back(self, ctx):
+        for member in ctx.guild.members:
+            await self.give_roles(member)
+
+    async def give_roles(self, member):
+        all_members = self.data.get("reapply_roles", {})
+        if str(member.id) in all_members:
+            role_list = []
+            for role in all_members[str(member.id)]:
+                role = member.guild.get_role(int(role))
+                if role is not None:
+                    role_list.append(role)
+            try:
+                attempts = 0
+                while attempts < 3:
+                    try:
+                        await member.add_roles(*role_list)
+                        return
+                    except Exception as e:
+                        print(e)
+                        attempts += 1
+                    await asyncio.sleep(2)
+                raise e
+            except Exception as e:
+                print(e)
+                for role in all_members[str(member.id)]:
+                    try:
+                        await member.add_roles(member.guild.get_role(int(role)))
+                    except Exception as e:
+                        print(e)
+                        print(role)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.guild.id == config.sparky_guild_id:
-            all_members = self.data.get("reapply_roles", {})
-            if str(member.id) in all_members:
-                role_list = []
-                for role in all_members[str(member.id)]:
-                    role = member.guild.get_role(int(role))
-                    if role is not None:
-                        role_list.append(role)
-                try:
-                    attempts = 0
-                    while attempts < 3:
-                        try:
-                            await member.add_roles(*role_list)
-                            return
-                        except Exception as e:
-                            print(e)
-                            attempts += 1
-                        await asyncio.sleep(2)
-                    raise e
-                except Exception as e:
-                    print(e)
-                    for role in all_members[str(member.id)]:
-                        try:
-                            await member.add_roles(member.guild.get_role(int(role)))
-                        except Exception as e:
-                            print(e)
-                            print(role)
+            await self.give_roles(member)
 
 
 def setup(bot):
