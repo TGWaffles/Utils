@@ -17,7 +17,7 @@ class Blacklist(commands.Cog):
 
     @staticmethod
     def remove_obfuscation(input_string: str):
-        return unidecode(input_string.replace(" ", "").lower())
+        return unidecode(input_string.replace(" ", "")).lower()
 
     @commands.command()
     @is_staff()
