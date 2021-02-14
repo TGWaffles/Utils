@@ -9,7 +9,7 @@ def get_speak_file(message_content, lang, speed, tld):
     pre_processed = BytesIO()
     post_processed = BytesIO()
     try:
-        spoken_google = gTTS(message_content, lang=lang)
+        spoken_google = gTTS(message_content, lang=lang, tld=tld)
         spoken_google.write_to_fp(fp=pre_processed)
         pre_processed.seek(0)
         segment = pydub.AudioSegment.from_file(pre_processed, bitrate=356000, format="mp3")
