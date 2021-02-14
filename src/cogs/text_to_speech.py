@@ -10,6 +10,7 @@ from discord.ext import commands
 from main import UtilsBot
 from src.checks.custom_check import speak_changer_check
 from src.checks.role_check import is_high_staff
+from src.checks.user_check import is_owner
 from src.cogs import api
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
@@ -122,6 +123,16 @@ class TTS(commands.Cog):
                                                               f"Changed voice language to {lang_real_name}"))
 
     @commands.command(pass_context=True)
+    @is_owner()
+    async def tld(self, ctx, new_tld):
+        server_tlds = self.data.get("server_tlds", {})
+        server_tlds[ctx.guild.id] = new_tld
+        self.data["server_tlds"] = server_tlds
+        await ctx.reply(embed=self.bot.create_completed_embed("TLD Changed!",
+                                                              "Attempted to change TLD to {}".format(new_tld)))
+
+
+    @commands.command(pass_context=True)
     @speak_changer_check()
     async def speakers(self, ctx):
         all_guilds = self.data.get("speaking", {})
@@ -182,8 +193,9 @@ class TTS(commands.Cog):
         lang = server_languages.get(str(voice_channel.guild.id), "en")
         speed = self.data.get("speak_speeds", {}).get(str(voice_channel.guild.id), 1.0)
         with concurrent.futures.ProcessPoolExecutor() as pool:
+            tld = self.data.get("server_tlds", {}).get(str(voice_channel.guild.id), "com")
             output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, content,
-                                                                       lang, speed))
+                                                                       lang, speed, tld))
         while voice_client.is_playing():
             await asyncio.sleep(0.1)
         try:

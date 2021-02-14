@@ -5,7 +5,7 @@ from gtts import gTTS
 from io import BytesIO
 
 
-def get_speak_file(message_content, lang, speed):
+def get_speak_file(message_content, lang, speed, tld):
     pre_processed = BytesIO()
     post_processed = BytesIO()
     try:
