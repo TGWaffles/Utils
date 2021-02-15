@@ -5,6 +5,7 @@ import discord
 import psutil
 import webcolors
 import random
+import re
 from io import BytesIO
 from discord.ext import commands, tasks
 
@@ -139,9 +140,17 @@ class Misc(commands.Cog):
         await attachment.save(text_file)
         text_file.seek(0)
         full_text = text_file.read().decode()
-        while len(full_text) > 0:
-            await ctx.send(content=full_text[:2000])
-            full_text = full_text[2000:]
+        while len(full_text) > 2000:
+            newline_indices = [m.end() for m in re.finditer("\n", full_text[:2000])]
+            if len(newline_indices) == 0:
+                to_send = full_text[:2000]
+                full_text = full_text[2000:]
+            else:
+                to_send = full_text[:newline_indices[-1]]
+                full_text = full_text[newline_indices[-1]:]
+            await ctx.send(to_send)
+        if len(full_text) > 0:
+            await ctx.send(content=full_text)
 
     async def update_members_vc(self):
         users_vc: discord.VoiceChannel = self.bot.get_channel(727202196600651858)
