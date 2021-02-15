@@ -138,10 +138,9 @@ class Misc(commands.Cog):
         text_file = BytesIO()
         await attachment.save(text_file)
         text_file.seek(0)
-        full_text = text_file.read()
-        print(full_text)
+        full_text = text_file.read().decode()
         while len(full_text) > 0:
-            await ctx.send(content=full_text[:1999])
+            await ctx.send(content=full_text[:2000])
             full_text = full_text[2000:]
 
     async def update_members_vc(self):
