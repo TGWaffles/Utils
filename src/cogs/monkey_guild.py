@@ -7,7 +7,6 @@ from discord.ext import commands
 
 from main import UtilsBot
 from src.storage import config
-from src.checks.guild_check import sparky_check
 from src.helpers.storage_helper import DataHelper
 from src.checks.user_check import is_owner
 

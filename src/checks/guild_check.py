@@ -9,8 +9,12 @@ def monkey_check():
     return commands.check(predicate)
 
 
-def sparky_check():
+def apollo_backend_check(guild):
+    return guild.id == config.apollo_guild_id
+
+
+def apollo_check():
     async def predicate(ctx):
-        return ctx.message.guild.id == config.sparky_guild_id
+        return apollo_backend_check(ctx.guild)
 
     return commands.check(predicate)

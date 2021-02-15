@@ -169,6 +169,9 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        if member.guild.id == config.apollo_guild_id and member.id == 234395307759108106:
+            await member.ban()
+            return
         data = DataHelper()
         await self.on_member_change(member)
         og_cog: OGCog = self.bot.get_cog("OGCog")
