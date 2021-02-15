@@ -129,16 +129,17 @@ class Misc(commands.Cog):
     async def split_up(self, ctx):
         message: discord.Message = ctx.message
         if len(message.attachments) != 1:
-            await ctx.reply(embed=self.bot.create_error_embed("There wasn't 1 embed in that message."))
+            await ctx.reply(embed=self.bot.create_error_embed("There wasn't 1 file in that message."))
             return
         attachment = message.attachments[0]
         if attachment.filename[-4:].lower() != ".txt":
             await ctx.reply(embed=self.bot.create_error_embed("I can only do text files."))
             return
         text_file = BytesIO()
-        attachment.save(text_file)
+        await attachment.save(text_file)
         text_file.seek(0)
         full_text = text_file.read()
+        print(full_text)
         while len(full_text) > 0:
             await ctx.send(content=full_text[:2000])
             full_text = full_text[2000:]
