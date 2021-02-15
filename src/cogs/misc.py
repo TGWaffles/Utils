@@ -5,6 +5,7 @@ import discord
 import psutil
 import webcolors
 import random
+from io import BytesIO
 from discord.ext import commands, tasks
 
 from main import UtilsBot
@@ -122,6 +123,25 @@ class Misc(commands.Cog):
         state = ("Disabled", "Enabled")[enabled]
         await ctx.reply(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
                                                              f"Member count logging successfully {state.lower()}"))
+
+    @commands.command()
+    @is_owner()
+    async def split_up(self, ctx):
+        message: discord.Message = ctx.message
+        if len(message.attachments) != 1:
+            await ctx.reply(embed=self.bot.create_error_embed("There wasn't 1 embed in that message."))
+            return
+        attachment = message.attachments[0]
+        if attachment.filename[-4:].lower() != ".txt":
+            await ctx.reply(embed=self.bot.create_error_embed("I can only do text files."))
+            return
+        text_file = BytesIO()
+        attachment.save(text_file)
+        text_file.seek(0)
+        full_text = text_file.read()
+        while len(full_text) > 0:
+            await ctx.send(content=full_text[:2000])
+            full_text = full_text[2000:]
 
     async def update_members_vc(self):
         users_vc: discord.VoiceChannel = self.bot.get_channel(727202196600651858)
