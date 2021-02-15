@@ -38,8 +38,10 @@ class OGCog(commands.Cog):
         all_guilds = data.get("og_messages", {})
         og_messages = all_guilds.get(str(member.guild.id), {})
         if str(member.id) in og_messages.keys():
+            print("he's here")
             is_og = True
             message_time = datetime.datetime.utcfromtimestamp(og_messages.get(str(member.id), 0))
+        print("checked member id.")
         embed = discord.Embed(title="OG Check")
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])

@@ -43,6 +43,7 @@ class UtilsBot(commands.Bot):
                     member_object = members[member_ids.index(int(user_id))]
                     first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
                     if first_join < member_object.joined_at:
+                        print(member_object.name)
                         member_object.joined_at = first_join
                         members[member_ids.index(int(user_id))] = member_object
                 except (ValueError, IndexError):
