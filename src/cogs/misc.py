@@ -141,7 +141,7 @@ class Misc(commands.Cog):
         full_text = text_file.read()
         print(full_text)
         while len(full_text) > 0:
-            await ctx.send(content=full_text[:2000])
+            await ctx.send(content=full_text[:1999])
             full_text = full_text[2000:]
 
     async def update_members_vc(self):
