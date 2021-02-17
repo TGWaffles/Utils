@@ -11,6 +11,7 @@ import mcuuid.api
 import mcuuid.tools
 import concurrent.futures
 import secrets
+import aiohttp
 from functools import partial
 from discord.ext import commands, tasks
 from io import BytesIO
@@ -213,6 +214,7 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
         self.name_to_files = {}
+        self.external_ip = None
         app = web.Application()
         app.add_routes([web.get('/{uid}.png', self.request_image)])
         # noinspection PyProtectedMember
@@ -397,7 +399,7 @@ class Hypixel(commands.Cog):
             self.name_to_files[token] = file
             added_uids.append(token)
             embed = await self.get_user_embed(member)
-            embed.set_image(url="http://tgwaffles.me:8800/{}.png".format(token))
+            embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
             if new_messages:
                 await channel.send(embed=embed)
             else:
@@ -410,6 +412,11 @@ class Hypixel(commands.Cog):
 
     @tasks.loop(seconds=5, count=None)
     async def update_hypixel_info(self):
+        if self.external_ip is None:
+            async with aiohttp.ClientSession() as session:
+                request = await session.get("https://checkip.amazonaws.com/")
+                text = await request.text()
+                self.external_ip = text.strip()
         all_channels = self.data.get("hypixel_channels", {}).copy()
         member_uuids = set()
         for _, members in all_channels.items():
