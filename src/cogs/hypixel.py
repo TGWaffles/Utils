@@ -243,7 +243,10 @@ class Hypixel(commands.Cog):
             return web.Response(status=404)
         response = web.StreamResponse()
         response.content_type = "image/png"
-        data = file.read()
+        try:
+            data = file.read()
+        except ValueError:
+            return web.Response(status=404)
         file.seek(0)
         response.content_length = len(data)
         await response.prepare(request)
