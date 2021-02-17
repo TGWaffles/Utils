@@ -227,7 +227,7 @@ class Hypixel(commands.Cog):
         try:
             fkdr = player.stats['Bedwars']['final_kills_bedwars'] / player.stats['Bedwars']['final_deaths_bedwars']
         except KeyError:
-            print(player.displayname)
+            
             fkdr = 0
         bedwars_level = get_level_from_xp(experience)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
@@ -387,13 +387,16 @@ class Hypixel(commands.Cog):
                 our_members.append(member)
         channel = await self.bot.fetch_channel(channel_id)
         history = await channel.history(limit=None, oldest_first=True).flatten()
+        print("Gotten history.")
         editable_messages = [message for message in history if message.author == self.bot.user]
         futures = []
         with concurrent.futures.ProcessPoolExecutor() as pool:
+            print("Opened process pool.")
             for member in our_members:
                 futures.append(asyncio.get_event_loop().run_in_executor(pool, partial(get_file_for_member, member)))
+        print("Waiting on member files...")
         member_files = await asyncio.gather(*futures)
-        print("Gathered member files.")
+        print("Gathered them!")
         if len(editable_messages) != len(our_members):
             await channel.purge(limit=None)
             new_messages = True
@@ -406,7 +409,7 @@ class Hypixel(commands.Cog):
             added_uids.append(token)
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
-            print("http://{}:8800/{}.png".format(self.external_ip, token))
+            
             if new_messages:
                 await channel.send(embed=embed)
             else:
@@ -443,13 +446,13 @@ class Hypixel(commands.Cog):
         online_members.sort(key=lambda x: float(x["threat_index"]))
         member_dicts = offline_members + online_members
         pending_tasks = []
-        print("Appending tasks.")
+        
         for channel in all_channels.keys():
             pending_tasks.append(self.bot.loop.create_task(
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
-        print("Gathering tasks.")
+        
         await asyncio.gather(*pending_tasks)
-        print("Tasks done.")
+        
 
     @commands.Cog.listener()
     async def on_message(self, message):
