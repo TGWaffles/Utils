@@ -1,6 +1,7 @@
 import os
+import src.storage.token as token
 
-version_number = "1.26.4dev1"
+version_number = "1.27.0"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -12,6 +13,12 @@ lexibot_id = 730015197980262424
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api", "og_checker", "games", "blacklist"]
+
+dev = False
+if dev:
+    token.token = token.dev_token
+    extensions.remove("suggestions")
+    extensions.remove("games")
 
 monkey_guild_id = 725886999646437407
 apollo_guild_id = 770972021487304714

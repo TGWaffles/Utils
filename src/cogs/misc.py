@@ -123,7 +123,7 @@ class Misc(commands.Cog):
         data["members"] = enabled
         state = ("Disabled", "Enabled")[enabled]
         await ctx.reply(embed=self.bot.create_completed_embed("Member Count {}!".format(state),
-                                                             f"Member count logging successfully {state.lower()}"))
+                                                              f"Member count logging successfully {state.lower()}"))
 
     @commands.command()
     @is_owner()
@@ -169,7 +169,7 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if member.guild.id == config.apollo_guild_id and member.id == 234395307759108106:
+        if member.guild.id == config.apollo_guild_id and (member.bot and not member.id == self.bot.user.id):
             await member.ban()
             return
         data = DataHelper()
@@ -196,8 +196,9 @@ class Misc(commands.Cog):
     @tasks.loop(seconds=30, count=None)
     async def update_status(self):
         memory = psutil.virtual_memory()
-        used = memory.available // (1024 ** 2)
+        free = memory.available // (1024 ** 2)
         total = memory.total // (1024 ** 2)
+        used = total - free
         possible_presences = ["Current CPU load: {}%!".format(psutil.cpu_percent(None)),
                               "Current RAM usage: {}MB/{}MB.".format(used, total),
                               "Total guild count: {}!".format(len(self.bot.guilds)),
