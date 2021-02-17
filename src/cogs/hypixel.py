@@ -4,6 +4,7 @@ import datetime
 import PIL.Image
 import PIL.ImageDraw
 import PIL.ImageFont
+import PIL.ImageChops
 import asyncpixel
 import asyncpixel.exceptions.exceptions
 import discord
@@ -41,71 +42,16 @@ def get_colour_from_threat(threat_index):
         return 170, 0, 0
 
 
-# def draw_table(members):
-#     for member in members:
-#         if member["online"]:
-#             if member["mode"] is None:
-#                 game_text = "{}: \nLOBBY".format(member["game"])
-#             else:
-#                 try:
-#                     game_text = "{}: \n{} \n({})".format(member["game"], member["mode"], member["map"]["map"])
-#                 except KeyError:
-#                     game_text = "{}: \n{}".format(member["game"], member["mode"])
-#         else:
-#             game_text = member["last_logout"].strftime("%Y/%m/%d %H:%M")
-#         member["game"] = game_text
-#     final_file = BytesIO()
-#     size = 2048
-#     width = size
-#     column_height = size // 16
-#     offset_from_top = size // 48
-#     height = column_height * (len(members) + 1)
-#     image = PIL.Image.new('RGB', (width, height), color=(128, 128, 128))
-#     drawer = PIL.ImageDraw.Draw(image)
-#     columns = ["Name", "Last Online", "Level", "Winstreak", "Threat Index", "FKDR"]
-#     column_to_date = lambda member: [member["name"], member["game"],
-#                                      member["bedwars_level"], member["bedwars_winstreak"],
-#                                      round(member["threat_index"], 1), round(member["fkdr"], 1)]
-#     online_count = len([1 for member in members if member["online"]])
-#     if online_count > 0:
-#         member_index = len(members) - online_count
-#         text_y = member_index * column_height + offset_from_top
-#         highest_y = (text_y + ((member_index + 1) * column_height + offset_from_top)) // 2
-#         # highest_y = height - (online_count * column_height)
-#         drawer.rectangle(xy=[(0, highest_y), (width, height)], width=0, fill=(32, 128, 32))
-#         line_y = (offset_from_top + column_height + offset_from_top) // 2
-#         drawer.rectangle(xy=[(0, line_y), (width, highest_y)], width=0, fill=(128, 32, 32))
-#     else:
-#         line_y = (offset_from_top + column_height + offset_from_top) // 2
-#         drawer.rectangle(xy=[(0, line_y), (width, height)], width=0, fill=(128, 32, 32))
-#     line_distance = size // len(columns)
-#     for column in range(len(columns) - 1):
-#         x = (column + 1) * line_distance
-#         drawer.line([(x, 0), (x, height)], width=(size // (len(columns) * 32)), fill=(0, 0, 0))
-#     for column in range(len(columns)):
-#         text_x = (column * line_distance + (column + 1) * line_distance) // 2
-#         text_y = offset_from_top
-#         font = find_font_size(drawer, columns[column], (line_distance * 3) // 4, line_distance, column_height)
-#         drawer.text((text_x, text_y), columns[column], fill=(0, 0, 0), font=font, anchor="mm")
-#         line_y = (text_y + column_height + offset_from_top) // 2
-#         drawer.line([(0, line_y), (width, line_y)], width=(size // (len(columns) * 32)),
-#                     fill=(0, 0, 0))
-#     for member_index in range(len(members)):
-#         text_y = (member_index + 1) * column_height + offset_from_top
-#         member_data = column_to_date(members[member_index])
-#         fill = get_colour_from_threat(members[member_index]["threat_index"])
-#         for column in range(len(columns)):
-#             text_x = (column * line_distance + (column + 1) * line_distance) // 2
-#             text = str(member_data[column])
-#             font = find_font_size(drawer, text, (line_distance * 3) // 4, line_distance, column_height)
-#             drawer.text((text_x, text_y), text, fill=fill, font=font, anchor="mm")
-#         if member_index < len(members) - 1:
-#             line_y = (text_y + ((member_index + 2) * column_height + offset_from_top)) // 2
-#             drawer.line([(0, line_y), (width, line_y)], width=(size // (len(columns) * 32)),
-#                         fill=(0, 0, 0))
-#     image.save(fp=final_file, format="png")
-#     final_file.seek(0)
-#     return final_file
+def are_equal(file1, file2):
+    image1 = PIL.Image.open(file1)
+    image2 = PIL.Image.open(file2)
+    diff = PIL.ImageChops.difference(image1, image2)
+    file1.seek(0)
+    file2.seek(0)
+    if diff.getbbox():
+        return False
+    else:
+        return True
 
 
 def get_file_for_member(member):
@@ -198,16 +144,22 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
-        self.name_to_files = {}
+        self.token_to_files = {}
         self.instance_uids = []
         self.external_ip = None
+        self.user_to_uid = {}
         app = web.Application()
         app.add_routes([web.get('/{uid}.png', self.request_image)])
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=8800))
 
     async def get_user_stats(self, user_uuid):
-        player = await self.hypixel.get_player(user_uuid)
+        while True:
+            try:
+                player = await self.hypixel.get_player(user_uuid)
+                break
+            except asyncpixel.exceptions.exceptions.RateLimitError:
+                await asyncio.sleep(0.25)
         member_online = bool(player.lastLogout < player.lastLogin)
         experience = player.stats["Bedwars"]["Experience"]
         try:
@@ -218,7 +170,12 @@ class Hypixel(commands.Cog):
         bedwars_level = get_level_from_xp(experience)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
         if member_online:
-            status = await self.hypixel.get_player_status(user_uuid)
+            while True:
+                try:
+                    status = await self.hypixel.get_player_status(user_uuid)
+                    break
+                except asyncpixel.exceptions.exceptions.RateLimitError:
+                    await asyncio.sleep(0.25)
             return {"name": player.displayname,
                     "level": player.level, "last_logout": datetime.datetime.fromtimestamp(player.lastLogout.timestamp(),
                                                                                           datetime.timezone.utc),
@@ -236,6 +193,25 @@ class Hypixel(commands.Cog):
                     "bedwars_level": get_level_from_xp(experience),
                     "bedwars_winstreak": player.stats["Bedwars"]["winstreak"], "uuid": user_uuid,
                     "threat_index": threat_index, "fkdr": fkdr}
+
+    async def get_expanded_player(self, user_uuid, pool):
+        player = await self.get_user_stats(user_uuid)
+        member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
+        last_file = None
+        if player["name"] in self.user_to_uid:
+            last_token = self.user_to_uid[player["name"]]
+            if self.user_to_uid[player["name"]] in self.token_to_files:
+                last_file = self.token_to_files[last_token]
+        if last_file is None:
+            same_file = False
+        else:
+            same_file = await self.bot.loop.run_in_executor(pool, partial(are_equal, last_file, member_file))
+        if same_file:
+            member_file.close()
+            member_file = last_file
+        player["file"] = member_file
+        player["unchanged"] = same_file
+        return player
 
     @staticmethod
     async def get_user_embed(member):
@@ -262,7 +238,7 @@ class Hypixel(commands.Cog):
         return member_embed
 
     async def request_image(self, request: web.Request):
-        file = self.name_to_files.get(request.match_info['uid'], None)
+        file = self.token_to_files.get(request.match_info['uid'], None)
         if file is None:
             return web.Response(status=404)
         response = web.StreamResponse()
@@ -373,27 +349,30 @@ class Hypixel(commands.Cog):
         channel = await self.bot.fetch_channel(channel_id)
         history = await channel.history(limit=None, oldest_first=True).flatten()
         editable_messages = [message for message in history if message.author == self.bot.user]
-        futures = []
-        with concurrent.futures.ProcessPoolExecutor() as pool:
-            for member in our_members:
-                futures.append(asyncio.get_event_loop().run_in_executor(pool, partial(get_file_for_member, member)))
-        member_files = await asyncio.gather(*futures)
+        member_files = [member["file"] for member in our_members]
         if len(editable_messages) != len(our_members):
             await channel.purge(limit=None)
             new_messages = True
         else:
             new_messages = False
         for member, file in zip(our_members, member_files):
-            token = secrets.token_urlsafe(16)
-            self.name_to_files[token] = file
-            self.instance_uids.append(token)
+            if not member["unchanged"]:
+                token = secrets.token_urlsafe(16)
+                self.token_to_files[token] = file
+                self.user_to_uid[member["name"]] = token
+                self.instance_uids.append(token)
+            else:
+                token = self.user_to_uid[member["name"]]
+                self.instance_uids.append(token)
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
             
             if new_messages:
                 await channel.send(embed=embed)
             else:
-                await editable_messages[i].edit(embed=embed)
+                embed_member_name = editable_messages[i].embeds[0].title
+                if embed_member_name != member["name"] or not member["unchanged"]:
+                    await editable_messages[i].edit(embed=embed)
                 i += 1
 
     @tasks.loop(seconds=5, count=None)
@@ -408,14 +387,11 @@ class Hypixel(commands.Cog):
         for _, members in all_channels.items():
             for member_uuid in members:
                 member_uuids.add(member_uuid)
-        member_dicts = []
-        for member_uuid in member_uuids:
-            while True:
-                try:
-                    member_dicts.append(await self.get_user_stats(member_uuid))
-                    break
-                except asyncpixel.exceptions.exceptions.RateLimitError:
-                    await asyncio.sleep(0.5)
+        member_futures = []
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            for member_uuid in member_uuids:
+                member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool)))
+            member_dicts = await asyncio.gather(*member_futures)
         offline_members = [member for member in member_dicts if not member["online"]]
         online_members = [member for member in member_dicts if member["online"]]
         offline_members.sort(key=lambda x: float(x["threat_index"]))
@@ -428,10 +404,10 @@ class Hypixel(commands.Cog):
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
         
         await asyncio.gather(*pending_tasks)
-        removing_tokens = [token for token in self.name_to_files.keys() if token not in self.instance_uids]
+        removing_tokens = [token for token in self.token_to_files.keys() if token not in self.instance_uids]
         for token in removing_tokens:
-            self.name_to_files[token].close()
-            del self.name_to_files[token]
+            self.token_to_files[token].close()
+            del self.token_to_files[token]
         self.instance_uids = []
 
     @commands.Cog.listener()
