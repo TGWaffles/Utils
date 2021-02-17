@@ -404,6 +404,7 @@ class Hypixel(commands.Cog):
             added_uids.append(token)
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
+            print("http://{}:8800/{}.png".format(self.external_ip, token))
             if new_messages:
                 await channel.send(embed=embed)
             else:
