@@ -123,6 +123,7 @@ def get_colour_from_threat(threat_index):
 
 
 def get_file_for_member(member):
+    print("Starting file gather.")
     final_file = BytesIO()
     size = 1024
     width = size
@@ -139,7 +140,7 @@ def get_file_for_member(member):
     name_x = width // 2
     name_y = height // 8
     draw.text((name_x, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
-
+    print("Drawn name text.")
     # Write last online or current game.
     if member["online"]:
         if member["mode"] is None:
@@ -197,9 +198,11 @@ def get_file_for_member(member):
     threat_index_text = "Threat Index\n{}".format(round(member["threat_index"], 1))
     draw.text((threat_index_x, threat_index_y), threat_index_text, font=last_played_font, anchor="mm",
               fill=regular_text_fill, align="center")
-
+    print("Drawn all text.")
     image.save(fp=final_file, format="png")
+    print("saved.")
     final_file.seek(0)
+    print("Seeked...")
     return final_file
 
 
@@ -379,7 +382,6 @@ class Hypixel(commands.Cog):
                                                                           channel.mention)))
 
     async def send_embeds(self, channel_id, channel_members, all_members):
-        print("Sent embeds called.")
         our_members = []
         i = 0
         for member in all_members:
@@ -387,11 +389,9 @@ class Hypixel(commands.Cog):
                 our_members.append(member)
         channel = await self.bot.fetch_channel(channel_id)
         history = await channel.history(limit=None, oldest_first=True).flatten()
-        print("Gotten history.")
         editable_messages = [message for message in history if message.author == self.bot.user]
         futures = []
         with concurrent.futures.ProcessPoolExecutor() as pool:
-            print("Opened process pool.")
             for member in our_members:
                 futures.append(asyncio.get_event_loop().run_in_executor(pool, partial(get_file_for_member, member)))
         print("Waiting on member files...")
