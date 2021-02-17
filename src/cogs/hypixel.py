@@ -224,7 +224,11 @@ class Hypixel(commands.Cog):
         player = await self.hypixel.get_player(user_uuid)
         member_online = bool(player.lastLogout < player.lastLogin)
         experience = player.stats["Bedwars"]["Experience"]
-        fkdr = player.stats['Bedwars']['final_kills_bedwars'] / player.stats['Bedwars']['final_deaths_bedwars']
+        try:
+            fkdr = player.stats['Bedwars']['final_kills_bedwars'] / player.stats['Bedwars']['final_deaths_bedwars']
+        except KeyError:
+            print(player.displayname)
+            fkdr = 0
         bedwars_level = get_level_from_xp(experience)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
         if member_online:
