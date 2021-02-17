@@ -24,20 +24,6 @@ from src.helpers.hypixel_helper import *
 from src.helpers.storage_helper import DataHelper
 
 
-def find_font_size(draw, text, min_width, max_width, max_height):
-    size = 1
-    font = PIL.ImageFont.truetype("arial.ttf", size)
-    last_size = draw.textsize(text, font=font)
-    while last_size[0] < min_width and last_size[1] < max_height:
-        size += 1
-        font = PIL.ImageFont.truetype("arial.ttf", size)
-        last_size = draw.textsize(text, font=font)
-    if last_size[0] > max_width or last_size[1] > max_height:
-        size -= 1
-        font = PIL.ImageFont.truetype("arial.ttf", size)
-    return font
-
-
 def get_colour_from_threat(threat_index):
     if threat_index <= 45:
         return 170, 170, 170
@@ -123,7 +109,6 @@ def get_colour_from_threat(threat_index):
 
 
 def get_file_for_member(member):
-    print("Starting file gather.")
     final_file = BytesIO()
     size = 1024
     width = size
@@ -132,19 +117,15 @@ def get_file_for_member(member):
         fill = (16, 64, 16)
     else:
         fill = (64, 16, 16)
-    print("I'm gonna make a new image...")
     image = PIL.Image.new('RGB', (width, height), color=fill)
-    print("Made image.")
     draw = PIL.ImageDraw.Draw(image)
-    print("Made drawer.")
     name_colour = get_colour_from_threat(member["threat_index"])
-    name_font = PIL.ImageFont.truetype("arial.ttf", size // 16)
-    print("Got name font.")
+    name_font = PIL.ImageFont.load_default()
+    name_font.size = size // 16
     # Write Name
     name_x = width // 2
     name_y = height // 8
     draw.text((name_x, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
-    print("Drawn name text.")
     # Write last online or current game.
     if member["online"]:
         if member["mode"] is None:
@@ -160,7 +141,8 @@ def get_file_for_member(member):
         game_text = "{}".format(member["last_logout"].strftime("%Y/%m/%d %H:%M"))
     top_line_height = height // 8
     last_played_y = height - top_line_height
-    last_played_font = PIL.ImageFont.truetype("arial.ttf", size // 32)
+    last_played_font = PIL.ImageFont.load_default()
+    last_played_font.size = size // 32
     regular_text_fill = (255, 100, 255)
     last_played_x = width // 64
     # last_played_x = max([draw.textsize(line, font=last_played_font)[0]
@@ -202,11 +184,8 @@ def get_file_for_member(member):
     threat_index_text = "Threat Index\n{}".format(round(member["threat_index"], 1))
     draw.text((threat_index_x, threat_index_y), threat_index_text, font=last_played_font, anchor="mm",
               fill=regular_text_fill, align="center")
-    print("Drawn all text.")
     image.save(fp=final_file, format="png")
-    print("saved.")
     final_file.seek(0)
-    print("Seeked...")
     return final_file
 
 
@@ -398,9 +377,7 @@ class Hypixel(commands.Cog):
         with concurrent.futures.ProcessPoolExecutor() as pool:
             for member in our_members:
                 futures.append(asyncio.get_event_loop().run_in_executor(pool, partial(get_file_for_member, member)))
-        print("Waiting on member files...")
         member_files = await asyncio.gather(*futures)
-        print("Gathered them!")
         if len(editable_messages) != len(our_members):
             await channel.purge(limit=None)
             new_messages = True
