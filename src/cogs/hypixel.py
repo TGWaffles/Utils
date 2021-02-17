@@ -199,6 +199,7 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
         self.name_to_files = {}
+        self.instance_uids = []
         self.external_ip = None
         app = web.Application()
         app.add_routes([web.get('/{uid}.png', self.request_image)])
@@ -382,11 +383,10 @@ class Hypixel(commands.Cog):
             new_messages = True
         else:
             new_messages = False
-        added_uids = []
         for member, file in zip(our_members, member_files):
             token = secrets.token_urlsafe(16)
             self.name_to_files[token] = file
-            added_uids.append(token)
+            self.instance_uids.append(token)
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
             
@@ -395,10 +395,6 @@ class Hypixel(commands.Cog):
             else:
                 await editable_messages[i].edit(embed=embed)
                 i += 1
-        removing_tokens = [token for token in self.name_to_files.keys() if token not in added_uids]
-        for token in removing_tokens:
-            self.name_to_files[token].close()
-            del self.name_to_files[token]
 
     @tasks.loop(seconds=5, count=None)
     async def update_hypixel_info(self):
@@ -432,7 +428,11 @@ class Hypixel(commands.Cog):
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
         
         await asyncio.gather(*pending_tasks)
-        
+        removing_tokens = [token for token in self.name_to_files.keys() if token not in self.instance_uids]
+        for token in removing_tokens:
+            self.name_to_files[token].close()
+            del self.name_to_files[token]
+        self.instance_uids = []
 
     @commands.Cog.listener()
     async def on_message(self, message):
