@@ -132,10 +132,14 @@ def get_file_for_member(member):
         fill = (16, 64, 16)
     else:
         fill = (64, 16, 16)
+    print("I'm gonna make a new image...")
     image = PIL.Image.new('RGB', (width, height), color=fill)
+    print("Made image.")
     draw = PIL.ImageDraw.Draw(image)
+    print("Made drawer.")
     name_colour = get_colour_from_threat(member["threat_index"])
     name_font = PIL.ImageFont.truetype("arial.ttf", size // 16)
+    print("Got name font.")
     # Write Name
     name_x = width // 2
     name_y = height // 8
