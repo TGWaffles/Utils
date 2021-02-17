@@ -120,7 +120,7 @@ def get_file_for_member(member):
     image = PIL.Image.new('RGB', (width, height), color=fill)
     draw = PIL.ImageDraw.Draw(image)
     name_colour = get_colour_from_threat(member["threat_index"])
-    name_font = PIL.ImageFont.load_default()
+    name_font = PIL.ImageFont.truetype("arial.ttf", size // 16)
     name_font.size = size // 16
     # Write Name
     name_x = width // 2
@@ -141,8 +141,7 @@ def get_file_for_member(member):
         game_text = "{}".format(member["last_logout"].strftime("%Y/%m/%d %H:%M"))
     top_line_height = height // 8
     last_played_y = height - top_line_height
-    last_played_font = PIL.ImageFont.load_default()
-    last_played_font.size = size // 32
+    last_played_font = PIL.ImageFont.truetype("arial.ttf", size // 32)
     regular_text_fill = (255, 100, 255)
     last_played_x = width // 64
     # last_played_x = max([draw.textsize(line, font=last_played_font)[0]
@@ -213,7 +212,7 @@ class Hypixel(commands.Cog):
         try:
             fkdr = player.stats['Bedwars']['final_kills_bedwars'] / player.stats['Bedwars']['final_deaths_bedwars']
         except KeyError:
-            
+
             fkdr = 0
         bedwars_level = get_level_from_xp(experience)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
