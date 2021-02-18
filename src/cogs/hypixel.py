@@ -334,16 +334,18 @@ class Hypixel(commands.Cog):
         if uuid is None:
             return
         all_channels = self.data.get("hypixel_channels", {})
-        channel = ctx.channel
-        if uuid in self.data.get("hypixel_channels", {})[str(channel.id)]:
-            all_channels[str(channel.id)].remove(uuid)
-            self.data["hypixel_channels"] = all_channels
-            await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
-                                                                  "User {} has been removed from {}.".format(
-                                                                      mcuuid.api.GetPlayerData(uuid).username,
-                                                                      channel.mention)))
-        else:
-            await ctx.reply(embed=self.bot.create_error_embed("That user was not in your hypixel channel."))
+        found = False
+        for channel in ctx.guild.channels:
+            if uuid in self.data.get("hypixel_channels", {})[str(channel.id)]:
+                all_channels[str(channel.id)].remove(uuid)
+                self.data["hypixel_channels"] = all_channels
+                await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
+                                                                      "User {} has been removed from {}.".format(
+                                                                          mcuuid.api.GetPlayerData(uuid).username,
+                                                                          channel.mention)))
+                found = True
+        if not found:
+            await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
 
     async def send_embeds(self, channel_id, channel_members, all_members):
         our_members = []
