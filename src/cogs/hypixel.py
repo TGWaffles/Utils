@@ -138,6 +138,7 @@ class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.data = DataHelper()
+        self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
         self.hypixel = asyncpixel.Client("e823fbc4-e526-4fbb-bf15-37e543aebdd6")
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
@@ -146,6 +147,7 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.start()
         self.token_to_files = {}
         self.token_last_used = {}
+        self.latest_tokens = []
         self.external_ip = None
         self.user_to_uid = {}
         app = web.Application()
@@ -194,23 +196,26 @@ class Hypixel(commands.Cog):
                     "bedwars_winstreak": player.stats["Bedwars"]["winstreak"], "uuid": user_uuid,
                     "threat_index": threat_index, "fkdr": fkdr}
 
-    async def get_expanded_player(self, user_uuid, pool):
+    async def get_expanded_player(self, user_uuid, pool, reset=False):
         player = await self.get_user_stats(user_uuid)
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
-        if player["name"] in self.user_to_uid:
-            last_token = self.user_to_uid[player["name"]]
-            if self.user_to_uid[player["name"]] in self.token_to_files:
-                last_file = BytesIO(self.token_to_files[last_token])
-        if last_file is None:
-            same_file = False
-        else:
-            same_file = await self.bot.loop.run_in_executor(pool, partial(are_equal, last_file, member_file))
-            if same_file:
-                member_file.close()
-                member_file = last_file
+        if not reset:
+            if player["name"] in self.user_to_uid:
+                last_token = self.user_to_uid[player["name"]]
+                if self.user_to_uid[player["name"]] in self.token_to_files:
+                    last_file = BytesIO(self.token_to_files[last_token])
+            if last_file is None:
+                same_file = False
             else:
-                last_file.close()
+                same_file = await self.bot.loop.run_in_executor(pool, partial(are_equal, last_file, member_file))
+                if same_file:
+                    member_file.close()
+                    member_file = last_file
+                else:
+                    last_file.close()
+        else:
+            same_file = False
         player["file"] = member_file.read()
         player["unchanged"] = same_file
         member_file.close()
@@ -388,10 +393,15 @@ class Hypixel(commands.Cog):
         for _, members in all_channels.items():
             for member_uuid in members:
                 member_uuids.add(member_uuid)
+        now = datetime.datetime.now()
+        reset = (now - self.last_reset).total_seconds() > 180
         member_futures = []
+        if reset:
+            self.last_reset = datetime.datetime.now()
         with concurrent.futures.ProcessPoolExecutor() as pool:
             for member_uuid in member_uuids:
-                member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool)))
+                member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool,
+                                                                                         reset)))
             member_dicts = await asyncio.gather(*member_futures)
         offline_members = [member for member in member_dicts if not member["online"]]
         online_members = [member for member in member_dicts if member["online"]]
@@ -399,18 +409,13 @@ class Hypixel(commands.Cog):
         online_members.sort(key=lambda x: float(x["threat_index"]))
         member_dicts = offline_members + online_members
         pending_tasks = []
-
         for channel in all_channels.keys():
             pending_tasks.append(self.bot.loop.create_task(
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
 
         await asyncio.gather(*pending_tasks)
-        now = datetime.datetime.now()
-        if now.minute % 3 != 0:
-            removing_tokens = [token for token in self.token_to_files.keys() if
-                               (now - self.token_last_used.get(token)).total_seconds() > 300]
-        else:
-            removing_tokens = [*self.token_to_files]
+        removing_tokens = [token for token in self.token_to_files.keys() if
+                           (now - self.token_last_used.get(token)).total_seconds() > 300]
         removing_users = []
         for token in removing_tokens:
             del self.token_to_files[token]
