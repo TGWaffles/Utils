@@ -282,6 +282,7 @@ class Hypixel(commands.Cog):
 
     async def uuid_from_identifier(self, ctx, identifier):
         failed = False
+        uuid = ""
         try:
             if mcuuid.tools.is_valid_mojang_uuid(identifier):
                 uuid = identifier
@@ -296,13 +297,15 @@ class Hypixel(commands.Cog):
                             delete_after=10)
             await ctx.message.delete()
             return
+        return uuid
+
+    async def check_valid_player(self, uuid):
         try:
             # noinspection PyUnboundLocalVariable
             await self.get_user_stats(uuid)
         except (TypeError, KeyError):
-            await ctx.reply(embed=self.bot.create_error_embed("That player is not a valid Hypixel Bedwars Player!"))
-            return
-        return uuid
+            return False
+        return True
 
     @commands.command(pass_context=True, name="add", description="Adds a player to your server's hypixel channel!",
                       aliases=["hadd", "hypixel_add", "hypixeladd"])
@@ -310,6 +313,11 @@ class Hypixel(commands.Cog):
     async def add(self, ctx, username: str):
         uuid = await self.uuid_from_identifier(ctx, username)
         if uuid is None:
+            return
+        valid = await self.check_valid_player(uuid)
+        if not valid:
+            await ctx.reply(embed=self.bot.create_error_embed("That user is not a valid hypixel bedwars player. "
+                                                              "Get them to play some games first!"))
             return
         all_channels = self.data.get("hypixel_channels", {})
         for channel_id in all_channels.keys():
@@ -330,26 +338,19 @@ class Hypixel(commands.Cog):
                       aliases=["hremove", "hypixel_remove", "hypixelremove"])
     @is_staff()
     async def remove(self, ctx, username: str):
-        print("fetching uuid")
         uuid = await self.uuid_from_identifier(ctx, username)
         if uuid is None:
             return
-        print("fetched.")
         all_channels = self.data.get("hypixel_channels", {})
         found = False
-        print("iterating through channels")
         for channel in ctx.guild.channels:
-            print(channel.name)
             if uuid in all_channels.get(str(channel.id), []):
-                print("removing from channel")
                 all_channels[str(channel.id)].remove(uuid)
                 self.data["hypixel_channels"] = all_channels
-                print("sending message bish")
                 await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
                                                                       "User {} has been removed from {}.".format(
                                                                           mcuuid.api.GetPlayerData(uuid).username,
                                                                           channel.mention)))
-                print("ayo sent")
                 found = True
         if not found:
             await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
