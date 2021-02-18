@@ -244,7 +244,6 @@ class Hypixel(commands.Cog):
         token = request.match_info['uid']
         data = self.token_to_files.get(token, None)
         if data is None:
-            print(self.token_to_files.keys())
             return web.Response(status=404)
         response = web.StreamResponse()
         response.content_type = "image/png"
@@ -362,7 +361,6 @@ class Hypixel(commands.Cog):
         for member, file in zip(our_members, member_files):
             if not member["unchanged"] or self.user_to_uid.get(member["name"]) not in self.token_to_files:
                 token = secrets.token_urlsafe(16)
-                print("changing {} to {}".format(self.user_to_uid.get(member["name"], None), token))
                 self.token_to_files[token] = file
                 self.token_last_used[token] = datetime.datetime.now()
                 self.user_to_uid[member["name"]] = token
@@ -408,8 +406,11 @@ class Hypixel(commands.Cog):
 
         await asyncio.gather(*pending_tasks)
         now = datetime.datetime.now()
-        removing_tokens = [token for token in self.token_to_files.keys() if
-                           (now - self.token_last_used.get(token)).total_seconds() > 300]
+        if now.minute % 3 != 0:
+            removing_tokens = [token for token in self.token_to_files.keys() if
+                               (now - self.token_last_used.get(token)).total_seconds() > 300]
+        else:
+            removing_tokens = [*self.token_to_files]
         removing_users = []
         for token in removing_tokens:
             del self.token_to_files[token]
