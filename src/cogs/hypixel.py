@@ -364,7 +364,7 @@ class Hypixel(commands.Cog):
                 token = secrets.token_urlsafe(16)
                 print("changing {} to {}".format(self.user_to_uid.get(member["name"], None), token))
                 self.token_to_files[token] = file
-                self.token_last_used = datetime.datetime.now()
+                self.token_last_used[token] = datetime.datetime.now()
                 self.user_to_uid[member["name"]] = token
             else:
                 token = self.user_to_uid[member["name"]]
