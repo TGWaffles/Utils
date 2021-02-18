@@ -246,7 +246,16 @@ class Hypixel(commands.Cog):
         username = request.match_info['user']
         data = self.user_to_files.get(username.lower(), None)
         if data is None:
-            return web.Response(status=404)
+            uuid = await self.uuid_from_identifier(username)
+            if uuid is None:
+                return web.Response(status=404)
+            valid = await self.check_valid_player(uuid)
+            if not valid:
+                return web.Response(status=404)
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                player = await self.get_expanded_player(uuid, pool, True)
+            data = player["file"]
+            self.user_to_files[username.lower()] = data
         response = web.StreamResponse()
         response.content_type = "image/png"
         response.content_length = len(data)
@@ -280,7 +289,7 @@ class Hypixel(commands.Cog):
         except asyncio.TimeoutError:
             return
 
-    async def uuid_from_identifier(self, ctx, identifier):
+    async def uuid_from_identifier(self, identifier):
         failed = False
         uuid = ""
         try:
@@ -293,10 +302,7 @@ class Hypixel(commands.Cog):
         except AttributeError:
             failed = True
         if failed:
-            await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(identifier)),
-                            delete_after=10)
-            await ctx.message.delete()
-            return
+            return None
         return uuid
 
     async def check_valid_player(self, uuid):
@@ -311,8 +317,11 @@ class Hypixel(commands.Cog):
                       aliases=["hadd", "hypixel_add", "hypixeladd"])
     @is_staff()
     async def add(self, ctx, username: str):
-        uuid = await self.uuid_from_identifier(ctx, username)
+        uuid = await self.uuid_from_identifier(username)
         if uuid is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                            delete_after=10)
+            await ctx.message.delete()
             return
         valid = await self.check_valid_player(uuid)
         if not valid:
@@ -338,8 +347,11 @@ class Hypixel(commands.Cog):
                       aliases=["hremove", "hypixel_remove", "hypixelremove"])
     @is_staff()
     async def remove(self, ctx, username: str):
-        uuid = await self.uuid_from_identifier(ctx, username)
+        uuid = await self.uuid_from_identifier(username)
         if uuid is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                            delete_after=10)
+            await ctx.message.delete()
             return
         all_channels = self.data.get("hypixel_channels", {})
         found = False

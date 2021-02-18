@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "1.28.3"
+version_number = "1.28.4"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -14,7 +14,7 @@ lexibot_id = 730015197980262424
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api", "og_checker", "games", "blacklist"]
 
-dev = False
+dev = True
 if dev:
     token.token = token.dev_token
     extensions.remove("suggestions")
