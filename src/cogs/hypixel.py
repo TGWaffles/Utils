@@ -325,7 +325,7 @@ class Hypixel(commands.Cog):
                                                                           mcuuid.api.GetPlayerData(uuid).username,
                                                                           channel.mention)))
 
-    @commands.command(pass_context=True, name="remove", description="Removes a player to your server's "
+    @commands.command(pass_context=True, name="remove", description="Removes a player from your server's "
                                                                     "hypixel channel!",
                       aliases=["hremove", "hypixel_remove", "hypixelremove"])
     @is_staff()
@@ -334,15 +334,16 @@ class Hypixel(commands.Cog):
         if uuid is None:
             return
         all_channels = self.data.get("hypixel_channels", {})
-        for channel_id in all_channels.keys():
-            channel = self.bot.get_channel(int(channel_id))
-            if uuid in self.data.get("hypixel_channels", {})[str(channel_id)]:
-                all_channels[str(channel_id)].remove(uuid)
-                self.data["hypixel_channels"] = all_channels
-                await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
-                                                                      "User {} has been removed from {}.".format(
-                                                                          mcuuid.api.GetPlayerData(uuid).username,
-                                                                          channel.mention)))
+        channel = ctx.channel
+        if uuid in self.data.get("hypixel_channels", {})[str(channel.id)]:
+            all_channels[str(channel.id)].remove(uuid)
+            self.data["hypixel_channels"] = all_channels
+            await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
+                                                                  "User {} has been removed from {}.".format(
+                                                                      mcuuid.api.GetPlayerData(uuid).username,
+                                                                      channel.mention)))
+        else:
+            await ctx.reply(embed=self.bot.create_error_embed("That user was not in your hypixel channel."))
 
     async def send_embeds(self, channel_id, channel_members, all_members):
         our_members = []
