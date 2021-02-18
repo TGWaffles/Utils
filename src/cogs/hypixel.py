@@ -358,23 +358,21 @@ class Hypixel(commands.Cog):
         else:
             new_messages = False
         for member, file in zip(our_members, member_files):
-            if not member["unchanged"]:
+            if not member["unchanged"] or self.user_to_uid.get(member["name"]) not in self.token_to_files:
                 token = secrets.token_urlsafe(16)
                 print("changing {} to {}".format(self.user_to_uid.get(member["name"], None), token))
                 self.token_to_files[token] = file
                 self.user_to_uid[member["name"]] = token
-                self.instance_uids.append(token)
             else:
                 token = self.user_to_uid[member["name"]]
-                self.instance_uids.append(token)
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
-            
+            self.instance_uids.append(token)
             if new_messages:
                 await channel.send(embed=embed)
             else:
                 embed_member_name = editable_messages[i].embeds[0].title
-                if embed_member_name != member["name"] or not member["unchanged"]:
+                if embed_member_name != member["name"] or not member["unchanged"] or token not in self.token_to_files:
                     await editable_messages[i].edit(embed=embed)
                 i += 1
 
