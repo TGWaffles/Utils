@@ -201,16 +201,19 @@ class Hypixel(commands.Cog):
         if player["name"] in self.user_to_uid:
             last_token = self.user_to_uid[player["name"]]
             if self.user_to_uid[player["name"]] in self.token_to_files:
-                last_file = self.token_to_files[last_token]
+                last_file = BytesIO(self.token_to_files[last_token])
         if last_file is None:
             same_file = False
         else:
             same_file = await self.bot.loop.run_in_executor(pool, partial(are_equal, last_file, member_file))
-        if same_file:
-            member_file.close()
-            member_file = last_file
-        player["file"] = member_file
+            if same_file:
+                member_file.close()
+                member_file = last_file
+            else:
+                last_file.close()
+        player["file"] = member_file.read()
         player["unchanged"] = same_file
+        member_file.close()
         return player
 
     @staticmethod
@@ -238,16 +241,11 @@ class Hypixel(commands.Cog):
         return member_embed
 
     async def request_image(self, request: web.Request):
-        file = self.token_to_files.get(request.match_info['uid'], None)
-        if file is None:
+        data = self.token_to_files.get(request.match_info['uid'], None)
+        if data is None:
             return web.Response(status=404)
         response = web.StreamResponse()
         response.content_type = "image/png"
-        try:
-            data = file.read()
-        except ValueError:
-            return web.Response(status=404)
-        file.seek(0)
         response.content_length = len(data)
         await response.prepare(request)
         await response.write(data)
@@ -380,41 +378,37 @@ class Hypixel(commands.Cog):
 
     @tasks.loop(seconds=5, count=None)
     async def update_hypixel_info(self):
-        try:
-            if self.external_ip is None:
-                async with aiohttp.ClientSession() as session:
-                    request = await session.get("https://checkip.amazonaws.com/")
-                    text = await request.text()
-                    self.external_ip = text.strip()
-            all_channels = self.data.get("hypixel_channels", {}).copy()
-            member_uuids = set()
-            for _, members in all_channels.items():
-                for member_uuid in members:
-                    member_uuids.add(member_uuid)
-            member_futures = []
-            with concurrent.futures.ProcessPoolExecutor() as pool:
-                for member_uuid in member_uuids:
-                    member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool)))
-                member_dicts = await asyncio.gather(*member_futures)
-            offline_members = [member for member in member_dicts if not member["online"]]
-            online_members = [member for member in member_dicts if member["online"]]
-            offline_members.sort(key=lambda x: float(x["threat_index"]))
-            online_members.sort(key=lambda x: float(x["threat_index"]))
-            member_dicts = offline_members + online_members
-            pending_tasks = []
+        if self.external_ip is None:
+            async with aiohttp.ClientSession() as session:
+                request = await session.get("https://checkip.amazonaws.com/")
+                text = await request.text()
+                self.external_ip = text.strip()
+        all_channels = self.data.get("hypixel_channels", {}).copy()
+        member_uuids = set()
+        for _, members in all_channels.items():
+            for member_uuid in members:
+                member_uuids.add(member_uuid)
+        member_futures = []
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            for member_uuid in member_uuids:
+                member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool)))
+            member_dicts = await asyncio.gather(*member_futures)
+        offline_members = [member for member in member_dicts if not member["online"]]
+        online_members = [member for member in member_dicts if member["online"]]
+        offline_members.sort(key=lambda x: float(x["threat_index"]))
+        online_members.sort(key=lambda x: float(x["threat_index"]))
+        member_dicts = offline_members + online_members
+        pending_tasks = []
 
-            for channel in all_channels.keys():
-                pending_tasks.append(self.bot.loop.create_task(
-                    self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
+        for channel in all_channels.keys():
+            pending_tasks.append(self.bot.loop.create_task(
+                self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
 
-            await asyncio.gather(*pending_tasks)
-            removing_tokens = [token for token in self.token_to_files.keys() if token not in self.instance_uids]
-            for token in removing_tokens:
-                self.token_to_files[token].close()
-                del self.token_to_files[token]
-            self.instance_uids = []
-        except ValueError as e:
-            print(e)
+        await asyncio.gather(*pending_tasks)
+        removing_tokens = [token for token in self.token_to_files.keys() if token not in self.instance_uids]
+        for token in removing_tokens:
+            del self.token_to_files[token]
+        self.instance_uids = []
 
     @commands.Cog.listener()
     async def on_message(self, message):
