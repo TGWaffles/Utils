@@ -145,13 +145,12 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
-        self.token_to_files = {}
+        self.user_to_files = {}
         self.token_last_used = {}
         self.latest_tokens = []
         self.external_ip = None
-        self.user_to_uid = {}
         app = web.Application()
-        app.add_routes([web.get('/{uid}.png', self.request_image)])
+        app.add_routes([web.get('/{user}-{uid}.png', self.request_image)])
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=8800))
 
@@ -201,10 +200,8 @@ class Hypixel(commands.Cog):
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
-            if player["name"] in self.user_to_uid:
-                last_token = self.user_to_uid[player["name"]]
-                if self.user_to_uid[player["name"]] in self.token_to_files:
-                    last_file = BytesIO(self.token_to_files[last_token])
+            if player["name"] in self.user_to_files:
+                last_file = BytesIO(self.user_to_files[player["name"]])
             if last_file is None:
                 same_file = False
             else:
@@ -246,14 +243,13 @@ class Hypixel(commands.Cog):
         return member_embed
 
     async def request_image(self, request: web.Request):
-        token = request.match_info['uid']
-        data = self.token_to_files.get(token, None)
+        username = request.match_info['user']
+        data = self.user_to_files.get(username, None)
         if data is None:
             return web.Response(status=404)
         response = web.StreamResponse()
         response.content_type = "image/png"
         response.content_length = len(data)
-        self.token_last_used[token] = datetime.datetime.now()
         await response.prepare(request)
         await response.write(data)
         return response
@@ -364,20 +360,16 @@ class Hypixel(commands.Cog):
         else:
             new_messages = False
         for member, file in zip(our_members, member_files):
-            if not member["unchanged"] or self.user_to_uid.get(member["name"]) not in self.token_to_files:
-                token = secrets.token_urlsafe(16)
-                self.token_to_files[token] = file
-                self.token_last_used[token] = datetime.datetime.now()
-                self.user_to_uid[member["name"]] = token
-            else:
-                token = self.user_to_uid[member["name"]]
+            if not member["unchanged"] or member["name"] not in self.user_to_files:
+                self.user_to_files[member["name"]] = file
+            token = secrets.token_urlsafe(16).replace("-", "")
             embed = await self.get_user_embed(member)
-            embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
+            embed.set_image(url="http://{}:8800/{}-{}.png".format(self.external_ip, member["name"], token))
             if new_messages:
                 await channel.send(embed=embed)
             else:
                 embed_member_name = editable_messages[i].embeds[0].title
-                if embed_member_name != member["name"] or not member["unchanged"] or token not in self.token_to_files:
+                if embed_member_name != member["name"] or not member["unchanged"]:
                     await editable_messages[i].edit(embed=embed)
                 i += 1
 
@@ -412,16 +404,7 @@ class Hypixel(commands.Cog):
         for channel in all_channels.keys():
             pending_tasks.append(self.bot.loop.create_task(
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
-
         await asyncio.gather(*pending_tasks)
-        removing_tokens = [token for token in self.token_to_files.keys() if
-                           (now - self.token_last_used.get(token)).total_seconds() > 300]
-        removing_users = []
-        for token in removing_tokens:
-            del self.token_to_files[token]
-            removing_users += [user for user in self.user_to_uid if self.user_to_uid[user] == token]
-        for user in removing_users:
-            del self.user_to_uid[user]
 
     @commands.Cog.listener()
     async def on_message(self, message):
