@@ -368,7 +368,14 @@ class Hypixel(commands.Cog):
             if new_messages:
                 await channel.send(embed=embed)
             else:
-                embed_member_name = editable_messages[i].embeds[0].title
+                try:
+                    embed_member_name = editable_messages[i].embeds[0].title
+                except IndexError:
+                    print(channel_id)
+                    print(channel.name)
+                    print(member["name"])
+                    print(editable_messages[i].id)
+                    return
                 if embed_member_name != member["name"] or not member["unchanged"]:
                     await editable_messages[i].edit(embed=embed)
                 i += 1
