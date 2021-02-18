@@ -330,19 +330,26 @@ class Hypixel(commands.Cog):
                       aliases=["hremove", "hypixel_remove", "hypixelremove"])
     @is_staff()
     async def remove(self, ctx, username: str):
+        print("fetching uuid")
         uuid = await self.uuid_from_identifier(ctx, username)
         if uuid is None:
             return
+        print("fetched.")
         all_channels = self.data.get("hypixel_channels", {})
         found = False
+        print("iterating through channels")
         for channel in ctx.guild.channels:
+            print(channel.name)
             if uuid in all_channels.get(str(channel.id), []):
+                print("removing from channel")
                 all_channels[str(channel.id)].remove(uuid)
                 self.data["hypixel_channels"] = all_channels
+                print("sending message bish")
                 await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
                                                                       "User {} has been removed from {}.".format(
                                                                           mcuuid.api.GetPlayerData(uuid).username,
                                                                           channel.mention)))
+                print("ayo sent")
                 found = True
         if not found:
             await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
