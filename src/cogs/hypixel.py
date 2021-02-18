@@ -145,7 +145,7 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
         self.token_to_files = {}
-        self.instance_uids = []
+        self.token_last_used = {}
         self.external_ip = None
         self.user_to_uid = {}
         app = web.Application()
@@ -241,13 +241,15 @@ class Hypixel(commands.Cog):
         return member_embed
 
     async def request_image(self, request: web.Request):
-        data = self.token_to_files.get(request.match_info['uid'], None)
+        token = request.match_info['uid']
+        data = self.token_to_files.get(token, None)
         if data is None:
             print(self.token_to_files.keys())
             return web.Response(status=404)
         response = web.StreamResponse()
         response.content_type = "image/png"
         response.content_length = len(data)
+        self.token_last_used[token] = datetime.datetime.now()
         await response.prepare(request)
         await response.write(data)
         return response
@@ -362,12 +364,12 @@ class Hypixel(commands.Cog):
                 token = secrets.token_urlsafe(16)
                 print("changing {} to {}".format(self.user_to_uid.get(member["name"], None), token))
                 self.token_to_files[token] = file
+                self.token_last_used = datetime.datetime.now()
                 self.user_to_uid[member["name"]] = token
             else:
                 token = self.user_to_uid[member["name"]]
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}.png".format(self.external_ip, token))
-            self.instance_uids.append(token)
             if new_messages:
                 await channel.send(embed=embed)
             else:
@@ -405,11 +407,15 @@ class Hypixel(commands.Cog):
                 self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
 
         await asyncio.gather(*pending_tasks)
-        removing_tokens = [token for token in self.token_to_files.keys() if token not in self.instance_uids]
+        now = datetime.datetime.now()
+        removing_tokens = [token for token in self.token_to_files.keys() if
+                           (now - self.token_last_used.get(token)).total_seconds() > 300]
+        removing_users = []
         for token in removing_tokens:
-            print("removing {}".format(token))
             del self.token_to_files[token]
-        self.instance_uids = []
+            removing_users += [user for user in self.user_to_uid if self.user_to_uid[user] == token]
+        for user in removing_users:
+            del self.user_to_uid[user]
 
     @commands.Cog.listener()
     async def on_message(self, message):
