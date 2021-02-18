@@ -243,6 +243,7 @@ class Hypixel(commands.Cog):
     async def request_image(self, request: web.Request):
         data = self.token_to_files.get(request.match_info['uid'], None)
         if data is None:
+            print(self.token_to_files.keys())
             return web.Response(status=404)
         response = web.StreamResponse()
         response.content_type = "image/png"
@@ -359,6 +360,7 @@ class Hypixel(commands.Cog):
         for member, file in zip(our_members, member_files):
             if not member["unchanged"]:
                 token = secrets.token_urlsafe(16)
+                print("changing {} to {}".format(self.user_to_uid.get(member["name"], None), token))
                 self.token_to_files[token] = file
                 self.user_to_uid[member["name"]] = token
                 self.instance_uids.append(token)
@@ -407,6 +409,7 @@ class Hypixel(commands.Cog):
         await asyncio.gather(*pending_tasks)
         removing_tokens = [token for token in self.token_to_files.keys() if token not in self.instance_uids]
         for token in removing_tokens:
+            print("removing {}".format(token))
             del self.token_to_files[token]
         self.instance_uids = []
 
