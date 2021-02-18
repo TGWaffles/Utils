@@ -336,7 +336,7 @@ class Hypixel(commands.Cog):
         all_channels = self.data.get("hypixel_channels", {})
         found = False
         for channel in ctx.guild.channels:
-            if uuid in self.data.get("hypixel_channels", {})[str(channel.id)]:
+            if uuid in all_channels.get(str(channel.id), []):
                 all_channels[str(channel.id)].remove(uuid)
                 self.data["hypixel_channels"] = all_channels
                 await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
