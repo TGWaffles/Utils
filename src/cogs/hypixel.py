@@ -200,8 +200,8 @@ class Hypixel(commands.Cog):
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
-            if player["name"] in self.user_to_files:
-                last_file = BytesIO(self.user_to_files[player["name"]])
+            if player["name"].lower() in self.user_to_files:
+                last_file = BytesIO(self.user_to_files[player["name"].lower()])
             if last_file is None:
                 same_file = False
             else:
@@ -244,7 +244,7 @@ class Hypixel(commands.Cog):
 
     async def request_image(self, request: web.Request):
         username = request.match_info['user']
-        data = self.user_to_files.get(username, None)
+        data = self.user_to_files.get(username.lower(), None)
         if data is None:
             return web.Response(status=404)
         response = web.StreamResponse()
@@ -360,8 +360,8 @@ class Hypixel(commands.Cog):
         else:
             new_messages = False
         for member, file in zip(our_members, member_files):
-            if not member["unchanged"] or member["name"] not in self.user_to_files:
-                self.user_to_files[member["name"]] = file
+            if not member["unchanged"] or member["name"].lower() not in self.user_to_files:
+                self.user_to_files[member["name"].lower()] = file
             token = secrets.token_urlsafe(16).replace("-", "")
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:8800/{}-{}.png".format(self.external_ip, member["name"], token))
