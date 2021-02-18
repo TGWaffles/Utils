@@ -14,7 +14,7 @@ lexibot_id = 730015197980262424
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api", "og_checker", "games", "blacklist"]
 
-dev = True
+dev = False
 if dev:
     token.token = token.dev_token
     extensions.remove("suggestions")
