@@ -354,7 +354,8 @@ class Hypixel(commands.Cog):
         history = await channel.history(limit=None, oldest_first=True).flatten()
         editable_messages = [message for message in history if message.author == self.bot.user]
         member_files = [member["file"] for member in our_members]
-        if len(editable_messages) != len(our_members):
+        if (len(editable_messages) != len(our_members) or
+                len([message for message in editable_messages if len(message.embeds) == 1]) != len(our_members)):
             await channel.purge(limit=None)
             new_messages = True
         else:
@@ -368,14 +369,7 @@ class Hypixel(commands.Cog):
             if new_messages:
                 await channel.send(embed=embed)
             else:
-                try:
-                    embed_member_name = editable_messages[i].embeds[0].title
-                except IndexError:
-                    print(channel_id)
-                    print(channel.name)
-                    print(member["name"])
-                    print(editable_messages[i].id)
-                    return
+                embed_member_name = editable_messages[i].embeds[0].title
                 if embed_member_name != member["name"] or not member["unchanged"]:
                     await editable_messages[i].edit(embed=embed)
                 i += 1
