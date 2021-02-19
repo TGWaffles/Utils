@@ -4,6 +4,7 @@ import sys
 import json
 import os
 import datetime
+import re
 import subprocess
 
 from pretty_help import PrettyHelp
@@ -69,6 +70,20 @@ class UtilsBot(commands.Bot):
         embed = discord.Embed(title=title, description=text, colour=discord.Colour.green(),
                               timestamp=datetime.datetime.utcnow())
         return embed
+
+    @staticmethod
+    def split_text(full_text):
+        while len(full_text) > 2000:
+            newline_indices = [m.end() for m in re.finditer("\n", full_text[:2000])]
+            if len(newline_indices) == 0:
+                to_send = full_text[:2000]
+                full_text = full_text[2000:]
+            else:
+                to_send = full_text[:newline_indices[-1]]
+                full_text = full_text[newline_indices[-1]:]
+            yield to_send
+        if len(full_text) > 0:
+            yield full_text
 
     @staticmethod
     def restart():
