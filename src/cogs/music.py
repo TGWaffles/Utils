@@ -11,6 +11,15 @@ from functools import partial
 from main import UtilsBot
 from src.helpers.storage_helper import DataHelper
 
+# TODO:
+"""1. Add a true pagination system to the bot as a whole to allow !queue
+2. Add !queue, !clearqueue, !dequeue <index>
+3. Add !volume
+4. Add thumbnails (maybe) for "now playing" embeds.
+5. Clean up help command for music related bot commands.
+6. Add variable prefix (set to something obscure at first)
+7. <FUTURE> Start on web help page and change help handler to fully custom help handler."""
+
 youtube_dl.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {
@@ -112,7 +121,8 @@ class Music(commands.Cog):
             first_song_name = await self.title_from_url(first_song)
             await ctx.reply(embed=self.bot.create_completed_embed("Added song to queue!", f"Added {first_song_name} "
                                                                                           f"to queue!\n"
-                                                                                          f"Please note other songs in a playlist may still be "
+                                                                                          f"Please note other songs in "
+                                                                                          f"a playlist may still be "
                                                                                           f"processing."))
             futures = []
             for url in playlist_info:
