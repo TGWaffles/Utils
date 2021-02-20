@@ -263,6 +263,27 @@ class Hypixel(commands.Cog):
         await response.write(data)
         return response
 
+    @commands.command(aliases="hinfo")
+    async def info(self, ctx, username: str):
+        async with ctx.typing():
+            data = self.user_to_files.get(username.lower(), None)
+            if data is None:
+                uuid = await self.uuid_from_identifier(username)
+                if uuid is None:
+                    await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
+                    return
+                valid = await self.check_valid_player(uuid)
+                if not valid:
+                    await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played enough bedwars."))
+                    return
+                with concurrent.futures.ProcessPoolExecutor() as pool:
+                    player = await self.get_expanded_player(uuid, pool, True)
+                data = player["file"]
+                self.user_to_files[username.lower()] = data
+            file = BytesIO(data)
+            discord_file = discord.File(fp=file, filename=f"{username}.png`")
+            await ctx.reply(file=discord_file)
+
     @commands.command(pass_context=True)
     @is_staff()
     async def hypixel_channel(self, ctx, channel: discord.TextChannel):
