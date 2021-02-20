@@ -25,7 +25,7 @@ class OGCog(commands.Cog):
         first_join_date = first_join_date.replace(tzinfo=datetime.timezone.utc)
         return first_join_date < og_date
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["og_check"])
     async def check_og(self, ctx, member: discord.Member = None):
         if member is None:
             member = ctx.message.author
