@@ -179,7 +179,7 @@ class Music(commands.Cog):
             # await voice_client.disconnect()
             return
         next_song_url = guild_queued.pop(0)
-        local_ffmpeg_options = ffmpeg_options
+        local_ffmpeg_options = ffmpeg_options.copy()
         resume_from = 0
         if type(next_song_url) == tuple or type(next_song_url) == list:
             next_song_url, resume_from = next_song_url
