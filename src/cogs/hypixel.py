@@ -263,7 +263,7 @@ class Hypixel(commands.Cog):
         await response.write(data)
         return response
 
-    @commands.command(aliases="hinfo")
+    @commands.command(aliases=["hinfo"])
     async def info(self, ctx, username: str):
         async with ctx.typing():
             data = self.user_to_files.get(username.lower(), None)
