@@ -51,6 +51,7 @@ class UtilsBot(commands.Bot):
                     pass
         members = list(sorting_members.values())
         members.sort(key=lambda x: x[1])
+        members = [member[0] for member in members]
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
         return members
