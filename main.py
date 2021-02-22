@@ -34,35 +34,26 @@ class UtilsBot(commands.Bot):
 
     async def get_sorted_members(self, guild):
         members = await guild.fetch_members(limit=None).flatten()
+        members = [member for member in members if not member.bot]
         sorting_members = {member: (member, member.joined_at) for member in members}
-        if guild.id == config.monkey_guild_id:
-            member_ids = [user.id for user in members]
-            all_guilds = self.data.get("og_messages", {})
-            og_messages = all_guilds.get(str(guild.id), {})
-            for user_id in og_messages.keys():
-                try:
-                    member_object = members[member_ids.index(int(user_id))]
-                    if guild.id == 770972021487304714:
-                        print(og_messages)
-                        print(member_object.name)
-                        print(og_messages[user_id])
-                    first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
-                    if guild.id == 770972021487304714:
-                        print(first_join)
-                        print(member_object.joined_at)
-                    if first_join < member_object.joined_at:
-                        sorting_members[member_object] = (member_object, first_join)
-                        member_object.joined_at = first_join
-                        members[member_ids.index(int(user_id))] = member_object
-                except (ValueError, IndexError):
-                    pass
+        member_ids = [user.id for user in members]
+        all_guilds = self.data.get("og_messages", {})
+        og_messages = all_guilds.get(str(guild.id), {})
+        for user_id in og_messages.keys():
+            try:
+                member_object = members[member_ids.index(int(user_id))]
+                first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
+                if first_join < member_object.joined_at:
+                    sorting_members[member_object] = (member_object, first_join)
+                    member_object.joined_at = first_join
+                    members[member_ids.index(int(user_id))] = member_object
+            except (ValueError, IndexError):
+                pass
         members = list(sorting_members.values())
         members.sort(key=lambda x: x[1])
         members = [member[0] for member in members]
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
-        if guild.id == 770972021487304714:
-            print("\n".join([member.name for member in members]))
         return members
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
