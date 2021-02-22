@@ -43,6 +43,7 @@ class UtilsBot(commands.Bot):
                 try:
                     member_object = members[member_ids.index(int(user_id))]
                     if guild.id == 770972021487304714:
+                        print(og_messages)
                         print(member_object.name)
                         print(og_messages[user_id])
                     first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
