@@ -196,6 +196,7 @@ class Music(commands.Cog):
         embed = self.bot.create_completed_embed("Playing next song!", "Playing **[{}]({})**".format(title,
                                                                                                     next_song_url))
         embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
+        history = await self.called_from[voice_client.guild.id].history(limit=1).flatten()
         await self.called_from[voice_client.guild.id].send(embed=embed)
 
     @commands.command()
