@@ -54,7 +54,8 @@ class UtilsBot(commands.Bot):
         members = [member[0] for member in members]
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
-        print(members)
+        if guild.id == 770972021487304714:
+            print(members)
         return members
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
