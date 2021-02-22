@@ -292,7 +292,7 @@ class Hypixel(commands.Cog):
                                                                                 "updates? \n "
                                                                                 "(THIS DELETES ALL CONTENTS) \n"
                                                                                 "Type \"yes\" if you're sure.".format(
-            channel.mention)))
+                                                                                    channel.mention)))
         try:
             await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
             await sent.delete()
@@ -310,7 +310,8 @@ class Hypixel(commands.Cog):
         except asyncio.TimeoutError:
             return
 
-    async def uuid_from_identifier(self, identifier):
+    @staticmethod
+    async def uuid_from_identifier(identifier):
         failed = False
         uuid = ""
         try:
