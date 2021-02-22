@@ -42,7 +42,12 @@ class UtilsBot(commands.Bot):
             for user_id in og_messages.keys():
                 try:
                     member_object = members[member_ids.index(int(user_id))]
+                    if guild.id == 770972021487304714:
+                        print(member_object.name)
                     first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
+                    if guild.id == 770972021487304714:
+                        print(first_join)
+                        print(member_object.joined_at)
                     if first_join < member_object.joined_at:
                         sorting_members[member_object] = (member_object, first_join)
                         member_object.joined_at = first_join
@@ -55,7 +60,7 @@ class UtilsBot(commands.Bot):
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
         if guild.id == 770972021487304714:
-            print(members)
+            print("\n".join([member.name for member in members]))
         return members
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
