@@ -125,7 +125,7 @@ class Monkey(commands.Cog):
         if message.channel.id == config.counting_channel_id:
             count = 15
             while True:
-                try:f
+                try:
                     previous_messages = [x for x in await message.channel.history(limit=count).flatten()
                                          if not x.author.id == self.bot.user.id]
                     previous_message = previous_messages[1]
