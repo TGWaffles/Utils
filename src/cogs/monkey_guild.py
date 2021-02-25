@@ -9,6 +9,7 @@ from main import UtilsBot
 from src.storage import config
 from src.helpers.storage_helper import DataHelper
 from src.checks.user_check import is_owner
+from src.checks.guild_check import monkey_check
 
 
 class Monkey(commands.Cog):
@@ -17,6 +18,14 @@ class Monkey(commands.Cog):
         # self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
         self.previous_counting_number = None
         self.data = DataHelper()
+
+    @commands.command()
+    @monkey_check()
+    @is_owner()
+    async def fix_muted_stuff(self, ctx):
+        muted_override = discord.PermissionOverwrite(send_messages=False)
+        for channel in ctx.guild.channels:
+            await channel.set_permissions(muted_override)
 
     # def is_og(self, member: discord.Member):
     #     first_join_date = member.joined_at

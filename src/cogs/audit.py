@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 from src.storage import config
 from src.checks.role_check import is_staff_backend
+from typing import Optional
 from main import UtilsBot
 
 
@@ -12,17 +13,34 @@ class Audit(commands.Cog):
         self.bot: UtilsBot = bot
 
     @commands.command(pass_context=True)
-    async def audit(self, ctx, command, member: discord.Member, *, other_info=""):
+    async def audit(self, ctx, command, member: Optional[discord.Member], channel: Optional[discord.TextChannel],
+                    *, other_info=""):
         if not is_staff_backend(ctx.author) and not ctx.author.id == config.zex_id == member.id:
+            raise commands.CheckFailure
+        if ctx.author.id == config.zex_id == member.id and command.lower() != "roles":
             raise commands.CheckFailure
         if command.lower() == "roles":
             await self.audit_roles(ctx, member)
             return
+        elif command.lower() == "overwrites":
+            await self.audit_overwrites(ctx, channel)
         elif other_info == "something":
             # TODO: Write rest of audit commands...
             pass
 
-    async def audit_roles(self, ctx, member: discord.Member):
+    async def audit_overwrites(self, ctx, channel: Optional[discord.TextChannel]):
+        if channel is None:
+            await ctx.send(self.bot.create_error_embed("No channel mentioned!"))
+            return
+        sent_message = await ctx.send("Searching... check this message for updates when completed.")
+        embed = await self.create_channel_updates_embed(channel)
+
+    async def create_channel_updates_embed(self, channel: discord.TextChannel):
+        embed = discord.Embed(timestamp=datetime.datetime.utcnow())
+        embed.colour = discord.Colour.blue()
+        embed.title = "Channel updates for {} - {}".format(channel.id, channel.name)
+
+    async def audit_roles(self, ctx, member: Optional[discord.Member]):
         if member is None:
             await ctx.send(self.bot.create_error_embed("No member mentioned!"))
             return
@@ -57,6 +75,23 @@ class Audit(commands.Cog):
             first_time_string = str(first_time.timestamp())
         embed.set_footer(text="{}\n{}".format(first_time_string, last_time_string))
         return embed
+
+    @staticmethod
+    async def get_channel_overwrites(channel: discord.TextChannel, before=None, after=None):
+        guild = channel.guild
+        action = discord.AuditLogAction.overwrite_update
+        entries = []
+        if before is None and after is None:
+            audit_search = guild.audit_logs(action=action, limit=None)
+        elif after is None:
+            audit_search = guild.audit_logs(action=action, limit=None, before=before)
+        elif before is None:
+            audit_search = guild.audit_logs(action=action, limit=None, after=after)
+        else:
+            return [], None
+        last_time = None
+        first_time = None
+
 
     @staticmethod
     async def get_role_updates(member: discord.Member, before=None, after=None):
