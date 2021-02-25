@@ -23,7 +23,7 @@ class Monkey(commands.Cog):
     @monkey_check()
     @is_owner()
     async def fix_muted_stuff(self, ctx):
-        muted_override = discord.PermissionOverwrite(send_messages=False)
+        muted_override = discord.PermissionOverwrite(send_messages=False, speak=False)
         muted_role = ctx.guild.get_role(728074050684977193)
         print(muted_role)
         message = await ctx.reply(embed=self.bot.create_processing_embed("Processing", "Doing it..."))
