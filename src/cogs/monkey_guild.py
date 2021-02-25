@@ -24,8 +24,12 @@ class Monkey(commands.Cog):
     @is_owner()
     async def fix_muted_stuff(self, ctx):
         muted_override = discord.PermissionOverwrite(send_messages=False)
+        muted_role = ctx.guild.get_role(814632063650103357)
+        message = await ctx.reply(embed=self.bot.create_processing_embed("Processing", "Doing it..."))
         for channel in ctx.guild.channels:
-            await channel.set_permissions(muted_override)
+            await channel.set_permissions(muted_role, overwrite=muted_override)
+        await message.edit(embed=self.bot.create_completed_embed("Done.", "Fixed (I think)"))
+
 
     # def is_og(self, member: discord.Member):
     #     first_join_date = member.joined_at
