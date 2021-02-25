@@ -123,14 +123,15 @@ class Monkey(commands.Cog):
         if message.author.id == self.bot.user.id:
             return
         if message.channel.id == config.counting_channel_id:
-            previous_messages = [x for x in await message.channel.history(limit=15).flatten()
-                                 if not x.author.id == self.bot.user.id]
-            previous_message = previous_messages[1]
-            if previous_message.author.id == message.author.id:
-                await message.reply(embed=self.bot.create_error_embed("You can't send two numbers in a row!"),
-                                    delete_after=7)
-                await message.delete()
-                return
+            count = 15
+            while True:
+                try:f
+                    previous_messages = [x for x in await message.channel.history(limit=count).flatten()
+                                         if not x.author.id == self.bot.user.id]
+                    previous_message = previous_messages[1]
+                    break
+                except IndexError:
+                    count += 10
             if self.previous_counting_number is None:
                 try:
                     previous_number = int(re.findall(r"\d+", previous_message.clean_content)[0])
