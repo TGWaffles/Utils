@@ -353,6 +353,10 @@ class Hypixel(commands.Cog):
         all_channels = self.data.get("hypixel_channels", {})
         for channel_id in all_channels.keys():
             channel = self.bot.get_channel(int(channel_id))
+            if channel is None:
+                all_channels.pop(str(channel_id))
+                self.data["hypixel_channels"] = all_channels
+                continue
             if channel.guild == ctx.guild:
                 if uuid in all_channels[str(channel_id)]:
                     await ctx.reply(embed=self.bot.create_error_embed("Player already in channel!"))
@@ -396,6 +400,11 @@ class Hypixel(commands.Cog):
             if member["uuid"] in channel_members:
                 our_members.append(member)
         channel = await self.bot.fetch_channel(channel_id)
+        if channel is None:
+            all_channels = self.data.get("hypixel_channels", {})
+            all_channels.pop(str(channel_id))
+            self.data["hypixel_channels"] = all_channels
+            return
         history = await channel.history(limit=None, oldest_first=True).flatten()
         editable_messages = [message for message in history if message.author == self.bot.user]
         member_files = [member["file"] for member in our_members]
