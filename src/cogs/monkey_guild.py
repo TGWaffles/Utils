@@ -146,6 +146,11 @@ class Monkey(commands.Cog):
                     break
                 except IndexError:
                     count += 10
+            if previous_message.author.id == message.author.id:
+                await message.reply(embed=self.bot.create_error_embed("You can't send two numbers in a row!"),
+                                    delete_after=7)
+                await message.delete()
+                return
             if self.previous_counting_number is None:
                 try:
                     previous_number = int(re.findall(r"\d+", previous_message.clean_content)[0])
