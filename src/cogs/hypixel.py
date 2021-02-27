@@ -351,7 +351,7 @@ class Hypixel(commands.Cog):
                                                               "Get them to play some games first!"))
             return
         all_channels = self.data.get("hypixel_channels", {})
-        for channel_id in [all_channels.keys()].copy():
+        for channel_id in list(all_channels.keys()).copy():
             channel = self.bot.get_channel(int(channel_id))
             if channel is None:
                 all_channels.pop(str(channel_id))
