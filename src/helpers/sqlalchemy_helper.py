@@ -9,28 +9,28 @@ from sqlalchemy.exc import IntegrityError, OperationalError, StatementError
 
 from src.helpers.models.database_models import *
 
-old_commit = session.Session.commit
-old_query = session.Session.query
-
-
-def commit(self):
-    try:
-        old_commit(self)
-    except IntegrityError as e:
-        session.Session.rollback(self)
-
-
-def query(self, *args, **kwargs):
-    try:
-        return old_query(self, *args, **kwargs)
-    except (OperationalError, StatementError):
-        session.Session.rollback(self)
-        print("ERROR FOUND!")
-        return query(self, *args, **kwargs)
-
-
-session.Session.commit = commit
-session.Session.query = query
+# old_commit = session.Session.commit
+# old_query = session.Session.query
+#
+#
+# def commit(self):
+#     try:
+#         old_commit(self)
+#     except IntegrityError as e:
+#         session.Session.rollback(self)
+#
+#
+# def query(self, *args, **kwargs):
+#     try:
+#         return old_query(self, *args, **kwargs)
+#     except (OperationalError, StatementError):
+#         session.Session.rollback(self)
+#         print("ERROR FOUND!")
+#         return query(self, *args, **kwargs)
+#
+#
+# session.Session.commit = commit
+# session.Session.query = query
 
 
 class DatabaseHelper:
