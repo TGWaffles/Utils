@@ -22,10 +22,10 @@ def commit(self):
 
 def query(self, *args, **kwargs):
     try:
-        old_query(self, *args, **kwargs)
+        return old_query(self, *args, **kwargs)
     except (OperationalError, StatementError):
         session.Session.rollback(self)
-        query(self, *args, **kwargs)
+        return query(self, *args, **kwargs)
 
 
 session.Session.commit = commit
