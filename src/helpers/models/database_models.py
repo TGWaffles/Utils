@@ -28,7 +28,7 @@ class Guild(Base):
             guild_object = session.query(Guild).filter_by(id=guild.id).first()
             if guild_object is None:
                 guild_object = Guild(id=guild.id)
-                session.add(guild_object)
+                session.merge(guild_object)
         guild_object.name = guild.name
         guild_object.removed = False
         session.commit()
@@ -75,7 +75,7 @@ class Role(Base):
             role_object = session.query(Role).filter_by(id=role.id).first()
             if role_object is None:
                 role_object = Role(id=role.id, guild=guild_object)
-                session.add(role_object)
+                session.merge(role_object)
         role_object.role_permissions = role.permissions.value
         role_object.name = role.name
         role_object.colour = role.colour.value
@@ -120,7 +120,7 @@ class Member(Base):
                                          guild_id=discord_member.guild.id)
                 # noinspection PyTypeChecker
                 member_to_guild.user = User.from_discord(session, discord_member)
-                session.add(member_to_guild)
+                session.merge(member_to_guild)
         member_to_guild.nick = discord_member.nick
         member_to_guild.joined_at = discord_member.joined_at
         member_to_roles: list = member_to_guild.roles.copy()
@@ -184,7 +184,7 @@ class User(Base):
             user_object = session.query(User).filter_by(id=user.id).first()
             if user_object is None:
                 user_object = User(id=user.id)
-                session.add(user_object)
+                session.merge(user_object)
         user_object.name = user.name
         user_object.bot = user.bot
         session.commit()
@@ -204,7 +204,8 @@ class Channel(Base):
             text_channel_object = session.query(Channel).filter_by(id=text_channel.id).first()
             if text_channel_object is None:
                 text_channel_object = Channel(id=text_channel.id)
-                session.add(text_channel_object)
+                session.merge(text_channel_object)
+                session.commit()
         text_channel_object.name = text_channel.name
         text_channel_object.guild = guild
         session.commit()
@@ -246,7 +247,7 @@ class Message(Base):
             message_object = session.query(Message).filter_by(id=message.id).first()
             if message_object is None:
                 message_object = Message(id=message.id)
-                session.add(message_object)
+                session.merge(message_object)
         message_object.user_id = message.author.id
         message_object.channel = channel
         message_object.guild_id = channel.guild_id
@@ -288,7 +289,7 @@ class MessageEdit(Base):
             if edit_object is None or edit_object.timestamp != message.edited_at.replace(tzinfo=None, microsecond=0):
                 edit_object = MessageEdit(timestamp=message.edited_at.replace(tzinfo=None, microsecond=0),
                                           message_id=message.id)
-                session.add(edit_object)
+                session.merge(edit_object)
         edit_object.message = message_object
         edit_object.edited_content = message.content
         if len(message.embeds) > 0:
@@ -310,7 +311,7 @@ class MessageEdit(Base):
                 MessageEdit.timestamp.desc()).first()
             if edit_object is None or edit_object.timestamp != edited_at:
                 edit_object = MessageEdit(timestamp=edited_at, message_id=message_id)
-                session.add(edit_object)
+                session.merge(edit_object)
         edit_object.message = message_object
         edit_object.edited_content = content
         if len(embeds) > 0:
