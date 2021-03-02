@@ -113,8 +113,8 @@ class Member(Base):
         if not isinstance(discord_member, discord.Member):
             return None
         with session.no_autoflush, member_lock:
-            member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
-                                                              guild_id=discord_member.guild.id).first()
+            member_to_guild = session.query(Member).get({"user_id": discord_member.id,
+                                                         "guild_id": discord_member.guild.id})
             if member_to_guild is None:
                 member_to_guild = Member(user_id=discord_member.id,
                                          guild_id=discord_member.guild.id)
