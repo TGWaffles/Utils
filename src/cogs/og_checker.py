@@ -50,7 +50,7 @@ class OGCog(commands.Cog):
         if message_time is not None:
             embed.timestamp = message_time
             embed.add_field(name="First Message", value=message_time.strftime("%Y-%m-%d %H:%M"))
-        if self.bot.latest_joins == {}:
+        if self.bot.latest_joins == {} or ctx.guild.id not in self.bot.latest_joins:
             await self.bot.get_latest_joins()
         members = self.bot.latest_joins[ctx.guild.id]
         members = [user.id for user in members]
