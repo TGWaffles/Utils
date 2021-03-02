@@ -5,7 +5,7 @@ import pandas
 import sqlalchemy
 from threading import Lock
 from sqlalchemy import and_, desc
-from sqlalchemy.orm import sessionmaker, scoped_session, session
+from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import IntegrityError, OperationalError, StatementError
 
 from src.helpers.models.database_models import *
