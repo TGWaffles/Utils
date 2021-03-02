@@ -113,14 +113,14 @@ class Member(Base):
         if not isinstance(discord_member, discord.Member):
             return None
         with session.no_autoflush, member_lock:
-            member_to_guild = session.query(Member).get((discord_member.id, discord_member.guild.id))
+            member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
+                                                              guild_id=discord_member.guild.id).first()
             if member_to_guild is None:
                 member_to_guild = Member(user_id=discord_member.id,
                                          guild_id=discord_member.guild.id)
                 # noinspection PyTypeChecker
                 member_to_guild.user = User.from_discord(session, discord_member)
                 session.add(member_to_guild)
-                session.commit()
         member_to_guild.nick = discord_member.nick
         member_to_guild.joined_at = discord_member.joined_at
         member_to_roles: list = member_to_guild.roles.copy()
