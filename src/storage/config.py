@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "2.0.1"
+version_number = "2.0.2"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -37,6 +37,7 @@ high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, he
 # Settings for the Suggestions cog
 suggestions_channel_id = 798972358878167080
 archive_channel_id = 725920625956225055
+motw_channel_id = 816299775108055081
 # suggestions_decisions_id = 727563806762598450
 suggestions_decisions_id = 798972358878167080
 counting_channel_id = 773952078404911123
