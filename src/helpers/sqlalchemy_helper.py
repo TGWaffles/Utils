@@ -25,11 +25,13 @@ def query(self, *args, **kwargs):
         return old_query(self, *args, **kwargs)
     except (OperationalError, StatementError):
         session.Session.rollback(self)
+        print("ERROR FOUND!")
         return query(self, *args, **kwargs)
 
 
 session.Session.commit = commit
 session.Session.query = query
+
 
 class DatabaseHelper:
     def __init__(self):
