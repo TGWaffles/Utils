@@ -3,7 +3,7 @@ import src.storage.token as token
 
 version_number = "2.0.6"
 
-bot_prefix = "!"
+bot_prefix = "%"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
 power_id = 739600091480064010
@@ -12,7 +12,7 @@ lexi_id = 280843294508974103
 lexibot_id = 730015197980262424
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
-              "hypixel", "api", "og_checker", "games", "blacklist", "logger"]
+              "hypixel", "api", "og_checker", "blacklist", "logger"]
 
 
 dev = False
