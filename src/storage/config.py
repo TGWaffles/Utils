@@ -3,7 +3,7 @@ import src.storage.token as token
 
 version_number = "2.0.6"
 
-bot_prefix = "%"
+bot_prefix = "!"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
 power_id = 739600091480064010
