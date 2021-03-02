@@ -121,6 +121,7 @@ class Member(Base):
                 # noinspection PyTypeChecker
                 member_to_guild.user = User.from_discord(session, discord_member)
                 session.add(member_to_guild)
+                session.commit()
         member_to_guild.nick = discord_member.nick
         member_to_guild.joined_at = discord_member.joined_at
         member_to_roles: list = member_to_guild.roles.copy()
