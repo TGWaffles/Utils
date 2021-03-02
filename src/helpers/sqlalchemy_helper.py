@@ -5,11 +5,12 @@ import pandas
 import sqlalchemy
 from sqlalchemy import and_, desc
 from sqlalchemy.orm import sessionmaker, scoped_session, session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError, StatementError
 
 from src.helpers.models.database_models import *
 
 old_commit = session.Session.commit
+old_query = session.Session.query
 
 
 def commit(self):
@@ -19,8 +20,16 @@ def commit(self):
         session.Session.rollback(self)
 
 
-session.Session.commit = commit
+def query(self, *args, **kwargs):
+    try:
+        old_query(self, *args, **kwargs)
+    except (OperationalError, StatementError):
+        session.Session.rollback(self)
+        query(self, *args, **kwargs)
 
+
+session.Session.commit = commit
+session.Session.query = query
 
 class DatabaseHelper:
     def __init__(self):
