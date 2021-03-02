@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "1.29.4"
+version_number = "2.0"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -12,7 +12,8 @@ lexi_id = 280843294508974103
 lexibot_id = 730015197980262424
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
-              "hypixel", "api", "og_checker", "games", "blacklist"]
+              "hypixel", "api", "og_checker", "games", "blacklist", "logger"]
+
 
 dev = False
 if dev:
@@ -30,6 +31,7 @@ mod_god_role_id = 750406434180563055
 dep_mod_role_id = 740871749956009984
 head_mod_role_id = 727294744777982003
 lexi_role_id = 725895255198531675
+motw_role_id = 802584127634669609
 high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, head_mod_role_id, lexi_role_id]
 
 # Settings for the Suggestions cog
