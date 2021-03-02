@@ -3,10 +3,23 @@ from io import BytesIO
 
 import pandas
 import sqlalchemy
+import mysqldb
 from sqlalchemy import and_, desc
-from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.orm import sessionmaker, scoped_session, session
 
 from src.helpers.models.database_models import *
+
+old_commit = session.Session.commit
+
+
+def commit(self):
+    try:
+        old_commit(self)
+    except mysqldb._exceptions.IntegrityError as e:
+        session.Session.rollback(self)
+
+
+session.Session.commit = commit
 
 
 class DatabaseHelper:
