@@ -196,7 +196,9 @@ class Hypixel(commands.Cog):
                     "threat_index": threat_index, "fkdr": fkdr}
 
     async def get_expanded_player(self, user_uuid, pool, reset=False):
+        print("getting player stats")
         player = await self.get_user_stats(user_uuid)
+        print("assemblin file")
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
@@ -216,6 +218,7 @@ class Hypixel(commands.Cog):
         player["file"] = member_file.read()
         player["unchanged"] = same_file
         member_file.close()
+        print("made it all.")
         return player
 
     @staticmethod
