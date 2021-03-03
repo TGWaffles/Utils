@@ -164,10 +164,14 @@ class SQLAlchemyTest(commands.Cog):
         if group not in ['d', 'w', 'm', 'y']:
             await ctx.reply(embed=self.bot.create_error_embed("Valid grouping options are d, w, m, y"))
             return
+        print("Getting times.")
         times = await self.bot.loop.run_in_executor(None, partial(self.database.get_graph_of_messages, member))
+        print("got times, starting compilation.")
         with ProcessPoolExecutor() as pool:
             file = await self.bot.loop.run_in_executor(pool, partial(self.database.file_from_timestamps, times, group))
+        print("got compilation")
         discord_file = discord.File(fp=file, filename="image.png")
+        print("made file.")
         await ctx.reply(file=discord_file)
 
     @commands.command()
