@@ -59,9 +59,12 @@ class DatabaseHelper:
             self.session_creator.remove()
 
     def save_message(self, message: discord.Message):
+        print(f"{message.id} - waiting for lock.")
         with self.processing:
+            print(f"{message.id} - found lock.")
             session = self.session_creator()
             Message.from_discord(session, message)
+            print(f"{message.id} - done message.")
             self.session_creator.remove()
 
     def save_message_edit_raw(self, payload):
