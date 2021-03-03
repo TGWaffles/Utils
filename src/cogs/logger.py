@@ -30,7 +30,7 @@ class SQLAlchemyTest(commands.Cog):
 
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
-        count_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
+        count_channel: discord.TextChannel = self.bot.get_channel(config.message_count_channel)
         count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild))
         await count_channel.edit(name=f"Messages: {count:,}")
 
