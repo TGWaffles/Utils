@@ -161,8 +161,11 @@ class DatabaseHelper:
                 Message.content.match(phrase),
                 Message.guild_id == guild.id).order_by(
                 Message.timestamp)
+            print(query.statement.compile(self.engine))
             results = query.all()
+            print("Got results")
             times = [row.timestamp for row in results]
+            print("extracted from results")
             self.session_creator.remove()
             return times
 
