@@ -226,15 +226,20 @@ class SQLAlchemyTest(commands.Cog):
         if len(phrase) > 180:
             await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
             return
+        print("Getting phrase times.")
         times = await self.bot.loop.run_in_executor(None, partial(self.database.phrase_times, ctx.guild, phrase))
+        print("Running process")
         with ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+        print("Finished processing.")
         file = BytesIO(data)
         file.seek(0)
         discord_file = discord.File(fp=file, filename="image.png")
         embed = discord.Embed(title=f"Number of times \"{phrase}\" has been said:")
         embed.set_image(url="attachment://image.png")
+        print("Compiled embed")
         await ctx.reply(embed=embed, file=discord_file)
+        print("Embed sent.")
 
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
