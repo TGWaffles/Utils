@@ -137,6 +137,14 @@ class DatabaseHelper:
             Role.delete(session, role)
             self.session_creator.remove()
 
+    def count(self, guild, phrase):
+        with self.processing:
+            session = self.session_creator()
+            query = session.query(Message.id).filter(Message.content.contains(phrase), Message.guild_id == guild.id)
+            amount = query.count()
+            self.session_creator.remove()
+        return amount
+
     def get_last_week_messages(self, guild):
         with self.processing:
             session = self.session_creator()

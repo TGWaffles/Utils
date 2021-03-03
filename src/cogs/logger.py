@@ -187,6 +187,12 @@ class SQLAlchemyTest(commands.Cog):
         embed.timestamp = message.timestamp
         await ctx.reply(embed=embed)
 
+    @commands.command(description="Count how many times a phrase has been said!")
+    async def count(self, ctx, *, phrase):
+        amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, ctx.guild, phrase))
+        await ctx.reply(embed=self.bot.create_completed_embed(
+            f"Number of times \"{phrase}\" has been said!", f"**{amount}**"))
+
     @commands.Cog.listener()
     async def on_member_update(self, _, after):
         await self.bot.loop.run_in_executor(None, partial(self.database.update_member, after))
