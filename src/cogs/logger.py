@@ -1,6 +1,7 @@
 import asyncio
 import re
 import time
+from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from functools import partial
 from typing import Optional
@@ -169,10 +170,8 @@ class SQLAlchemyTest(commands.Cog):
         times = await self.bot.loop.run_in_executor(None, partial(self.database.get_graph_of_messages, member))
         print("got times, starting compilation.")
         with ProcessPoolExecutor() as pool:
-            file = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
-            print("got file.")
-        print("executor closed.")
-        print(len(file.getbuffer()))
+            data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+        file = BytesIO(data)
         file.seek(0)
         print("got compilation")
         discord_file = discord.File(fp=file, filename="image.png")

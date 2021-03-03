@@ -19,4 +19,4 @@ def file_from_timestamps(times, group):
     figure.savefig(file)
     file.seek(0)
     print("done")
-    return file
+    return file.read()
