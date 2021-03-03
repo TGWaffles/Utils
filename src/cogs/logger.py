@@ -26,6 +26,7 @@ class SQLAlchemyTest(commands.Cog):
         self.channel_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.data = DataHelper()
         self.update_motw.start()
+        self.update_message_count.start()
 
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
