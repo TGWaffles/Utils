@@ -172,7 +172,7 @@ class SQLAlchemyTest(commands.Cog):
             file = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
             print("got file.")
         print("executor closed.")
-        print(len(file))
+        print(len(file.getbuffer()))
         file.seek(0)
         print("got compilation")
         discord_file = discord.File(fp=file, filename="image.png")
