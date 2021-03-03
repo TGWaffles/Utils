@@ -189,6 +189,9 @@ class SQLAlchemyTest(commands.Cog):
 
     @commands.command(description="Count how many times a phrase has been said!")
     async def count(self, ctx, *, phrase):
+        if len(phrase) > 223:
+            await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
+            return
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, ctx.guild, phrase))
         await ctx.reply(embed=self.bot.create_completed_embed(
             f"Number of times \"{phrase}\" has been said!", f"**{amount}** times!"))
