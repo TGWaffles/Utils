@@ -59,8 +59,10 @@ class SQLAlchemyTest(commands.Cog):
         if member is None:
             member = ctx.author
         score = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_score, member))
-        await ctx.reply(embed=self.bot.create_completed_embed(f"Score for {member.nick or member.name}",
-                                                              str(score)))
+        embed = self.bot.create_completed_embed(f"Score for {member.nick or member.name} - past 7 days",
+                                                str(score))
+        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        await ctx.reply(embed=embed)
 
     @commands.command()
     @is_owner()
@@ -128,8 +130,9 @@ class SQLAlchemyTest(commands.Cog):
     async def leaderboard(self, ctx):
         guild = ctx.guild
         results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, guild))
-        embed = discord.Embed(title="Leaderboard", colour=discord.Colour.green())
+        embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
         embed.description = "```"
+        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
         regex_pattern = re.compile(pattern="["
                                            u"\U0001F600-\U0001F64F"
                                            u"\U0001F300-\U0001F5FF"
