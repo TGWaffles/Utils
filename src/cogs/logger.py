@@ -202,9 +202,9 @@ class SQLAlchemyTest(commands.Cog):
     # async def on_member_remove(self, member):
     #     await self.bot.loop.run_in_executor(None, partial(self.database.delete_member, member))
     #
-    # @commands.Cog.listener()
-    # async def on_message(self, message):
-    #     await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
     #
     # @commands.Cog.listener()
     # async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
