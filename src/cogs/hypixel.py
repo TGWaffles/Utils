@@ -266,22 +266,29 @@ class Hypixel(commands.Cog):
     @commands.command(aliases=["hinfo"])
     async def info(self, ctx, username: str):
         async with ctx.typing():
+            print("checking files.")
             data = self.user_to_files.get(username.lower(), None)
             if data is None:
+                print("Getting uuid")
                 uuid = await self.uuid_from_identifier(username)
+                print("got uuid")
                 if uuid is None:
                     await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
                     return
+                print("running check.")
                 valid = await self.check_valid_player(uuid)
+                print("check not worked.")
                 if not valid:
                     await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played enough bedwars."))
                     return
                 with concurrent.futures.ProcessPoolExecutor() as pool:
+                    print("getting expanded player")
                     player = await self.get_expanded_player(uuid, pool, True)
                 data = player["file"]
                 self.user_to_files[username.lower()] = data
             file = BytesIO(data)
             discord_file = discord.File(fp=file, filename=f"{username}.png`")
+            print("replying")
             await ctx.reply(file=discord_file)
 
     @commands.command(pass_context=True)
@@ -464,6 +471,7 @@ class Hypixel(commands.Cog):
                     self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
             await asyncio.gather(*pending_tasks)
         except Exception as e:
+            print("hypixel error")
             print(e)
 
     @commands.Cog.listener()
