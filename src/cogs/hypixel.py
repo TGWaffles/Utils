@@ -55,6 +55,7 @@ def are_equal(file1, file2):
 
 
 def get_file_for_member(member):
+    print("started process")
     final_file = BytesIO()
     size = 1024
     width = size
@@ -63,10 +64,12 @@ def get_file_for_member(member):
         fill = (16, 64, 16)
     else:
         fill = (64, 16, 16)
+    print("line 67")
     image = PIL.Image.new('RGB', (width, height), color=fill)
     draw = PIL.ImageDraw.Draw(image)
     name_colour = get_colour_from_threat(member["threat_index"])
     name_font = PIL.ImageFont.truetype("arial.ttf", size // 16)
+    print("line 72")
     name_font.size = size // 16
     # Write Name
     name_x = width // 2
