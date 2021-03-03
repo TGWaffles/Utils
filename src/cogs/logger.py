@@ -191,7 +191,7 @@ class SQLAlchemyTest(commands.Cog):
     async def count(self, ctx, *, phrase):
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, ctx.guild, phrase))
         await ctx.reply(embed=self.bot.create_completed_embed(
-            f"Number of times \"{phrase}\" has been said!", f"**{amount}**"))
+            f"Number of times \"{phrase}\" has been said!", f"**{amount}** times!"))
 
     @commands.Cog.listener()
     async def on_member_update(self, _, after):

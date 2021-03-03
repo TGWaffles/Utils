@@ -139,9 +139,7 @@ class DatabaseHelper:
             session = self.session_creator()
             query = session.query(func.count(Message.id)).filter(Message.content.like(f"%{phrase}%"),
                                                                  Message.guild_id == guild.id)
-            print(query.statement.compile(self.engine))
-            amount = query.first()
-            print(dir(amount))
+            amount = query.first().count
             self.session_creator.remove()
         return amount
 
