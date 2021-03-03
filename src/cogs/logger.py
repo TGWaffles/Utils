@@ -200,7 +200,7 @@ class SQLAlchemyTest(commands.Cog):
     async def messages(self, ctx):
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, ctx.guild))
         await ctx.reply(embed=self.bot.create_completed_embed(
-            title="Total Messages sent in this guild!", text=f"{amount} messages!"
+            title="Total Messages sent in this guild!", text=f"**{amount:,}** messages!"
         ))
 
     @commands.Cog.listener()
