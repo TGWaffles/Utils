@@ -153,6 +153,19 @@ class DatabaseHelper:
             self.session_creator.remove()
         return amount
 
+    def phrase_times(self, guild, phrase):
+        with self.processing:
+            session = self.session_creator()
+            query = session.query(Message.timestamp).with_hint(Message,
+                                                               "USE INDEX(whenMessage)").filter(
+                Message.content.match(phrase),
+                Message.guild_id == guild.id).order_by(
+                Message.timestamp)
+            results = query.all()
+            times = [row.timestamp for row in results]
+            self.session_creator.remove()
+            return times
+
     def all_messages(self, guild):
         with self.processing:
             session = self.session_creator()

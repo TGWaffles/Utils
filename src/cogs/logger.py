@@ -218,6 +218,24 @@ class SQLAlchemyTest(commands.Cog):
         embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes (\"\")!")
         await ctx.reply(embed=embed)
 
+    @commands.command(description="Plots a bar chart of word usage over time.", aliases=["wordstats, wordusage",
+                                                                                         "word_stats", "phrase_usage",
+                                                                                         "phrasestats", "phrase_stats",
+                                                                                         "phraseusage"])
+    async def word_usage(self, ctx, *, phrase, group: Optional[str]):
+        if len(phrase) > 180:
+            await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
+            return
+        times = await self.bot.loop.run_in_executor(None, partial(self.database.phrase_times, ctx.guild, phrase))
+        with ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
+        embed = discord.Embed(title=f"Number of times \"{phrase}\" has been said:")
+        embed.set_image(url="attachment://image.png")
+        await ctx.reply(embed=embed, file=discord_file)
+
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, ctx.guild))
