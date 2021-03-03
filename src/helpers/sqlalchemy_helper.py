@@ -141,6 +141,7 @@ class DatabaseHelper:
                                                                  Message.guild_id == guild.id)
             print(query.statement.compile(self.engine))
             amount = query.first()
+            print(dir(amount))
             self.session_creator.remove()
         return amount
 
