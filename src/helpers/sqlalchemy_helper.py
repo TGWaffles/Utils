@@ -143,6 +143,16 @@ class DatabaseHelper:
             self.session_creator.remove()
         return amount
 
+    def count_member(self, member, phrase):
+        with self.processing:
+            session = self.session_creator()
+            query = session.query(func.count(Message.id)).filter(Message.content.match(phrase),
+                                                                 Message.guild_id == member.guild.id,
+                                                                 Message.user_id == member.id)
+            amount = query.first()[0]
+            self.session_creator.remove()
+        return amount
+
     def all_messages(self, guild):
         with self.processing:
             session = self.session_creator()
