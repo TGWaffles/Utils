@@ -169,10 +169,13 @@ class SQLAlchemyTest(commands.Cog):
         print("got times, starting compilation.")
         with ProcessPoolExecutor() as pool:
             file = await self.bot.loop.run_in_executor(pool, partial(self.database.file_from_timestamps, times, group))
+        print(len(file))
+        file.seek(0)
         print("got compilation")
         discord_file = discord.File(fp=file, filename="image.png")
         print("made file.")
         await ctx.reply(file=discord_file)
+        print("Sent.")
 
     @commands.command()
     async def snipe(self, ctx):
