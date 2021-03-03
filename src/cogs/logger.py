@@ -190,78 +190,78 @@ class SQLAlchemyTest(commands.Cog):
         embed.timestamp = message.timestamp
         await ctx.reply(embed=embed)
 
-    @commands.Cog.listener()
-    async def on_member_update(self, _, after):
-        await self.bot.loop.run_in_executor(None, partial(self.database.update_member, after))
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        await self.bot.loop.run_in_executor(None, partial(self.database.update_member, member))
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, member):
-        await self.bot.loop.run_in_executor(None, partial(self.database.delete_member, member))
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
-
-    @commands.Cog.listener()
-    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
-        message_edit = await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit_raw, payload))
-        await asyncio.sleep(2)
-        if message_edit is None:
-            channel: discord.TextChannel = self.bot.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit, message))
-
-    @commands.Cog.listener()
-    async def on_raw_message_delete(self, payload):
-        await self.bot.loop.run_in_executor(None, partial(self.database.mark_deleted, payload.message_id))
-
-    @commands.Cog.listener()
-    async def on_bulk_message_delete(self, messages):
-        for message in messages:
-            await self.bot.loop.run_in_executor(None, partial(self.database.mark_deleted, message.id))
-
-    @commands.Cog.listener()
-    async def on_guild_channel_update(self, _, after):
-        if isinstance(after, discord.TextChannel):
-            await self.bot.loop.run_in_executor(None, partial(self.database.channel_updated, after))
-
-    @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel):
-        if isinstance(channel, discord.TextChannel):
-            await self.bot.loop.run_in_executor(None, partial(self.database.delete_channel, channel))
-
-    @commands.Cog.listener()
-    async def on_guild_channel_create(self, channel):
-        if isinstance(channel, discord.TextChannel):
-            await self.bot.loop.run_in_executor(None, partial(self.database.channel_updated, channel))
-
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        await self.bot.loop.run_in_executor(None, partial(self.database.add_guild, guild))
-
-    @commands.Cog.listener()
-    async def on_guild_update(self, _, guild):
-        await self.bot.loop.run_in_executor(None, partial(self.database.add_guild, guild))
-
-    @commands.Cog.listener()
-    async def on_guild_remove(self, guild):
-        await self.bot.loop.run_in_executor(None, partial(self.database.remove_guild, guild))
-
-    @commands.Cog.listener()
-    async def on_guild_role_create(self, role):
-        await self.bot.loop.run_in_executor(None, partial(self.database.add_role, role))
-
-    @commands.Cog.listener()
-    async def on_guild_role_update(self, _, role):
-        await self.bot.loop.run_in_executor(None, partial(self.database.add_role, role))
-
-    @commands.Cog.listener()
-    async def on_guild_role_delete(self, role):
-        await self.bot.loop.run_in_executor(None, partial(self.database.remove_role, role))
+    # @commands.Cog.listener()
+    # async def on_member_update(self, _, after):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.update_member, after))
+    #
+    # @commands.Cog.listener()
+    # async def on_member_join(self, member):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.update_member, member))
+    #
+    # @commands.Cog.listener()
+    # async def on_member_remove(self, member):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.delete_member, member))
+    #
+    # @commands.Cog.listener()
+    # async def on_message(self, message):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
+    #
+    # @commands.Cog.listener()
+    # async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+    #     message_edit = await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit_raw, payload))
+    #     await asyncio.sleep(2)
+    #     if message_edit is None:
+    #         channel: discord.TextChannel = self.bot.get_channel(payload.channel_id)
+    #         message = await channel.fetch_message(payload.message_id)
+    #         await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit, message))
+    #
+    # @commands.Cog.listener()
+    # async def on_raw_message_delete(self, payload):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.mark_deleted, payload.message_id))
+    #
+    # @commands.Cog.listener()
+    # async def on_bulk_message_delete(self, messages):
+    #     for message in messages:
+    #         await self.bot.loop.run_in_executor(None, partial(self.database.mark_deleted, message.id))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_channel_update(self, _, after):
+    #     if isinstance(after, discord.TextChannel):
+    #         await self.bot.loop.run_in_executor(None, partial(self.database.channel_updated, after))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_channel_delete(self, channel):
+    #     if isinstance(channel, discord.TextChannel):
+    #         await self.bot.loop.run_in_executor(None, partial(self.database.delete_channel, channel))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_channel_create(self, channel):
+    #     if isinstance(channel, discord.TextChannel):
+    #         await self.bot.loop.run_in_executor(None, partial(self.database.channel_updated, channel))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_join(self, guild):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.add_guild, guild))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_update(self, _, guild):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.add_guild, guild))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_remove(self, guild):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.remove_guild, guild))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_role_create(self, role):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.add_role, role))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_role_update(self, _, role):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.add_role, role))
+    #
+    # @commands.Cog.listener()
+    # async def on_guild_role_delete(self, role):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.remove_role, role))
 
 
 def setup(bot: UtilsBot):
