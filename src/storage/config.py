@@ -38,6 +38,8 @@ high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, he
 suggestions_channel_id = 798972358878167080
 archive_channel_id = 725920625956225055
 motw_channel_id = 816299775108055081
+message_count_channel = 816702703509700618
+
 # suggestions_decisions_id = 727563806762598450
 suggestions_decisions_id = 798972358878167080
 counting_channel_id = 773952078404911123

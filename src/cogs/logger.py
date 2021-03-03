@@ -27,6 +27,12 @@ class SQLAlchemyTest(commands.Cog):
         self.data = DataHelper()
         self.update_motw.start()
 
+    @tasks.loop(seconds=600, count=None)
+    async def update_message_count(self):
+        count_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
+        count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild))
+        await count_channel.edit(name=f"Messages: {count:,}")
+
     async def send_update(self, sent_message):
         if len(self.last_update.description) < 2000:
             await sent_message.edit(embed=self.last_update)
