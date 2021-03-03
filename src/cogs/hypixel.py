@@ -85,6 +85,7 @@ def get_file_for_member(member):
     else:
         last_played_heading = "Last Online"
         game_text = "{}".format(member["last_logout"].strftime("%Y/%m/%d %H:%M"))
+    print("doing image stuff")
     top_line_height = height // 8
     last_played_y = height - top_line_height
     last_played_font = PIL.ImageFont.truetype("arial.ttf", size // 32)
@@ -129,8 +130,11 @@ def get_file_for_member(member):
     threat_index_text = "Threat Index\n{}".format(round(member["threat_index"], 1))
     draw.text((threat_index_x, threat_index_y), threat_index_text, font=last_played_font, anchor="mm",
               fill=regular_text_fill, align="center")
+    print("done image stuff")
     image.save(fp=final_file, format="png")
+    print("saved")
     final_file.seek(0)
+    print("returning...")
     return final_file
 
 
