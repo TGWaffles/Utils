@@ -55,7 +55,6 @@ def are_equal(file1, file2):
 
 
 def get_file_for_member(member):
-    print("started process")
     final_file = BytesIO()
     size = 1024
     width = size
@@ -64,12 +63,10 @@ def get_file_for_member(member):
         fill = (16, 64, 16)
     else:
         fill = (64, 16, 16)
-    print("line 67")
     image = PIL.Image.new('RGB', (width, height), color=fill)
     draw = PIL.ImageDraw.Draw(image)
     name_colour = get_colour_from_threat(member["threat_index"])
     name_font = PIL.ImageFont.truetype("arial.ttf", size // 16)
-    print("line 72")
     name_font.size = size // 16
     # Write Name
     name_x = width // 2
@@ -88,7 +85,6 @@ def get_file_for_member(member):
     else:
         last_played_heading = "Last Online"
         game_text = "{}".format(member["last_logout"].strftime("%Y/%m/%d %H:%M"))
-    print("doing image stuff")
     top_line_height = height // 8
     last_played_y = height - top_line_height
     last_played_font = PIL.ImageFont.truetype("arial.ttf", size // 32)
@@ -133,11 +129,8 @@ def get_file_for_member(member):
     threat_index_text = "Threat Index\n{}".format(round(member["threat_index"], 1))
     draw.text((threat_index_x, threat_index_y), threat_index_text, font=last_played_font, anchor="mm",
               fill=regular_text_fill, align="center")
-    print("done image stuff")
     image.save(fp=final_file, format="png")
-    print("saved")
     final_file.seek(0)
-    print("returning...")
     return final_file
 
 
@@ -203,9 +196,7 @@ class Hypixel(commands.Cog):
                     "threat_index": threat_index, "fkdr": fkdr}
 
     async def get_expanded_player(self, user_uuid, pool, reset=False):
-        print("getting player stats")
         player = await self.get_user_stats(user_uuid)
-        print("assemblin file")
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
@@ -225,7 +216,6 @@ class Hypixel(commands.Cog):
         player["file"] = member_file.read()
         player["unchanged"] = same_file
         member_file.close()
-        print("made it all.")
         return player
 
     @staticmethod
@@ -276,29 +266,22 @@ class Hypixel(commands.Cog):
     @commands.command(aliases=["hinfo"])
     async def info(self, ctx, username: str):
         async with ctx.typing():
-            print("checking files.")
             data = self.user_to_files.get(username.lower(), None)
             if data is None:
-                print("Getting uuid")
                 uuid = await self.uuid_from_identifier(username)
-                print("got uuid")
                 if uuid is None:
                     await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
                     return
-                print("running check.")
                 valid = await self.check_valid_player(uuid)
-                print("check not worked.")
                 if not valid:
                     await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played enough bedwars."))
                     return
                 with concurrent.futures.ProcessPoolExecutor() as pool:
-                    print("getting expanded player")
                     player = await self.get_expanded_player(uuid, pool, True)
                 data = player["file"]
                 self.user_to_files[username.lower()] = data
             file = BytesIO(data)
             discord_file = discord.File(fp=file, filename=f"{username}.png`")
-            print("replying")
             await ctx.reply(file=discord_file)
 
     @commands.command(pass_context=True)
@@ -449,36 +432,40 @@ class Hypixel(commands.Cog):
 
     @tasks.loop(seconds=5, count=None)
     async def update_hypixel_info(self):
-        if self.external_ip is None:
-            async with aiohttp.ClientSession() as session:
-                request = await session.get("https://checkip.amazonaws.com/")
-                text = await request.text()
-                self.external_ip = text.strip()
-        all_channels = self.data.get("hypixel_channels", {}).copy()
-        member_uuids = set()
-        for _, members in all_channels.items():
-            for member_uuid in members:
-                member_uuids.add(member_uuid)
-        now = datetime.datetime.now()
-        reset = (now - self.last_reset).total_seconds() > 180
-        member_futures = []
-        if reset:
-            self.last_reset = datetime.datetime.now()
-        with concurrent.futures.ProcessPoolExecutor() as pool:
-            for member_uuid in member_uuids:
-                member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool,
-                                                                                         reset)))
-            member_dicts = await asyncio.gather(*member_futures)
-        offline_members = [member for member in member_dicts if not member["online"]]
-        online_members = [member for member in member_dicts if member["online"]]
-        offline_members.sort(key=lambda x: float(x["threat_index"]))
-        online_members.sort(key=lambda x: float(x["threat_index"]))
-        member_dicts = offline_members + online_members
-        pending_tasks = []
-        for channel in all_channels.keys():
-            pending_tasks.append(self.bot.loop.create_task(
-                self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
-        await asyncio.gather(*pending_tasks)
+        try:
+            if self.external_ip is None:
+                async with aiohttp.ClientSession() as session:
+                    request = await session.get("https://checkip.amazonaws.com/")
+                    text = await request.text()
+                    self.external_ip = text.strip()
+            all_channels = self.data.get("hypixel_channels", {}).copy()
+            member_uuids = set()
+            for _, members in all_channels.items():
+                for member_uuid in members:
+                    member_uuids.add(member_uuid)
+            now = datetime.datetime.now()
+            reset = (now - self.last_reset).total_seconds() > 180
+            member_futures = []
+            if reset:
+                self.last_reset = datetime.datetime.now()
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                for member_uuid in member_uuids:
+                    member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool,
+                                                                                             reset)))
+                member_dicts = await asyncio.gather(*member_futures)
+            offline_members = [member for member in member_dicts if not member["online"]]
+            online_members = [member for member in member_dicts if member["online"]]
+            offline_members.sort(key=lambda x: float(x["threat_index"]))
+            online_members.sort(key=lambda x: float(x["threat_index"]))
+            member_dicts = offline_members + online_members
+            pending_tasks = []
+            for channel in all_channels.keys():
+                pending_tasks.append(self.bot.loop.create_task(
+                    self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
+            await asyncio.gather(*pending_tasks)
+        except Exception as e:
+            print("hypixel error")
+            print(e)
 
     @commands.Cog.listener()
     async def on_message(self, message):
