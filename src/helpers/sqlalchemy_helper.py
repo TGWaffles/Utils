@@ -1,14 +1,11 @@
 import datetime
-from io import BytesIO
-import time
-import pandas
+
 import sqlalchemy
-from threading import Lock
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.exc import IntegrityError, OperationalError, StatementError
 
 from src.helpers.models.database_models import *
+
 
 # old_commit = session.Session.commit
 # old_query = session.Session.query
@@ -140,8 +137,9 @@ class DatabaseHelper:
     def count(self, guild, phrase):
         with self.processing:
             session = self.session_creator()
-            query = session.query(Message.id).filter(Message.content.contains(phrase), Message.guild_id == guild.id)
-            amount = query.count()
+            query = session.query(func.count(Message.id)).filter(Message.content.like(f"%{phrase}%"),
+                                                                 Message.guild_id == guild.id)
+            amount = query.first()
             self.session_creator.remove()
         return amount
 
