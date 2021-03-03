@@ -25,7 +25,11 @@ class Guild(Base):
     @classmethod
     def from_discord(cls, session: Session, guild: discord.Guild):
         with session.no_autoflush, guild_lock:
-            guild_object = session.query(Guild).filter_by(id=guild.id).first()
+            try:
+                guild_object = session.query(Guild).filter_by(id=guild.id).first()
+            except:
+                session.rollback()
+                return cls.from_discord(session, guild)
             if guild_object is None:
                 guild_object = Guild(id=guild.id)
                 session.add(guild_object)
@@ -50,7 +54,11 @@ class Guild(Base):
     @classmethod
     def delete(cls, session, guild):
         with session.no_autoflush, guild_lock:
-            guild_object = session.query(Guild).filter_by(id=guild.id).first()
+            try:
+                guild_object = session.query(Guild).filter_by(id=guild.id).first()
+            except:
+                session.rollback()
+                return cls.delete(session, guild)
             if guild_object is None:
                 return False
         guild_object.removed = True
@@ -72,7 +80,11 @@ class Role(Base):
     @classmethod
     def from_discord_and_guild(cls, session, role: discord.Role, guild_object: Guild):
         with session.no_autoflush, role_lock:
-            role_object = session.query(Role).filter_by(id=role.id).first()
+            try:
+                role_object = session.query(Role).filter_by(id=role.id).first()
+            except:
+                session.rollback()
+                cls.from_discord_and_guild(session, role, guild_object)
             if role_object is None:
                 role_object = Role(id=role.id, guild=guild_object)
                 session.add(role_object)
@@ -92,7 +104,11 @@ class Role(Base):
     @classmethod
     def delete(cls, session, role: discord.Role):
         with session.no_autoflush, role_lock:
-            role_object = session.query(Role).filter_by(id=role.id).first()
+            try:
+                role_object = session.query(Role).filter_by(id=role.id).first()
+            except:
+                session.rollback()
+                return cls.delete(session, role)
             if role_object is None:
                 return False
         session.delete(role_object)
@@ -113,8 +129,12 @@ class Member(Base):
         if not isinstance(discord_member, discord.Member):
             return None
         with session.no_autoflush, member_lock:
-            member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
-                                                              guild_id=discord_member.guild.id).first()
+            try:
+                member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
+                                                                  guild_id=discord_member.guild.id).first()
+            except:
+                session.rollback()
+                return cls.update_member(session, discord_member)
             if member_to_guild is None:
                 member_to_guild = Member(user_id=discord_member.id,
                                          guild_id=discord_member.guild.id)
@@ -140,8 +160,12 @@ class Member(Base):
     @classmethod
     def delete_member(cls, session, discord_member: discord.Member):
         with session.no_autoflush, member_lock:
-            member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
-                                                              guild_id=discord_member.guild.id).first()
+            try:
+                member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
+                                                                  guild_id=discord_member.guild.id).first()
+            except:
+                session.rollback()
+                return cls.delete_member(session, discord_member)
             if member_to_guild is None:
                 return False
         session.delete(member_to_guild)
@@ -162,8 +186,12 @@ class MemberToRole(Base):
     @classmethod
     def from_member_and_role(cls, session, member: Member, role: Role):
         with session.no_autoflush, member_roles_lock:
-            role_to_member = session.query(MemberToRole).filter_by(role_id=role.id, user_id=member.user_id,
-                                                                   guild_id=member.guild_id).first()
+            try:
+                role_to_member = session.query(MemberToRole).filter_by(role_id=role.id, user_id=member.user_id,
+                                                                       guild_id=member.guild_id).first()
+            except:
+                session.rollback()
+                return cls.from_member_and_role(session, member, role)
             if role_to_member is None:
                 role_to_member = MemberToRole()
         role_to_member.guild_id = member.guild_id
@@ -181,7 +209,11 @@ class User(Base):
     @classmethod
     def from_discord(cls, session, user: discord.User):
         with session.no_autoflush, user_lock:
-            user_object = session.query(User).filter_by(id=user.id).first()
+            try:
+                user_object = session.query(User).filter_by(id=user.id).first()
+            except:
+                session.rollback()
+                return cls.from_discord(session, user)
             if user_object is None:
                 user_object = User(id=user.id)
                 session.add(user_object)
@@ -201,7 +233,11 @@ class Channel(Base):
     @classmethod
     def from_discord_and_guild(cls, session, text_channel: discord.TextChannel, guild: Guild):
         with session.no_autoflush, channel_lock:
-            text_channel_object = session.query(Channel).filter_by(id=text_channel.id).first()
+            try:
+                text_channel_object = session.query(Channel).filter_by(id=text_channel.id).first()
+            except:
+                session.rollback()
+                return cls.from_discord_and_guild(session, text_channel, guild)
             if text_channel_object is None:
                 text_channel_object = Channel(id=text_channel.id)
                 session.add(text_channel_object)
@@ -219,7 +255,11 @@ class Channel(Base):
     @classmethod
     def delete_channel(cls, session, channel):
         with session.no_autoflush, channel_lock:
-            text_channel_object = session.query(Channel).filter_by(id=channel.id).first()
+            try:
+                text_channel_object = session.query(Channel).filter_by(id=channel.id).first()
+            except:
+                session.rollback()
+                return cls.delete_channel(session, channel)
             if text_channel_object is None:
                 return False
         session.delete(text_channel_object)
@@ -244,7 +284,11 @@ class Message(Base):
         channel = Channel.from_discord(session, message.channel)
         _ = User.from_discord(session, message.author)
         with session.no_autoflush, message_lock:
-            message_object = session.query(Message).filter_by(id=message.id).first()
+            try:
+                message_object = session.query(Message).filter_by(id=message.id).first()
+            except:
+                session.rollback()
+                return cls.from_discord(session, message)
             if message_object is None:
                 message_object = Message(id=message.id)
                 session.add(message_object)
@@ -262,7 +306,11 @@ class Message(Base):
 
     @classmethod
     def mark_deleted_id(cls, session, message_id):
-        message_object = session.query(Message).filter_by(id=message_id).first()
+        try:
+            message_object = session.query(Message).filter_by(id=message_id).first()
+        except:
+            session.rollback()
+            return cls.mark_deleted_id(session, message_id)
         if message_object is None:
             return False
         message_object.deleted = True
@@ -284,8 +332,12 @@ class MessageEdit(Base):
         if message.edited_at is None:
             return False
         with session.no_autoflush, edit_lock:
-            edit_object = session.query(MessageEdit).filter_by(message_id=message.id).order_by(
-                MessageEdit.timestamp.desc()).first()
+            try:
+                edit_object = session.query(MessageEdit).filter_by(message_id=message.id).order_by(
+                    MessageEdit.timestamp.desc()).first()
+            except:
+                session.rollback()
+                return cls.from_discord(session, message)
             if edit_object is None or edit_object.timestamp != message.edited_at.replace(tzinfo=None, microsecond=0):
                 edit_object = MessageEdit(timestamp=message.edited_at.replace(tzinfo=None, microsecond=0),
                                           message_id=message.id)
@@ -304,11 +356,19 @@ class MessageEdit(Base):
             embeds = []
         edited_at = edited_at.replace(tzinfo=None, microsecond=0)
         with session.no_autoflush, edit_lock:
-            message_object = session.query(Message).filter_by(id=message_id).first()
+            try:
+                message_object = session.query(Message).filter_by(id=message_id).first()
+            except:
+                session.rollback()
+                return cls.from_raw(session, message_id, edited_at, content, embeds)
             if message_object is None:
                 return None
-            edit_object = session.query(MessageEdit).filter_by(message_id=message_id).order_by(
-                MessageEdit.timestamp.desc()).first()
+            try:
+                edit_object = session.query(MessageEdit).filter_by(message_id=message_id).order_by(
+                    MessageEdit.timestamp.desc()).first()
+            except:
+                session.rollback()
+                return cls.from_raw(session, message_id, edited_at, content, embeds)
             if edit_object is None or edit_object.timestamp != edited_at:
                 edit_object = MessageEdit(timestamp=edited_at, message_id=message_id)
                 session.add(edit_object)

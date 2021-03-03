@@ -200,6 +200,7 @@ class DatabaseHelper:
             sub_query = session.query(Message.id).filter(Message.channel_id == channel.id,
                                                          Message.deleted.is_(True)).subquery()
             query = session.query(Message).join(sub_query, sub_query.c.id == Message.id).order_by(desc(Message.timestamp))
+            self.session_creator.remove()
             return query.first()
 
     def get_graph_of_messages(self, member):
@@ -213,4 +214,5 @@ class DatabaseHelper:
                 Message.timestamp)
             results = query.all()
             times = [row.timestamp for row in results]
+            self.session_creator.remove()
             return times
