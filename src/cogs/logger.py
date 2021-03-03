@@ -13,6 +13,7 @@ from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.helpers.sqlalchemy_helper import DatabaseHelper
 from src.helpers.storage_helper import DataHelper
+from src.helpers.graph_helper import file_from_timestamps
 
 
 class SQLAlchemyTest(commands.Cog):
@@ -168,7 +169,7 @@ class SQLAlchemyTest(commands.Cog):
         times = await self.bot.loop.run_in_executor(None, partial(self.database.get_graph_of_messages, member))
         print("got times, starting compilation.")
         with ProcessPoolExecutor() as pool:
-            file = await self.bot.loop.run_in_executor(pool, partial(self.database.file_from_timestamps, times, group))
+            file = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
         print(len(file))
         file.seek(0)
         print("got compilation")
