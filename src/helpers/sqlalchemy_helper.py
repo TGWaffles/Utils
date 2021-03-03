@@ -156,8 +156,7 @@ class DatabaseHelper:
     def phrase_times(self, guild, phrase):
         with self.processing:
             session = self.session_creator()
-            query = session.query(Message.timestamp).with_hint(Message,
-                                                               "USE INDEX(whenMessage)").filter(
+            query = session.query(Message.timestamp).filter(
                 Message.content.match(phrase),
                 Message.guild_id == guild.id).order_by(
                 Message.timestamp)
