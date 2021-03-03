@@ -222,7 +222,7 @@ class SQLAlchemyTest(commands.Cog):
                                                                                          "word_stats", "phrase_usage",
                                                                                          "phrasestats", "phrase_stats",
                                                                                          "phraseusage"])
-    async def word_usage(self, ctx, *, phrase, group: Optional[str]):
+    async def word_usage(self, ctx, group: Optional[str], *, phrase):
         if len(phrase) > 180:
             await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
             return
