@@ -8,6 +8,7 @@ import random
 import re
 from io import BytesIO
 from discord.ext import commands, tasks
+from functools import partial
 
 from main import UtilsBot
 from src.checks.role_check import is_staff, is_high_staff
@@ -212,7 +213,9 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if "@someone" in message.clean_content.lower() and not message.author.bot:
-            random_person = random.choice(message.channel.members)
+            random_user_id = await self.bot.loop.run_in_executor(None, partial(self.bot.database_handler.select_random,
+                                                                               message.channel.guild))
+            random_person = message.channel.guild.get_member(random_user_id)
             await message.reply("Your @someone was: {}".format(random_person.mention))
 
 

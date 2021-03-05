@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "2.1.7"
+version_number = "2.1.8"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -13,6 +13,7 @@ lexibot_id = 730015197980262424
 
 extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
               "hypixel", "api", "og_checker", "blacklist", "logger"]
+# extensions = ["logger"]
 
 
 dev = False

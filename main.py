@@ -25,6 +25,7 @@ class UtilsBot(commands.Bot):
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
+        self.database_handler = None
         self.latest_joins = {}
 
     async def get_latest_joins(self):

@@ -21,6 +21,7 @@ class SQLAlchemyTest(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.database = DatabaseHelper()
+        self.bot.database_handler = self.database
         self.bot.loop.run_in_executor(None, self.database.ensure_db)
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.channel_update = self.bot.create_processing_embed("Working...", "Starting processing!")
@@ -105,35 +106,35 @@ class SQLAlchemyTest(commands.Cog):
     async def full_guild(self, ctx):
         sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
         tasks = []
+        pool = ThreadPoolExecutor(max_workers=20000)
         for channel in ctx.guild.text_channels:
-            tasks.append(self.bot.loop.create_task(self.load_channel(channel)))
+            tasks.append(self.bot.loop.create_task(self.load_channel(channel, pool)))
         while any([not task.done() for task in tasks]):
             await self.send_update(sent_message)
             await asyncio.sleep(1)
         await asyncio.gather(*tasks)
         await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
 
-    async def load_channel(self, channel: discord.TextChannel):
+    async def load_channel(self, channel: discord.TextChannel, executor):
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
         if resume_from is not None:
             resume_from = await channel.fetch_message(resume_from)
         print(resume_from)
         # noinspection DuplicatedCode
-        with ThreadPoolExecutor() as executor:
-            async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
-                now = time.time()
-                if now - last_edit > 3:
-                    embed = discord.Embed(title="Processing messages",
-                                          description="Last Message text: {}, from {}, in {}".format(
-                                              message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
-                                              channel.mention), colour=discord.Colour.orange())
-                    embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-                    embed.timestamp = message.created_at
-                    self.last_update = embed
-                    last_edit = now
-                    self.data[f"resume_from_{channel.id}"] = message.id
-                executor.submit(partial(self.database.save_message, message))
+        async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
+            now = time.time()
+            if now - last_edit > 3:
+                embed = discord.Embed(title="Processing messages",
+                                      description="Last Message text: {}, from {}, in {}".format(
+                                          message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
+                                          channel.mention), colour=discord.Colour.orange())
+                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+                embed.timestamp = message.created_at
+                self.last_update = embed
+                last_edit = now
+                self.data[f"resume_from_{channel.id}"] = message.id
+            await self.bot.loop.run_in_executor(executor, partial(self.database.save_message, message))
 
     @commands.command()
     async def leaderboard(self, ctx):
