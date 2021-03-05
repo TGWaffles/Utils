@@ -263,9 +263,9 @@ class DatabaseHelper:
             session = self.session_creator()
             now = datetime.datetime.now()
             last_week = now - datetime.timedelta(days=7)
-            sub_query = session.query(func.distinct(Message.user_id)).with_hint(Message, "USE INDEX(timestamp)").filter(
+            sub_query = session.query(func.distinct(Message.user_id).label("user_id")).with_hint(Message, "USE INDEX(timestamp)").filter(
                 Message.timestamp > last_week, Message.guild_id == guild.id).subquery()
-            query = session.query(sub_query.c.distinct_1).order_by(func.rand()).limit(1)
+            query = session.query(sub_query.c.user_id).order_by(func.rand()).limit(1)
             results = query.all()
             print(results)
             print(results[0])
