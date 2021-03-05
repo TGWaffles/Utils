@@ -267,6 +267,4 @@ class DatabaseHelper:
                 Message.timestamp > last_week, Message.guild_id == guild.id).subquery()
             query = session.query(sub_query.c.user_id).order_by(func.rand()).limit(1)
             results = query.all()
-            print(results)
-            print(results[0])
-            return results[0]
+            return results[0][0]
