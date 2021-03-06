@@ -1,13 +1,17 @@
 import asyncio
 import re
 import time
+import datetime
+import json
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from functools import partial
 from typing import Optional
+from aiohttp import web
 
 import discord
 import src.storage.config as config
+from src.storage.token import api_token
 from discord.ext import commands, tasks
 
 from main import UtilsBot
@@ -21,19 +25,47 @@ class SQLAlchemyTest(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.database = DatabaseHelper()
-        self.bot.database_handler = self.database
         self.bot.loop.run_in_executor(None, self.database.ensure_db)
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.channel_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.data = DataHelper()
         self.update_motw.start()
         self.update_message_count.start()
+        app = web.Application()
+        app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart)])
+        # noinspection PyProtectedMember
+        self.bot.loop.create_task(web._run_app(app, port=6970))
 
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
         count_channel: discord.TextChannel = self.bot.get_channel(config.message_count_channel)
         count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild))
         await count_channel.edit(name=f"Messages: {count:,}")
+
+    @staticmethod
+    async def check_up(request: web.Request):
+        try:
+            request_json = await request.json()
+            if request_json.get("timestamp", None) is None:
+                raise TypeError
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        sent_time = request_json.get("timestamp")
+        current_time = datetime.datetime.utcnow().timestamp()
+        response_json = {"time_delay": current_time - sent_time}
+        return web.json_response(response_json)
+
+    async def nice_restart(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", None) == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        response = web.StreamResponse(status=202)
+        await response.prepare(request)
+        self.bot.restart()
 
     async def send_update(self, sent_message):
         if len(self.last_update.description) < 2000:
