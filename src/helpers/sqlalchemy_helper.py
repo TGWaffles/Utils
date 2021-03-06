@@ -239,7 +239,7 @@ class DatabaseHelper:
             session = self.session_creator()
             sub_query = session.query(Message).with_hint(Message, "USE INDEX(snipe)").filter(
                 Message.channel_id == channel.id, Message.deleted.is_(True)).subquery()
-            query = session.query(sub_query.c).order_by(
+            query = session.query(sub_query).order_by(
                 desc(sub_query.c.timestamp)).limit(1)
             self.session_creator.remove()
             return query.first()
