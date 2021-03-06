@@ -238,7 +238,7 @@ class DatabaseHelper:
         with self.processing:
             session = self.session_creator()
             sub_query = session.query(Message).with_hint(Message, "USE INDEX(snipe)").filter(
-                Message.channel_id == channel.id, Message.deleted.is_(True)).subquery()
+                Message.channel_id == channel.id, Message.deleted == 1).subquery()
             query = session.query(sub_query).order_by(
                 desc(sub_query.c.timestamp)).limit(1)
             print(query.statement.compile(self.engine))
