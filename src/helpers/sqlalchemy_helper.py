@@ -237,9 +237,9 @@ class DatabaseHelper:
     def snipe(self, channel):
         with self.processing:
             session = self.session_creator()
-            sub_query = session.query(Message.id).filter(Message.channel_id == channel.id,
-                                                         Message.deleted.is_(True)).subquery()
-            query = session.query(Message).join(sub_query, sub_query.c.id == Message.id).order_by(
+            sub_query = session.query(Message).with_hint(Message, "USE INDEX(snipe)").filter(
+                Message.channel_id == channel.id, Message.deleted.is_(True)).subquery()
+            query = session.query(sub_query).order_by(
                 desc(Message.timestamp))
             self.session_creator.remove()
             return query.first()
@@ -263,7 +263,8 @@ class DatabaseHelper:
             session = self.session_creator()
             now = datetime.datetime.now()
             last_week = now - datetime.timedelta(days=7)
-            sub_query = session.query(func.distinct(Message.user_id).label("user_id")).with_hint(Message, "USE INDEX(timestamp)").filter(
+            sub_query = session.query(func.distinct(Message.user_id).label("user_id")).with_hint(Message,
+                                                                                                 "USE INDEX(timestamp)").filter(
                 Message.timestamp > last_week, Message.guild_id == guild.id).subquery()
             query = session.query(sub_query.c.user_id).order_by(func.rand()).limit(1)
             results = query.all()
