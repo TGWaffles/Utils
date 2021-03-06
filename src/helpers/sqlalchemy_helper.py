@@ -241,6 +241,7 @@ class DatabaseHelper:
                 Message.channel_id == channel.id, Message.deleted.is_(True)).subquery()
             query = session.query(sub_query).order_by(
                 desc(sub_query.c.timestamp)).limit(1)
+            print(query.statement.compile(self.engine))
             self.session_creator.remove()
             return query.first()
 
