@@ -5,10 +5,12 @@ import aiohttp
 import aiohttp.client_exceptions
 import discord
 import re
-from discord.ext import commands
+from discord.ext import commands, tasks
+from functools import partial
 
 from main import UtilsBot
 from src.storage.token import api_token
+from src.storage import config
 
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
@@ -24,6 +26,30 @@ class DBApiClient(commands.Cog):
         self.db_url = "tgwaffles.me"
         self.bot.loop.create_task(self.ping_db_server())
         self.last_ping = datetime.datetime.now()
+        self.update_motw.start()
+
+    @tasks.loop(seconds=1800, count=None)
+    async def update_motw(self):
+        monkey_guild: discord.Guild = self.bot.get_guild(config.monkey_guild_id)
+        motw_role = monkey_guild.get_role(config.motw_role_id)
+        motw_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
+        params = {'token': api_token, 'guild_id': config.monkey_guild_id}
+        try:
+            async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=10,
+                                        json=params) as request:
+                results = await request.json()
+        except exceptions:
+            await self.restart_db_server()
+            return
+        members = [monkey_guild.get_member(user[0]) for user in results]
+        for member in monkey_guild.members:
+            if motw_role in member.roles and member not in members:
+                await member.remove_roles(motw_role)
+                await motw_channel.send(f"Goodbye {member.mention}! You will be missed!")
+        for member in members:
+            if motw_role not in member.roles:
+                await member.add_roles(motw_role)
+                await motw_channel.send(f"Welcome {member.mention}! I hope you enjoy your stay!")
 
     async def ping_db_server(self):
         while True:

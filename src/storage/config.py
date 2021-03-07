@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "2.2.6"
+version_number = "2.2.7"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"

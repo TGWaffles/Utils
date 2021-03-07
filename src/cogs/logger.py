@@ -30,7 +30,6 @@ class SQLAlchemyTest(commands.Cog):
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.channel_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.data = DataHelper()
-        self.update_motw.start()
         self.update_message_count.start()
         app = web.Application()
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
@@ -100,21 +99,6 @@ class SQLAlchemyTest(commands.Cog):
             except asyncio.CancelledError:
                 return
 
-    @tasks.loop(seconds=1800, count=None)
-    async def update_motw(self):
-        monkey_guild: discord.Guild = self.bot.get_guild(config.monkey_guild_id)
-        motw_role = monkey_guild.get_role(config.motw_role_id)
-        motw_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
-        results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, monkey_guild))
-        members = [monkey_guild.get_member(user[0]) for user in results]
-        for member in monkey_guild.members:
-            if motw_role in member.roles and member not in members:
-                await member.remove_roles(motw_role)
-                await motw_channel.send(f"Goodbye {member.mention}! You will be missed!")
-        for member in members:
-            if motw_role not in member.roles:
-                await member.add_roles(motw_role)
-                await motw_channel.send(f"Welcome {member.mention}! I hope you enjoy your stay!")
 
     @commands.command()
     async def score(self, ctx, member: Optional[discord.Member]):
