@@ -99,7 +99,7 @@ class DBApiClient(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
                                                                       f"Counting how many times \"{phrase}\""
                                                                       f"has been said..."))
-        params = {"phrase": phrase, "guild_id": ctx.guild.id}
+        params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
         while True:
             try:
                 async with self.session.get(url=f"http://{self.db_url}:6970/global_phrase_count", timeout=10,
