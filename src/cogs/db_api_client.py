@@ -25,8 +25,10 @@ class DBApiClient(commands.Cog):
                     json_info = await request.json()
                     if json_info.get("time_delay", 100) > 3:
                         await self.restart_db_server()
+                        await asyncio.sleep(10)
             except aiohttp.client_exceptions.ClientConnectorError:
                 await self.restart_db_server()
+                await asyncio.sleep(10)
             await asyncio.sleep(1)
 
     async def restart_db_server(self):
