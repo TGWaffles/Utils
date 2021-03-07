@@ -44,6 +44,10 @@ class DBApiClient(commands.Cog):
             response_json = await request.json()
             return response_json.get("member_id")
 
+    async def update(self):
+        params = {'token': api_token}
+        await self.session.post(url=f"http://{self.db_url}:6969/update", json=params)
+
 
 def setup(bot: UtilsBot):
     cog = DBApiClient(bot)

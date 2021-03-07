@@ -27,6 +27,15 @@ async def restart(request: web.Request):
     return web.Response(status=202)
 
 
+@routes.post("/update")
+async def update(request: web.Request):
+    unauthorised_response = is_unauthorised(request)
+    if unauthorised_response is not None:
+        return unauthorised_response
+    os.system("git pull")
+    return web.Response(status=202)
+
+
 if __name__ == '__main__':
     app = web.Application()
     app.add_routes(routes)
