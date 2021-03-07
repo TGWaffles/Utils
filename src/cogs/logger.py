@@ -81,7 +81,7 @@ class SQLAlchemyTest(commands.Cog):
         guild_id = request_json.get("guild_id", None)
         if guild_id is None:
             return web.Response(status=400)
-        random_id = await self.bot.loop.run_in_executor(None, partial(self.bot.database_handler.select_random,
+        random_id = await self.bot.loop.run_in_executor(None, partial(self.database.select_random,
                                                                       guild_id))
         response_json = {"member_id": random_id}
         return web.json_response(response_json)
