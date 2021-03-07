@@ -254,7 +254,7 @@ class SQLAlchemyTest(commands.Cog):
             return web.Response(status=400)
         message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel_id))
         response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
-                         message.timestamp.toisoformat()}
+                         message.timestamp.isoformat("T")}
         return web.json_response(response_json)
 
     @commands.command(description="Count how many times a phrase has been said!")
