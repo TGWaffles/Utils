@@ -32,11 +32,14 @@ class DBApiClient(commands.Cog):
     async def restart_db_server(self):
         params = {'token': api_token}
         try:
-            async with self.session.get(url=f"http://{self.db_url}:6970/restart", timeout=10, json=params) as request:
-                await request.json()
-                print("Restarted DB server")
+            async with self.session.post(url=f"http://{self.db_url}:6970/restart", timeout=10, json=params) as request:
+                if request.status == 202:
+                    print("Restarted DB server")
+                else:
+                    raise aiohttp.client_exceptions.ClientConnectorError
         except aiohttp.client_exceptions.ClientConnectorError:
             await self.session.post(url=f"http://{self.db_url}:6969/restart", json=params)
+            print("Force restarted DB server.")
 
     async def get_someone_id(self, guild_id):
         params = {'token': api_token, "guild_id": guild_id}
