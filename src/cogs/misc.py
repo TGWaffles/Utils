@@ -1,21 +1,19 @@
 import datetime
+import re
+from io import BytesIO
 from typing import Optional
 
 import discord
 import psutil
 import webcolors
-import random
-import re
-from io import BytesIO
 from discord.ext import commands, tasks
-from functools import partial
 
 from main import UtilsBot
 from src.checks.role_check import is_staff, is_high_staff
 from src.checks.user_check import is_owner
+from src.cogs.og_checker import OGCog
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
-from src.cogs.og_checker import OGCog
 
 
 def convert_colour(input_colour):

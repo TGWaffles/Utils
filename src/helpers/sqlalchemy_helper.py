@@ -1,7 +1,6 @@
 import datetime
 
 import sqlalchemy
-import random
 from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import sessionmaker, scoped_session
 
@@ -187,12 +186,10 @@ class DatabaseHelper:
             # total_messages = {}
             query = session.query(Message.user_id,
                                   Message.timestamp).with_hint(Message,
-                                                               "USE INDEX(whenMessage)").join(Member, and_(
-                Message.user_id == Member.user_id,
-                Message.guild_id ==
-                Member.guild_id)).join(User, Message.user_id == User.id). \
-                filter(Message.timestamp > last_week, Message.guild_id == guild.id,
-                       User.bot.is_(False))
+                                                               "USE INDEX(whenMessage)").join(
+                Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
+                User, Message.user_id == User.id).filter(Message.timestamp > last_week, Message.guild_id == guild.id,
+                                                         User.bot.is_(False))
             results = sorted(query.all(), key=lambda x: x.timestamp)
             for row in results:
                 user_id = row.user_id

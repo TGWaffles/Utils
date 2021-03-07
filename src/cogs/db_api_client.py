@@ -1,11 +1,11 @@
 import asyncio
+import datetime
+
 import aiohttp
 import aiohttp.client_exceptions
-import datetime
-from functools import partial
-from main import UtilsBot
-from discord.ext import commands, tasks
+from discord.ext import commands
 
+from main import UtilsBot
 from src.storage.token import api_token
 
 
@@ -15,6 +15,7 @@ class DBApiClient(commands.Cog):
         self.bot.database_handler = self
         self.session = aiohttp.ClientSession()
         self.db_url = "tgwaffles.me"
+        self.bot.loop.create_task(self.ping_db_server())
 
     async def ping_db_server(self):
         while True:
