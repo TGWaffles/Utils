@@ -3,6 +3,7 @@ import re
 import time
 import datetime
 import json
+import os
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from functools import partial
@@ -32,7 +33,9 @@ class SQLAlchemyTest(commands.Cog):
         self.update_motw.start()
         self.update_message_count.start()
         app = web.Application()
-        app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart)])
+        app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
+                        web.get("/someone", self.send_random_someone)])
+        os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
 
@@ -58,7 +61,7 @@ class SQLAlchemyTest(commands.Cog):
     async def nice_restart(self, request: web.Request):
         try:
             request_json = await request.json()
-            assert request_json.get("token", None) == api_token
+            assert request_json.get("token", "") == api_token
         except (TypeError, json.JSONDecodeError):
             return web.Response(status=400)
         except AssertionError:
@@ -66,6 +69,22 @@ class SQLAlchemyTest(commands.Cog):
         response = web.StreamResponse(status=202)
         await response.prepare(request)
         self.bot.restart()
+
+    async def send_random_someone(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        guild_id = request_json.get("guild_id", None)
+        if guild_id is None:
+            return web.Response(status=400)
+        random_id = await self.bot.loop.run_in_executor(None, partial(self.bot.database_handler.select_random,
+                                                                      guild_id))
+        response_json = {"member_id": random_id}
+        return web.json_response(response_json)
 
     async def send_update(self, sent_message):
         if len(self.last_update.description) < 2000:

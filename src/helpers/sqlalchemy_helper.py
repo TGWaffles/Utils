@@ -259,14 +259,14 @@ class DatabaseHelper:
             self.session_creator.remove()
             return times
 
-    def select_random(self, guild):
+    def select_random(self, guild_id):
         with self.processing:
             session = self.session_creator()
             now = datetime.datetime.now()
             last_week = now - datetime.timedelta(days=7)
             sub_query = session.query(func.distinct(Message.user_id).label("user_id")).with_hint(Message,
                                                                                                  "USE INDEX(timestamp)").filter(
-                Message.timestamp > last_week, Message.guild_id == guild.id).subquery()
+                Message.timestamp > last_week, Message.guild_id == guild_id).subquery()
             query = session.query(sub_query.c.user_id).order_by(func.rand()).limit(1)
             results = query.all()
             return results[0][0]

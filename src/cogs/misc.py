@@ -213,8 +213,7 @@ class Misc(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if "@someone" in message.clean_content.lower() and not message.author.bot:
-            random_user_id = await self.bot.loop.run_in_executor(None, partial(self.bot.database_handler.select_random,
-                                                                               message.channel.guild))
+            random_user_id = await self.bot.database_handler.get_someone_id(message.guild.id)
             random_person = message.channel.guild.get_member(random_user_id)
             await message.reply("Your @someone was: {}".format(random_person.mention))
 

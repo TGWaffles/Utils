@@ -11,10 +11,14 @@ zex_id = 734597893624692778
 lexi_id = 280843294508974103
 lexibot_id = 730015197980262424
 
-extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech", "monkey_guild",
-              "hypixel", "api", "og_checker", "blacklist", "logger"]
 # extensions = ["logger"]
 
+
+if os.environ.get("dbserver", None) is not None:
+    extensions = ["logger"]
+else:
+    extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech",
+                  "monkey_guild", "hypixel", "api", "og_checker", "blacklist"]
 
 dev = False
 if dev:
