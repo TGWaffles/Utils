@@ -190,6 +190,8 @@ class SQLAlchemyTest(commands.Cog):
     @commands.command()
     async def leaderboard(self, ctx):
         guild = ctx.guild
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
+                                                                      "Processing messages for leaderboard..."))
         results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, guild))
         embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
         embed.description = "```"
@@ -215,7 +217,7 @@ class SQLAlchemyTest(commands.Cog):
             embed.description += text
             # embed.add_field(name=f"{index+1}. {name}", value=f"Score: {user[1]} | Messages: {user[2]}", inline=False)
         embed.description += "```"
-        await ctx.reply(embed=embed)
+        await sent.edit(embed=embed)
 
     @commands.command()
     async def stats(self, ctx, member: Optional[discord.Member], group: Optional[str] = "m"):
@@ -225,37 +227,45 @@ class SQLAlchemyTest(commands.Cog):
         if group not in ['d', 'w', 'm', 'y']:
             await ctx.reply(embed=self.bot.create_error_embed("Valid grouping options are d, w, m, y"))
             return
-        print("Getting times.")
+        english_group = {'d': "Day", 'w': "Week", 'm': "Month", 'y': "Year"}
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages", "Compiling graph for all "
+                                                                                             "your messages..."))
         times = await self.bot.loop.run_in_executor(None, partial(self.database.get_graph_of_messages, member))
-        print("got times, starting compilation.")
         with ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
         file = BytesIO(data)
         file.seek(0)
         discord_file = discord.File(fp=file, filename="image.png")
-        await ctx.reply(file=discord_file)
+        embed = discord.Embed(title=f"Your stats for this {english_group[group]}:")
+        embed.set_image(url="attachment://image.png")
+        await sent.delete()
+        await ctx.reply(embed=embed, file=discord_file)
 
     @commands.command()
     async def snipe(self, ctx):
-        channel = ctx.channel
-        message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel))
-        user = self.bot.get_user(message.user_id)
-        embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
-        embed.set_author(name=user.name, icon_url=user.avatar_url)
-        embed.description = message.content
-        embed.timestamp = message.timestamp
-        await ctx.reply(embed=embed)
+        async with ctx.typing():
+            channel = ctx.channel
+            message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel))
+            user = self.bot.get_user(message.user_id)
+            embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
+            embed.set_author(name=user.name, icon_url=user.avatar_url)
+            embed.description = message.content
+            embed.timestamp = message.timestamp
+            await ctx.reply(embed=embed)
 
     @commands.command(description="Count how many times a phrase has been said!")
     async def count(self, ctx, *, phrase):
         if len(phrase) > 223:
             await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
             return
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
+                                                                      f"Counting how many times \"{phrase}\""
+                                                                      f"has been said..."))
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, ctx.guild, phrase))
         embed = self.bot.create_completed_embed(
             f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
         embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes (\"\")!")
-        await ctx.reply(embed=embed)
+        await sent.edit(embed=embed)
 
     @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
     async def count_user(self, ctx, member: Optional[discord.Member], *, phrase):
@@ -264,39 +274,44 @@ class SQLAlchemyTest(commands.Cog):
         if len(phrase) > 180:
             await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
             return
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
+                                                                      f"Counting how many times {member.display_name} "
+                                                                      f"said: \"{phrase}\""))
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.count_member, member, phrase))
         embed = self.bot.create_completed_embed(
             f"Number of times {member.display_name} said: \"{phrase}\":", f"**{amount}** times!")
         embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes (\"\")!")
-        await ctx.reply(embed=embed)
+        await sent.edit(embed=embed)
 
     @commands.command(description="Plots a bar chart of word usage over time.", aliases=["wordstats, wordusage",
                                                                                          "word_stats", "phrase_usage",
                                                                                          "phrasestats", "phrase_stats",
                                                                                          "phraseusage"])
     async def word_usage(self, ctx, phrase, group: Optional[str] = "m"):
-        if len(phrase) > 180:
-            await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
-            return
-        print("Getting phrase times.")
-        times = await self.bot.loop.run_in_executor(None, partial(self.database.phrase_times, ctx.guild, phrase))
-        print("Running process")
-        with ProcessPoolExecutor() as pool:
-            data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
-        print("Finished processing.")
-        file = BytesIO(data)
-        file.seek(0)
-        discord_file = discord.File(fp=file, filename="image.png")
-        embed = discord.Embed(title=f"Number of times \"{phrase}\" has been said:")
-        embed.set_image(url="attachment://image.png")
-        print("Compiled embed")
-        await ctx.reply(embed=embed, file=discord_file)
-        print("Embed sent.")
+        async with ctx.typing():
+            if len(phrase) > 180:
+                await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
+                return
+            print("Getting phrase times.")
+            times = await self.bot.loop.run_in_executor(None, partial(self.database.phrase_times, ctx.guild, phrase))
+            print("Running process")
+            with ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+            print("Finished processing.")
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+            embed = discord.Embed(title=f"Number of times \"{phrase}\" has been said:")
+            embed.set_image(url="attachment://image.png")
+            print("Compiled embed")
+            await ctx.reply(embed=embed, file=discord_file)
+            print("Embed sent.")
 
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...", "Counting all messages sent..."))
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, ctx.guild))
-        await ctx.reply(embed=self.bot.create_completed_embed(
+        await sent.edit(embed=self.bot.create_completed_embed(
             title="Total Messages sent in this guild!", text=f"**{amount:,}** messages!"
         ))
 
