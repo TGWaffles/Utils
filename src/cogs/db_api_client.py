@@ -4,6 +4,7 @@ import datetime
 import aiohttp
 import aiohttp.client_exceptions
 import discord
+import re
 from discord.ext import commands
 
 from main import UtilsBot
@@ -118,6 +119,49 @@ class DBApiClient(commands.Cog):
                         f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
                     embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes ("
                                           "\"\")!")
+                    await sent.edit(embed=embed)
+                    return True
+            except exceptions:
+                await self.restart_db_server()
+
+    @commands.command()
+    async def leaderboard(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
+                                                                      "Processing messages for leaderboard..."))
+        params = {'token': api_token, 'guild_id': ctx.guild.id}
+        while True:
+            try:
+                async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=10,
+                                            json=params) as request:
+                    if request.status != 200:
+                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
+                                                                          f"(status: {request.status})"))
+                        return
+                    request_json = await request.json()
+                    results = request_json.get("results")
+                    embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
+                    embed.description = "```"
+                    embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+                    regex_pattern = re.compile(pattern="["
+                                                       u"\U0001F600-\U0001F64F"
+                                                       u"\U0001F300-\U0001F5FF"
+                                                       u"\U0001F680-\U0001F6FF"
+                                                       u"\U0001F1E0-\U0001F1FF"
+                                                       "]+", flags=re.UNICODE)
+                    lengthening = []
+                    for index, user in enumerate(results):
+                        member = ctx.guild.get_member(user[0])
+                        name = (member.nick or member.name).replace("✨", "aa")
+                        name = regex_pattern.sub('a', name)
+                        name_length = len(name)
+                        lengthening.append(name_length + len(str(index + 1)))
+                    max_length = max(lengthening)
+                    for i in range(len(results)):
+                        member = ctx.guild.get_member(results[i][0])
+                        name = member.nick or member.name
+                        text = f"{i + 1}. {name}: " + " " * (max_length - lengthening[i]) + f"Score: {results[i][1]}\n"
+                        embed.description += text
+                    embed.description += "```"
                     await sent.edit(embed=embed)
                     return True
             except exceptions:

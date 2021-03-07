@@ -177,7 +177,7 @@ class DatabaseHelper:
             self.session_creator.remove()
         return amount
 
-    def get_last_week_messages(self, guild):
+    def get_last_week_messages(self, guild_id):
         with self.processing:
             session = self.session_creator()
             now = datetime.datetime.now()
@@ -185,13 +185,13 @@ class DatabaseHelper:
             last_valid = {}
             scores = {}
             # total_messages = {}
-            if guild.id == config.monkey_guild_id:
+            if guild_id == config.monkey_guild_id:
                 query = session.query(Message.user_id,
                                       Message.timestamp).with_hint(Message,
                                                                    "USE INDEX(whenMessage)").join(
                     Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
                     User, Message.user_id == User.id).filter(Message.timestamp > last_week,
-                                                             Message.guild_id == guild.id,
+                                                             Message.guild_id == guild_id,
                                                              User.bot.is_(False),
                                                              Message.channel_id == config.main_channel_id)
             else:
@@ -199,7 +199,8 @@ class DatabaseHelper:
                                       Message.timestamp).with_hint(Message,
                                                                    "USE INDEX(whenMessage)").join(
                     Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
-                    User, Message.user_id == User.id).filter(Message.timestamp > last_week, Message.guild_id == guild.id,
+                    User, Message.user_id == User.id).filter(Message.timestamp > last_week,
+                                                             Message.guild_id == guild_id,
                                                              User.bot.is_(False))
             results = sorted(query.all(), key=lambda x: x.timestamp)
             for row in results:

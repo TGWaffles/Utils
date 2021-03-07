@@ -35,7 +35,7 @@ class SQLAlchemyTest(commands.Cog):
         app = web.Application()
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
-                        web.get("/global_phrase_count", self.count)])
+                        web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -188,37 +188,20 @@ class SQLAlchemyTest(commands.Cog):
                 self.data[f"resume_from_{channel.id}"] = message.id
             await self.bot.loop.run_in_executor(executor, partial(self.database.save_message, message))
 
-    @commands.command()
-    async def leaderboard(self, ctx):
-        guild = ctx.guild
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
-                                                                      "Processing messages for leaderboard..."))
-        results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, guild))
-        embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
-        embed.description = "```"
-        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
-        regex_pattern = re.compile(pattern="["
-                                           u"\U0001F600-\U0001F64F"
-                                           u"\U0001F300-\U0001F5FF"
-                                           u"\U0001F680-\U0001F6FF"
-                                           u"\U0001F1E0-\U0001F1FF"
-                                           "]+", flags=re.UNICODE)
-        lengthening = []
-        for index, user in enumerate(results):
-            member = guild.get_member(user[0])
-            name = (member.nick or member.name).replace("✨", "aa")
-            name = regex_pattern.sub('a', name)
-            name_length = len(name)
-            lengthening.append(name_length + len(str(index + 1)))
-        max_length = max(lengthening)
-        for i in range(len(results)):
-            member = guild.get_member(results[i][0])
-            name = member.nick or member.name
-            text = f"{i + 1}. {name}: " + " " * (max_length - lengthening[i]) + f"Score: {results[i][1]}\n"
-            embed.description += text
-            # embed.add_field(name=f"{index+1}. {name}", value=f"Score: {user[1]} | Messages: {user[2]}", inline=False)
-        embed.description += "```"
-        await sent.edit(embed=embed)
+    async def leaderboard(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        guild_id = request_json.get("guild_id", None)
+        if guild_id is None:
+            return web.Response(status=400)
+        results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, guild_id))
+        response_json = {"results": results}
+        return web.json_response(response_json)
 
     @commands.command()
     async def stats(self, ctx, member: Optional[discord.Member], group: Optional[str] = "m"):
