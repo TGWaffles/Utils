@@ -97,7 +97,7 @@ class DBApiClient(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
             return
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
-                                                                      f"Counting how many times \"{phrase}\""
+                                                                      f"Counting how many times \"{phrase}\" "
                                                                       f"has been said..."))
         params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
         while True:
