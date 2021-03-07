@@ -74,7 +74,8 @@ class DBApiClient(commands.Cog):
             try:
                 async with self.session.get(url=f"http://{self.db_url}:6970/snipe", timeout=10, json=params) as request:
                     if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed("Couldn't snipe!"))
+                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe! "
+                                                                          f"(status: {request.status})"))
                         return
                     response_json = await request.json()
                     user_id = response_json.get("user_id")
@@ -104,7 +105,8 @@ class DBApiClient(commands.Cog):
                 async with self.session.get(url=f"http://{self.db_url}:6970/global_phrase_count", timeout=10,
                                             json=params) as request:
                     if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed("Couldn't count!"))
+                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
+                                                                          f"(status: {request.status})"))
                         return
                     response_json = await request.json()
                     amount = response_json.get("amount")
