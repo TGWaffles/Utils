@@ -5,6 +5,7 @@ from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from src.helpers.models.database_models import *
+from src.storage import config
 
 
 # old_commit = session.Session.commit
@@ -184,12 +185,22 @@ class DatabaseHelper:
             last_valid = {}
             scores = {}
             # total_messages = {}
-            query = session.query(Message.user_id,
-                                  Message.timestamp).with_hint(Message,
-                                                               "USE INDEX(whenMessage)").join(
-                Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
-                User, Message.user_id == User.id).filter(Message.timestamp > last_week, Message.guild_id == guild.id,
-                                                         User.bot.is_(False))
+            if guild.id == config.monkey_guild_id:
+                query = session.query(Message.user_id,
+                                      Message.timestamp).with_hint(Message,
+                                                                   "USE INDEX(whenMessage)").join(
+                    Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
+                    User, Message.user_id == User.id).filter(Message.timestamp > last_week,
+                                                             Message.guild_id == guild.id,
+                                                             User.bot.is_(False),
+                                                             Message.channel_id == config.main_channel_id)
+            else:
+                query = session.query(Message.user_id,
+                                      Message.timestamp).with_hint(Message,
+                                                                   "USE INDEX(whenMessage)").join(
+                    Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
+                    User, Message.user_id == User.id).filter(Message.timestamp > last_week, Message.guild_id == guild.id,
+                                                             User.bot.is_(False))
             results = sorted(query.all(), key=lambda x: x.timestamp)
             for row in results:
                 user_id = row.user_id
