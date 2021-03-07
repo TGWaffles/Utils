@@ -8,7 +8,7 @@ from src.storage.token import api_token
 routes = web.RouteTableDef()
 
 
-def is_unauthorised(request):
+async def is_unauthorised(request):
     try:
         request_json = await request.json()
     except (TypeError, json.JSONDecodeError):
@@ -19,7 +19,7 @@ def is_unauthorised(request):
 
 @routes.post("/restart")
 async def restart(request: web.Request):
-    unauthorised_response = is_unauthorised(request)
+    unauthorised_response = await is_unauthorised(request)
     if unauthorised_response is not None:
         return unauthorised_response
     os.system("tmux kill-session -t MonkeyDB")
@@ -29,7 +29,7 @@ async def restart(request: web.Request):
 
 @routes.post("/update")
 async def update(request: web.Request):
-    unauthorised_response = is_unauthorised(request)
+    unauthorised_response = await is_unauthorised(request)
     if unauthorised_response is not None:
         return unauthorised_response
     os.system("git pull")
