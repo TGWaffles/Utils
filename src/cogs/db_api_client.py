@@ -37,7 +37,8 @@ class DBApiClient(commands.Cog):
         try:
             async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=10,
                                         json=params) as request:
-                results = await request.json()
+                response_json = await request.json()
+                results = response_json.get("results")
         except exceptions:
             await self.restart_db_server()
             return
