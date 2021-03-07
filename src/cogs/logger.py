@@ -34,7 +34,8 @@ class SQLAlchemyTest(commands.Cog):
         self.update_message_count.start()
         app = web.Application()
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
-                        web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe)])
+                        web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
+                        web.get("/global_phrase_count", self.count)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
