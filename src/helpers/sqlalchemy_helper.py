@@ -135,11 +135,11 @@ class DatabaseHelper:
             Role.delete(session, role)
             self.session_creator.remove()
 
-    def count(self, guild, phrase):
+    def count(self, guild_id, phrase):
         with self.processing:
             session = self.session_creator()
             query = session.query(func.count(Message.id)).filter(Message.content.match(phrase),
-                                                                 Message.guild_id == guild.id)
+                                                                 Message.guild_id == guild_id)
             amount = query.first()[0]
             self.session_creator.remove()
         return amount

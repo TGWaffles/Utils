@@ -257,19 +257,21 @@ class SQLAlchemyTest(commands.Cog):
                          message.timestamp.isoformat("T")}
         return web.json_response(response_json)
 
-    @commands.command(description="Count how many times a phrase has been said!")
-    async def count(self, ctx, *, phrase):
-        if len(phrase) > 223:
-            await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
-            return
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
-                                                                      f"Counting how many times \"{phrase}\""
-                                                                      f"has been said..."))
-        amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, ctx.guild, phrase))
-        embed = self.bot.create_completed_embed(
-            f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
-        embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes (\"\")!")
-        await sent.edit(embed=embed)
+    async def count(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        phrase = request_json.get("phrase", None)
+        guild_id = request_json.get("guild_id", None)
+        if phrase is None or guild_id is None:
+            return web.Response(status=400)
+        amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, guild_id, phrase))
+        response_json = {"amount": amount}
+        return web.json_response(response_json)
 
     @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
     async def count_user(self, ctx, member: Optional[discord.Member], *, phrase):
