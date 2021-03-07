@@ -3,6 +3,7 @@ import datetime
 
 import aiohttp
 import aiohttp.client_exceptions
+import discord
 from discord.ext import commands
 
 from main import UtilsBot
@@ -48,6 +49,24 @@ class DBApiClient(commands.Cog):
         async with self.session.get(url=f"http://{self.db_url}:6970/someone", timeout=10, json=params) as request:
             response_json = await request.json()
             return response_json.get("member_id")
+
+    @commands.command()
+    async def snipe(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
+        params = {'token': api_token, 'channel_id': ctx.channel.id}
+        async with self.session.get(url=f"http://{self.db_url}:6970/snipe", timeout=10, json=params) as request:
+            if request.status != 200:
+                await sent.edit(embed=self.bot.create_error_embed("Couldn't snipe!"))
+            response_json = await request.json()
+            user_id = response_json.get("user_id")
+            content = response_json.get("content")
+            timestamp = datetime.datetime.fromisoformat(response_json.get("timestamp"))
+            user = self.bot.get_user(user_id)
+            embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
+            embed.set_author(name=user.name, icon_url=user.avatar_url)
+            embed.description = content
+            embed.timestamp = timestamp
+            await sent.edit(embed=embed)
 
     async def update(self):
         params = {'token': api_token}

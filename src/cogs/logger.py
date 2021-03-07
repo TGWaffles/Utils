@@ -34,7 +34,7 @@ class SQLAlchemyTest(commands.Cog):
         self.update_message_count.start()
         app = web.Application()
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
-                        web.get("/someone", self.send_random_someone)])
+                        web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -241,17 +241,21 @@ class SQLAlchemyTest(commands.Cog):
         await sent.delete()
         await ctx.reply(embed=embed, file=discord_file)
 
-    @commands.command()
-    async def snipe(self, ctx):
-        async with ctx.typing():
-            channel = ctx.channel
-            message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel))
-            user = self.bot.get_user(message.user_id)
-            embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
-            embed.set_author(name=user.name, icon_url=user.avatar_url)
-            embed.description = message.content
-            embed.timestamp = message.timestamp
-            await ctx.reply(embed=embed)
+    async def snipe(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        channel_id = request_json.get("channel_id", None)
+        if channel_id is None:
+            return web.Response(status=400)
+        message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel_id))
+        response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
+                         message.timestamp.toisoformat()}
+        return web.json_response(response_json)
 
     @commands.command(description="Count how many times a phrase has been said!")
     async def count(self, ctx, *, phrase):
