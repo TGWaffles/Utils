@@ -10,6 +10,10 @@ from main import UtilsBot
 from src.storage.token import api_token
 
 
+exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
+              aiohttp.client_exceptions.ClientConnectorError)
+
+
 class DBApiClient(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
@@ -63,7 +67,7 @@ class DBApiClient(commands.Cog):
                 async with self.session.get(url=f"http://{self.db_url}:6970/someone", timeout=10, json=params) as request:
                     response_json = await request.json()
                     return response_json.get("member_id")
-            except asyncio.exceptions.TimeoutError:
+            except exceptions:
                 await self.restart_db_server()
 
     @commands.command()
@@ -88,7 +92,7 @@ class DBApiClient(commands.Cog):
                     embed.timestamp = timestamp
                     await sent.edit(embed=embed)
                     return True
-            except asyncio.exceptions.TimeoutError:
+            except exceptions:
                 await self.restart_db_server()
 
     @commands.command(description="Count how many times a phrase has been said!")
@@ -116,7 +120,7 @@ class DBApiClient(commands.Cog):
                                           "\"\")!")
                     await sent.edit(embed=embed)
                     return True
-            except asyncio.exceptions.TimeoutError:
+            except exceptions:
                 await self.restart_db_server()
 
     async def update(self):
