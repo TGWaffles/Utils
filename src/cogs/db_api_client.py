@@ -273,7 +273,7 @@ class DBApiClient(commands.Cog):
         await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
 
     async def load_channel(self, channel_id: int, reset):
-        channel = self.bot.fetch_channel(channel_id)
+        channel = await self.bot.fetch_channel(channel_id)
         async with self.channel_lock:
             self.active_channel_ids.append(channel_id)
         print(channel.name)
