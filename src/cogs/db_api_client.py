@@ -70,6 +70,8 @@ class DBApiClient(commands.Cog):
             except asyncio.exceptions.TimeoutError:
                 self.bot.loop.create_task(await self.restart_db_server())
                 await asyncio.sleep(3)
+            except aiohttp.client_exceptions.ClientOSError:
+                await asyncio.sleep(2)
             await asyncio.sleep(1)
 
     async def restart_db_server(self):
