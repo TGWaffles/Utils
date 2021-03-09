@@ -241,10 +241,12 @@ class Misc(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed(f"There's not already a poll in this channel! \n"
                                                               f"Do {config.bot_prefix}poll to start one!"))
             return
-        polls.pop(str(ctx.channel.id))
+        message_id = polls.pop(str(ctx.channel.id))
         self.data["polls"] = polls
-        message: discord.Message = await ctx.channel.fetch_message(polls.get(str(ctx.channel.id)))
-        if message is None:
+        try:
+            message: discord.Message = await ctx.channel.fetch_message(message_id)
+            assert message is not None
+        except (discord.HTTPException, AssertionError):
             await ctx.reply(embed=self.bot.create_error_embed(f"The previous poll in this channel was deleted."))
             return
         plus_reactions = [reaction for reaction in message.reactions if reaction.emoji == "✅"][0].count - 1
