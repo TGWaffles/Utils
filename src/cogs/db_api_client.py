@@ -118,7 +118,7 @@ class DBApiClient(commands.Cog):
                     embed.set_author(name=user.name, icon_url=user.avatar_url)
                     preceding_message = (await ctx.channel.history(before=timestamp, limit=1).flatten())[0] or None
                     if preceding_message is not None:
-                        embed.set_footer(text=f"[Previous Message]({preceding_message.jump_url})")
+                        embed.add_field(name="\u200b", value=f"[Previous Message]({preceding_message.jump_url})")
                     embed.description = content
                     embed.timestamp = timestamp
                     await sent.edit(embed=embed)
