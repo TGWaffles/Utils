@@ -260,6 +260,7 @@ class DBApiClient(commands.Cog):
                 print(len(self.active_channel_ids))
                 print(self.active_channel_ids)
                 channel_id = channels_to_do.pop()
+                print(f"Adding channel id {channel_id}")
                 tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
             await self.send_update(sent_message)
             await asyncio.sleep(1)
@@ -281,6 +282,7 @@ class DBApiClient(commands.Cog):
         messages_to_send = []
         # noinspection DuplicatedCode
         async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
+            print("working on messages")
             now = time.time()
             if now - last_edit > 3:
                 embed = discord.Embed(title="Processing messages",
