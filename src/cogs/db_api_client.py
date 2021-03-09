@@ -251,6 +251,7 @@ class DBApiClient(commands.Cog):
         for guild in self.bot.guilds:
             print(guild.name)
             for channel in guild.text_channels:
+                print(channel.name)
                 channels_to_do.append(channel.id)
         for i in range(10):
             channel_id = channels_to_do.pop()
