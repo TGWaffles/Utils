@@ -153,7 +153,7 @@ class DBApiClient(commands.Cog):
                     with concurrent.futures.ProcessPoolExecutor() as pool:
                         data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
                                                                                  labels, amounts))
-                    file = BytesIO(base64.b64decode(data))
+                    file = BytesIO(data)
                     file.seek(0)
                     discord_file = discord.File(fp=file, filename="image.png")
                     await ctx.reply(file=discord_file)
