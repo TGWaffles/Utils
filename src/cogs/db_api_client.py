@@ -249,6 +249,7 @@ class DBApiClient(commands.Cog):
         tasks = []
         channels_to_do = []
         for guild in self.bot.guilds:
+            print(guild.name)
             for channel in guild.text_channels:
                 channels_to_do.append(channel.id)
         for i in range(10):
@@ -282,7 +283,6 @@ class DBApiClient(commands.Cog):
         messages_to_send = []
         # noinspection DuplicatedCode
         async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
-            print("working on messages")
             now = time.time()
             if now - last_edit > 3:
                 embed = discord.Embed(title="Processing messages",
