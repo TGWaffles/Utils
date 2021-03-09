@@ -266,7 +266,8 @@ class DatabaseHelper:
     def count_messages(self, member_id, guild_id):
         with self.processing:
             session = self.session_creator()
-            query = session.query(func.count(Message.id)).filter(Message.user_id == member_id)
+            query = session.query(func.count(Message.id)).filter(Message.user_id == member_id,
+                                                                 Message.guild_id == guild_id)
             user_sent = query.first()[0]
             self.session_creator.remove()
         guild_sent = self.all_messages(guild_id)
