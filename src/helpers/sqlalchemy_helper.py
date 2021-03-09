@@ -34,8 +34,8 @@ from src.storage import config
 
 class DatabaseHelper:
     def __init__(self):
-        self.engine = sqlalchemy.create_engine("mysql+pymysql://utils:t93PRdtuyWgyt93PRdtuyWgy@elastic.thom.club/"
-                                               "utils?charset=utf8mb4")
+        self.engine = sqlalchemy.create_engine("mysql+mysqlconnector://utils:t93PRdtuyWgyt93PRdtuyWgy@elastic.thom"
+                                               ".club/utils?charset=utf8mb4")
         session_maker = sessionmaker(bind=self.engine)
         self.session_creator = scoped_session(session_maker)
         self.processing = Lock()
