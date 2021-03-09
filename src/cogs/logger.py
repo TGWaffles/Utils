@@ -240,7 +240,7 @@ class SQLAlchemyTest(commands.Cog):
             return web.Response(status=400)
         message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel_id))
         response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
-                         message.timestamp.isoformat("T"), "id": message.id}
+                         message.timestamp.isoformat("T")}
         return web.json_response(response_json)
 
     async def count(self, request: web.Request):
