@@ -270,7 +270,7 @@ class DatabaseHelper:
             user_sent = query.first()[0]
             self.session_creator.remove()
         guild_sent = self.all_messages(guild_id)
-        return user_sent, round(user_sent / guild_sent, 6) * 100
+        return user_sent, round((user_sent / guild_sent) * 100, 6)
 
     def get_graph_of_messages(self, member):
         with self.processing:
