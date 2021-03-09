@@ -254,6 +254,7 @@ class DBApiClient(commands.Cog):
         for i in range(10):
             channel_id = channels_to_do.pop()
             tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
+        await asyncio.sleep(3)
         while len(self.active_channel_ids) > 0:
             if len(self.active_channel_ids) < 10:
                 print(len(self.active_channel_ids))
