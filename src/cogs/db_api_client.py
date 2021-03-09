@@ -37,6 +37,7 @@ class DBApiClient(commands.Cog):
         self.bot.loop.create_task(self.ping_db_server())
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
+        self.active_channel_ids = []
         self.update_motw.start()
 
     @tasks.loop(seconds=1800, count=None)
@@ -253,10 +254,10 @@ class DBApiClient(commands.Cog):
         for i in range(10):
             channel_id = channels_to_do.pop()
             tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
-        while True:
-            if len([True for task in tasks if not task.done()]) < 10:
-                print(len([True for task in tasks if not task.done()]))
-                print([task.done() for task in tasks])
+        while len(self.active_channel_ids) > 0:
+            if len(self.active_channel_ids) < 10:
+                print(len(self.active_channel_ids))
+                print(self.active_channel_ids)
                 channel_id = channels_to_do.pop()
                 tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
             await self.send_update(sent_message)
@@ -268,6 +269,7 @@ class DBApiClient(commands.Cog):
 
     async def load_channel(self, channel_id: int, reset):
         channel = self.bot.get_channel(channel_id)
+        self.active_channel_ids.append(channel_id)
         print(channel.name)
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
@@ -275,7 +277,6 @@ class DBApiClient(commands.Cog):
             resume_from = None
         if resume_from is not None:
             resume_from = await channel.fetch_message(resume_from)
-        print(resume_from)
         messages_to_send = []
         # noinspection DuplicatedCode
         async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
@@ -315,6 +316,7 @@ class DBApiClient(commands.Cog):
                         break
                     except exceptions:
                         await self.restart_db_server()
+        self.active_channel_ids.remove(channel_id)
 
     @commands.command()
     async def leaderboard(self, ctx):
