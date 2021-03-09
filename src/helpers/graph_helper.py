@@ -1,4 +1,6 @@
 import pandas
+import matplotlib.pyplot as plt
+import numpy as np
 
 from io import BytesIO
 
@@ -13,5 +15,14 @@ def file_from_timestamps(times, group):
     figure = bar_chart.get_figure()
     figure.tight_layout()
     figure.savefig(file)
+    file.seek(0)
+    return file.read()
+
+
+def pie_chart_from_amount_and_labels(labels, amounts):
+    file = BytesIO()
+    amounts = np.array(amounts)
+    plotted = plt.pie(amounts, labels=labels)
+    plotted.savefig(file)
     file.seek(0)
     return file.read()

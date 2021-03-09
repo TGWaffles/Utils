@@ -316,5 +316,4 @@ class DatabaseHelper:
                 else:
                     name = row[1].user.name
                 dicted_results[name] = row[2]
-                print(name, row.amount)
             return dicted_results

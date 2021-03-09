@@ -19,7 +19,7 @@ from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.helpers.sqlalchemy_helper import DatabaseHelper
 from src.helpers.storage_helper import DataHelper
-from src.helpers.graph_helper import file_from_timestamps
+from src.helpers.graph_helper import file_from_timestamps, pie_chart_from_amount_and_labels
 
 
 class SQLAlchemyTest(commands.Cog):
@@ -300,8 +300,16 @@ class SQLAlchemyTest(commands.Cog):
             print("Embed sent.")
 
     @commands.command()
-    async def test(self, ctx):
-        await self.bot.loop.run_in_executor(None, partial(self.database.get_message_counts, 725886999646437407, 10))
+    async def test(self, ctx, limit=10):
+        dicted = await self.bot.loop.run_in_executor(None, partial(self.database.get_message_counts,
+                                                                   ctx.guild.id, limit))
+        with ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
+                                                                     list(dicted.keys()), list(dicted.values())))
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
+        await ctx.reply(file=discord_file)
 
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
