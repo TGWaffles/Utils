@@ -303,7 +303,7 @@ class DatabaseHelper:
     def get_message_counts(self, guild_id, limit):
         with self.processing:
             session = self.session_creator()
-            query = session.query(Message.user_id, Member.nick, Member.user,
+            query = session.query(Message.user_id, Member,
                                   func.count(Message.user_id).label("amount")).join(
                 Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).filter(
                 Message.guild_id == guild_id
