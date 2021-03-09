@@ -23,6 +23,7 @@ from src.helpers.storage_helper import DataHelper
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
               aiohttp.client_exceptions.ClientConnectorError, aiohttp.client_exceptions.ClientOSError)
+timeout = 45
 
 
 class DBApiClient(commands.Cog):
@@ -45,7 +46,7 @@ class DBApiClient(commands.Cog):
         motw_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
         params = {'token': api_token, 'guild_id': config.monkey_guild_id}
         try:
-            async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=10,
+            async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=timeout,
                                         json=params) as request:
                 response_json = await request.json()
                 results = response_json.get("results")
@@ -87,7 +88,7 @@ class DBApiClient(commands.Cog):
             params = {'token': api_token}
             self.restarting = True
             try:
-                async with self.session.post(url=f"http://{self.db_url}:6970/restart", timeout=10, json=params) as request:
+                async with self.session.post(url=f"http://{self.db_url}:6970/restart", timeout=timeout, json=params) as request:
                     if request.status == 202:
                         print("Restarted DB server")
                     else:
@@ -104,7 +105,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, "guild_id": guild_id}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:6970/someone", timeout=10, json=params) as request:
+                async with self.session.get(url=f"http://{self.db_url}:6970/someone", timeout=timeout, json=params) as request:
                     response_json = await request.json()
                     return response_json.get("member_id")
             except exceptions:
@@ -116,7 +117,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:6970/snipe", timeout=10, json=params) as request:
+                async with self.session.get(url=f"http://{self.db_url}:6970/snipe", timeout=timeout, json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe! "
                                                                           f"(status: {request.status})"))
@@ -145,7 +146,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'guild_id': ctx.guild.id}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard_pie", timeout=10,
+                async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard_pie", timeout=timeout,
                                             json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
@@ -178,7 +179,7 @@ class DBApiClient(commands.Cog):
         params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:6970/global_phrase_count", timeout=10,
+                async with self.session.get(url=f"http://{self.db_url}:6970/global_phrase_count", timeout=timeout,
                                             json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
@@ -205,7 +206,7 @@ class DBApiClient(commands.Cog):
         params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:6970/percentage", timeout=10,
+                async with self.session.get(url=f"http://{self.db_url}:6970/percentage", timeout=timeout,
                                             json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
@@ -288,7 +289,7 @@ class DBApiClient(commands.Cog):
             if len(messages_to_send) >= 100:
                 while True:
                     try:
-                        req = await self.session.post(url=f"http://elastic.thom.club:6970/many_messages", timeout=10,
+                        req = await self.session.post(url=f"http://elastic.thom.club:6970/many_messages", timeout=timeout,
                                                       json={"token": api_token, "messages": messages_to_send})
                         messages_to_send = []
                         try:
@@ -309,7 +310,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'guild_id': ctx.guild.id}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=10,
+                async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard", timeout=timeout,
                                             json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
