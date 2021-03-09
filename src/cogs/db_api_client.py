@@ -272,7 +272,7 @@ class DBApiClient(commands.Cog):
             if len(messages_to_send) >= 100:
                 while True:
                     try:
-                        req = await self.session.post(url=f"http://{self.db_url}:6970/many_messages", timeout=10,
+                        req = await self.session.post(url=f"http://elastic.thom.club:6970/many_messages", timeout=10,
                                                       json={"token": api_token, "messages": messages_to_send})
                         messages_to_send = []
                         response = await req.json()
