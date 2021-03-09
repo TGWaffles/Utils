@@ -23,17 +23,16 @@ def file_from_timestamps(times, group):
 
 def pie_chart_from_amount_and_labels(labels, amounts):
     file = BytesIO()
-    second_file = BytesIO()
     amounts = np.array(amounts)
+    smaller_amounts = amounts[15:]
+    labels = labels[:15]
+    amounts = amounts[:15]
+    amounts.append(sum(smaller_amounts))
+    labels.append("Other")
     fig = plt.figure()
     axes = fig.add_axes([0, 0, 1, 1])
     axes.axis("equal")
     axes.pie(amounts, labels=labels, autopct='%1.3f%%')
     fig.savefig(file)
     file.seek(0)
-    image: PIL.Image = PIL.Image.open(file)
-    new_image = PIL.Image.new("RGB", image.size, (255, 255, 255))
-    new_image.paste(image, mask=image.split()[3])
-    new_image.save(second_file, format="JPEG", optimize=True, quality=90)
-    second_file.seek(0)
-    return second_file.read()
+    return file.read()
