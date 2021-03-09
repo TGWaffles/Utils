@@ -38,6 +38,7 @@ class DBApiClient(commands.Cog):
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
         self.active_channel_ids = []
+        self.channel_lock = asyncio.Lock()
         self.update_motw.start()
 
     @tasks.loop(seconds=1800, count=None)
@@ -273,7 +274,8 @@ class DBApiClient(commands.Cog):
 
     async def load_channel(self, channel_id: int, reset):
         channel = self.bot.get_channel(channel_id)
-        self.active_channel_ids.append(channel_id)
+        async with self.channel_lock:
+            self.active_channel_ids.append(channel_id)
         print(channel.name)
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
