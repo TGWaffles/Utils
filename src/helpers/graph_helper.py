@@ -22,7 +22,10 @@ def file_from_timestamps(times, group):
 def pie_chart_from_amount_and_labels(labels, amounts):
     file = BytesIO()
     amounts = np.array(amounts)
-    plotted = plt.pie(amounts, labels=labels)
+    fig = plt.figure()
+    axes = fig.add_axes([0, 0, 1, 1])
+    axes.axis("equal")
+    plotted = axes.pie(amounts, labels=labels, autopct='%1.3f%%')
     plotted.savefig(file)
     file.seek(0)
     return file.read()
