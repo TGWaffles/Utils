@@ -311,6 +311,9 @@ class DatabaseHelper:
             results = query.all()
             dicted_results = {}
             for row in results:
+                print(row[0])
+                print(row[1])
+                print(row[2])
                 print(dir(row))
                 if row.nick is not None:
                     name = row.Member.nick
