@@ -253,17 +253,20 @@ class DBApiClient(commands.Cog):
         for i in range(10):
             channel_id = channels_to_do.pop()
             tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
-        while any([not task.done() for task in tasks]):
+        while True:
             if len([True for task in tasks if not task.done()]) < 10:
                 channel_id = channels_to_do.pop()
                 tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
             await self.send_update(sent_message)
+            if not any([not task.done() for task in tasks]) and len(channels_to_do) == 0:
+                break
             await asyncio.sleep(1)
         await asyncio.gather(*tasks)
         await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
 
     async def load_channel(self, channel_id: int, reset):
         channel = self.bot.get_channel(channel_id)
+        print(channel.name)
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
         if reset:
