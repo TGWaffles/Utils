@@ -310,10 +310,14 @@ class DatabaseHelper:
             ).group_by(Message.user_id).order_by(desc("amount")).limit(limit)
             results = query.all()
             dicted_results = {}
+            this_total = 0
             for row in results:
                 if row[1].nick is not None:
                     name = row[1].nick
                 else:
                     name = row[1].user.name
                 dicted_results[name] = row[2]
-            return dicted_results
+                this_total += row[2]
+        guild_total = self.all_messages(guild_id)
+        dicted_results["other"] = guild_total - this_total
+        return dicted_results
