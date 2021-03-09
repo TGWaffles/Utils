@@ -246,16 +246,24 @@ class DBApiClient(commands.Cog):
     async def all_guilds(self, ctx):
         sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
         tasks = []
+        channels_to_do = []
         for guild in self.bot.guilds:
             for channel in guild.text_channels:
-                tasks.append(self.bot.loop.create_task(self.load_channel(channel, True)))
+                channels_to_do.append(channel.id)
+        for i in range(10):
+            channel_id = channels_to_do.pop()
+            tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
         while any([not task.done() for task in tasks]):
+            if len([True for task in tasks if not task.done()]) < 10:
+                channel_id = channels_to_do.pop()
+                tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
             await self.send_update(sent_message)
             await asyncio.sleep(1)
         await asyncio.gather(*tasks)
         await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
 
-    async def load_channel(self, channel: discord.TextChannel, reset):
+    async def load_channel(self, channel_id: int, reset):
+        channel = self.bot.get_channel(channel_id)
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
         if reset:
