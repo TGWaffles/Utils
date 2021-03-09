@@ -263,6 +263,10 @@ class Misc(commands.Cog):
         embed.add_field(name="✅", value=plus_reactions, inline=True)
         embed.add_field(name="❌", value=negative_reactions, inline=True)
         await message.reply(embed=embed)
+        embed = message.embeds[0]
+        embed.title = "This poll has closed."
+        embed.colour = discord.Colour.red()
+        await message.edit(embed=embed)
 
 
 def setup(bot):
