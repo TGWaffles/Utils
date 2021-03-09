@@ -151,6 +151,30 @@ class DBApiClient(commands.Cog):
             except exceptions:
                 await self.restart_db_server()
 
+    @commands.command(aliases=["ratio", "percentage"])
+    async def percent(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
+                                                                      f"Counting your amount of messages!"))
+        params = {"guild_id": ctx.guild.id, "member_id": ctx.author.id, "token": api_token}
+        while True:
+            try:
+                async with self.session.get(url=f"http://{self.db_url}:6970/percentage", timeout=10,
+                                            json=params) as request:
+                    if request.status != 200:
+                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
+                                                                          f"(status: {request.status})"))
+                        return
+                    response_json = await request.json()
+                    amount = response_json.get("amount")
+                    percentage = response_json.get("percentage")
+                    embed = self.bot.create_completed_embed("Amount of messages you've sent!",
+                                                            f"You have sent {amount:,} messages. That's {percentage}% "
+                                                            f"of the server's total!")
+                    await sent.edit(embed=embed)
+                    return True
+            except exceptions:
+                await self.restart_db_server()
+
     @commands.command()
     async def leaderboard(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",

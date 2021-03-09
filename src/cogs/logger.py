@@ -34,7 +34,8 @@ class SQLAlchemyTest(commands.Cog):
         app = web.Application()
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
-                        web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard)])
+                        web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
+                        web.get("/percentage", self.percentage)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -42,7 +43,7 @@ class SQLAlchemyTest(commands.Cog):
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
         count_channel: discord.TextChannel = self.bot.get_channel(config.message_count_channel)
-        count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild))
+        count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild.id))
         await count_channel.edit(name=f"Messages: {count:,}")
 
     @staticmethod
@@ -209,6 +210,23 @@ class SQLAlchemyTest(commands.Cog):
         await sent.delete()
         await ctx.reply(embed=embed, file=discord_file)
 
+    async def percentage(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        guild_id = request_json.get("guild_id", None)
+        member_id = request_json.get("member_id", None)
+        if guild_id is None or member_id is None:
+            return web.Response(status=400)
+        amount, percentage = await self.bot.loop.run_in_executor(None, partial(self.database.count_messages,
+                                                                               member_id, guild_id))
+        response_json = {"amount": amount, "percentage": percentage}
+        return web.json_response(response_json)
+
     async def snipe(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -284,7 +302,7 @@ class SQLAlchemyTest(commands.Cog):
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...", "Counting all messages sent..."))
-        amount = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, ctx.guild))
+        amount = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, ctx.guild.id))
         await sent.edit(embed=self.bot.create_completed_embed(
             title="Total Messages sent in this guild!", text=f"**{amount:,}** messages!"
         ))
