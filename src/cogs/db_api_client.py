@@ -152,11 +152,11 @@ class DBApiClient(commands.Cog):
                 await self.restart_db_server()
 
     @commands.command(aliases=["ratio", "percentage"])
-    async def percent(self, ctx, member: Optional[discord.Member]):
+    async def percent(self, ctx, member: Optional[discord.User]):
         if member is None:
             member = ctx.author
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
-                                                                      f"Counting {member.display_name}'s amount of "
+                                                                      f"Counting {member.name}'s amount of "
                                                                       f"messages!"))
         params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
         while True:
@@ -170,8 +170,8 @@ class DBApiClient(commands.Cog):
                     response_json = await request.json()
                     amount = response_json.get("amount")
                     percentage = response_json.get("percentage")
-                    embed = self.bot.create_completed_embed(f"Amount of messages {member.display_name}'s sent!",
-                                                            f"{member.display_name} has sent {amount:,} messages. "
+                    embed = self.bot.create_completed_embed(f"Amount of messages {member.name} has sent!",
+                                                            f"{member.name} has sent {amount:,} messages. "
                                                             f"That's {percentage}% "
                                                             f"of the server's total!")
                     await sent.edit(embed=embed)
