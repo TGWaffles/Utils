@@ -313,9 +313,9 @@ class DatabaseHelper:
             for row in results:
                 print(dir(row))
                 if row.nick is not None:
-                    name = row.member.nick
+                    name = row.Member.nick
                 else:
-                    name = row.user.name
+                    name = row.Member.user.name
                 dicted_results[name] = row.amount
                 print(name, row.amount)
             return dicted_results
