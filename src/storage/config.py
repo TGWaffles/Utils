@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "2.4.1"
+version_number = "2.4.11"
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
@@ -18,7 +18,7 @@ if os.environ.get("DATABASE_SERVER", None) is not None:
     extensions = ["logger"]
 else:
     extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech",
-                  "monkey_guild", "hypixel", "api", "og_checker", "blacklist", "db_api_client"]
+                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client"]
 
 dev = False
 if dev:
