@@ -35,7 +35,7 @@ from src.storage import config
 class DatabaseHelper:
     def __init__(self):
         self.engine = sqlalchemy.create_engine("mysql://utils:t93PRdtuyWgyt93PRdtuyWgy@elastic.thom.club/"
-                                               "utils?charset=utf8mb4")
+                                               "utils?charset=utf8mb4", client_encoding="utf8mb4")
         session_maker = sessionmaker(bind=self.engine)
         self.session_creator = scoped_session(session_maker)
         self.processing = Lock()
@@ -305,6 +305,7 @@ class DatabaseHelper:
         user_objects = {}
         for message in messages:
             message["timestamp"] = datetime.datetime.fromisoformat(message["timestamp"])
+            message["content"] = message["content"].decode("utf-8")
             message_objects[message.get("id")] = message
             user_objects[message.get("user_id")] = {"id": message.get("user_id"), "name": message.get("name"),
                                                     "bot": message.get("bot")}
