@@ -297,4 +297,25 @@ class DatabaseHelper:
                 Message.timestamp > last_week, Message.guild_id == guild_id).subquery()
             query = session.query(sub_query.c.user_id).order_by(func.rand()).limit(1)
             results = query.all()
+            self.session_creator.remove()
             return results[0][0]
+
+    def get_message_counts(self, guild_id, limit):
+        with self.processing:
+            session = self.session_creator()
+            query = session.query(Message.user_id, Member.nick, Member.user.name,
+                                  func.count(Message.user_id).label("amount")).join(
+                Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).filter(
+                Message.guild_id == guild_id
+            ).group_by(Message.user_id).limit(limit)
+            results = query.all()
+            dicted_results = {}
+            for row in results:
+                print(dir(row))
+                if row.nick is not None:
+                    name = row.member.nick
+                else:
+                    name = row.user.name
+                dicted_results[name] = row.amount
+                print(name, row.amount)
+            return dicted_results

@@ -299,6 +299,10 @@ class SQLAlchemyTest(commands.Cog):
             await ctx.reply(embed=embed, file=discord_file)
             print("Embed sent.")
 
+    @commands.command()
+    async def test(self, ctx):
+        await self.bot.loop.run_in_executor(None, partial(self.database.get_message_counts, 725886999646437407, 10))
+
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...", "Counting all messages sent..."))
