@@ -6,7 +6,7 @@ import aiohttp.client_exceptions
 import discord
 import re
 from discord.ext import commands, tasks
-from functools import partial
+from typing import Optional
 
 from main import UtilsBot
 from src.storage.token import api_token
@@ -152,10 +152,13 @@ class DBApiClient(commands.Cog):
                 await self.restart_db_server()
 
     @commands.command(aliases=["ratio", "percentage"])
-    async def percent(self, ctx):
+    async def percent(self, ctx, member: Optional[discord.Member]):
+        if member is None:
+            member = ctx.author
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
-                                                                      f"Counting your amount of messages!"))
-        params = {"guild_id": ctx.guild.id, "member_id": ctx.author.id, "token": api_token}
+                                                                      f"Counting {member.display_name}'s amount of "
+                                                                      f"messages!"))
+        params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
         while True:
             try:
                 async with self.session.get(url=f"http://{self.db_url}:6970/percentage", timeout=10,
@@ -167,8 +170,9 @@ class DBApiClient(commands.Cog):
                     response_json = await request.json()
                     amount = response_json.get("amount")
                     percentage = response_json.get("percentage")
-                    embed = self.bot.create_completed_embed("Amount of messages you've sent!",
-                                                            f"You have sent {amount:,} messages. That's {percentage}% "
+                    embed = self.bot.create_completed_embed(f"Amount of messages {member.diplay_name}'s sent!",
+                                                            f"{member.display_name} has sent {amount:,} messages. "
+                                                            f"That's {percentage}% "
                                                             f"of the server's total!")
                     await sent.edit(embed=embed)
                     return True
