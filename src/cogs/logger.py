@@ -208,7 +208,8 @@ class SQLAlchemyTest(commands.Cog):
             amounts.append(score)
         with ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels, labels, amounts))
-        response_json = {"chart": base64.b64encode(data)}
+        encoded_data = base64.b64encode(data)
+        response_json = {"chart": str(encoded_data)}
         return web.json_response(response_json)
 
     @commands.command()
