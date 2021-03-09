@@ -206,10 +206,12 @@ class SQLAlchemyTest(commands.Cog):
         for user_id, score in results:
             labels.append(self.bot.get_user(user_id).name)
             amounts.append(score)
-        with ProcessPoolExecutor() as pool:
-            data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels, labels, amounts))
-        encoded_data = base64.b64encode(data)
-        response_json = {"chart": encoded_data.decode("utf-8")}
+        smaller_amounts = amounts[15:]
+        labels = labels[:15]
+        amounts = amounts[:15]
+        amounts.append(sum(smaller_amounts))
+        labels.append("Other")
+        response_json = {"labels": labels, "amounts": amounts}
         return web.json_response(response_json)
 
     @commands.command()

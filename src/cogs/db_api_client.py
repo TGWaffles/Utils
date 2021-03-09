@@ -6,13 +6,16 @@ import aiohttp.client_exceptions
 import discord
 import re
 import base64
+import concurrent.futures
 from io import BytesIO
 from discord.ext import commands, tasks
 from typing import Optional
+from functools import partial
 
 from main import UtilsBot
 from src.storage.token import api_token
 from src.storage import config
+from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
@@ -144,7 +147,12 @@ class DBApiClient(commands.Cog):
                                                                           f"(status: {request.status})"))
                         return
                     request_json = await request.json()
-                    data = request_json.get("chart")
+                    labels = request_json.get("labels")
+                    amounts = request_json.get("amounts")
+                    await sent.edit(embed=self.bot.create_processing_embed("Got leaderboard!", "Generating pie chart."))
+                    with concurrent.futures.ProcessPoolExecutor() as pool:
+                        data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
+                                                                                 labels, amounts))
                     file = BytesIO(base64.b64decode(data))
                     file.seek(0)
                     discord_file = discord.File(fp=file, filename="image.png")
