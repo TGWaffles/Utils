@@ -112,10 +112,15 @@ class DBApiClient(commands.Cog):
                     response_json = await request.json()
                     user_id = response_json.get("user_id")
                     content = response_json.get("content")
+                    message_id = response_json.get("id")
+                    message: discord.Message = await ctx.channel.fetch_message(message_id)
                     timestamp = datetime.datetime.fromisoformat(response_json.get("timestamp"))
                     user = self.bot.get_user(user_id)
                     embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
                     embed.set_author(name=user.name, icon_url=user.avatar_url)
+                    preceding_message = (await ctx.channel.history(before=message, limit=1).flatten())[0] or None
+                    if preceding_message is not None:
+                        embed.set_footer(text=f"[Previous Message]({preceding_message.jump_url})")
                     embed.description = content
                     embed.timestamp = timestamp
                     await sent.edit(embed=embed)
