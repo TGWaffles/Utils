@@ -16,6 +16,7 @@ from main import UtilsBot
 from src.storage.token import api_token
 from src.storage import config
 from src.checks.custom_check import restart_check
+from src.checks.user_check import is_owner
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
 
@@ -239,6 +240,20 @@ class DBApiClient(commands.Cog):
         await asyncio.gather(*tasks)
         await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
 
+    @commands.command()
+    @is_owner()
+    async def all_guilds(self, ctx):
+        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
+        tasks = []
+        for guild in self.bot.guilds:
+            for channel in guild.text_channels:
+                tasks.append(self.bot.loop.create_task(self.load_channel(channel, True)))
+        while any([not task.done() for task in tasks]):
+            await self.send_update(sent_message)
+            await asyncio.sleep(1)
+        await asyncio.gather(*tasks)
+        await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
+
     async def load_channel(self, channel: discord.TextChannel, reset):
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
@@ -253,9 +268,9 @@ class DBApiClient(commands.Cog):
             now = time.time()
             if now - last_edit > 3:
                 embed = discord.Embed(title="Processing messages",
-                                      description="Last Message text: {}, from {}, in {}".format(
+                                      description="Last Message text: {}, from {}, in {}, in {}".format(
                                           message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
-                                          channel.mention), colour=discord.Colour.orange())
+                                          channel.name, channel.guild.name), colour=discord.Colour.orange())
                 embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
                 embed.timestamp = message.created_at
                 self.last_update = embed
