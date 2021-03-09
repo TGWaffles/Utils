@@ -15,7 +15,7 @@ from functools import partial
 from main import UtilsBot
 from src.storage.token import api_token
 from src.storage import config
-from src.checks.user_check import is_owner
+from src.checks.custom_check import restart_check
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
 
@@ -227,7 +227,7 @@ class DBApiClient(commands.Cog):
             await sent_message.edit(embed=self.last_update)
 
     @commands.command()
-    @is_owner()
+    @restart_check()
     async def full_guild(self, ctx, reset=False):
         sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
         tasks = []
