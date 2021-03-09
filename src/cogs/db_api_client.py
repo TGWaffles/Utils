@@ -16,7 +16,7 @@ from src.storage import config
 
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
-              aiohttp.client_exceptions.ClientConnectorError)
+              aiohttp.client_exceptions.ClientConnectorError, aiohttp.client_exceptions.ClientOSError)
 
 
 class DBApiClient(commands.Cog):
