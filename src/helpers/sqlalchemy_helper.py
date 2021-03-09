@@ -304,20 +304,22 @@ class DatabaseHelper:
         message_objects = {}
         user_objects = {}
         for message in messages:
-            message["timestamp"] = datetime.datetime.fromisoformat(message["timestamp"])
-            message_objects[message.get("id")] = message
-            user_objects[message.get("user_id")] = {"id": message.get("user_id"), "name": message.get("name"),
-                                                    "bot": message.get("bot")}
+            message_object = Message(id=message.get("id"), channel_id=message.get("channel_id"),
+                                     guild_id=message.get("guild_id"),
+                                     user_id=message.get("user_id"), content=message.get("content"),
+                                     embed_json=message.get("embed_json"),
+                                     timestamp=datetime.datetime.fromisoformat(message.get("timestamp")), deleted=False)
+            message_objects[message.get("id")] = message_object
+            user_object = User(id=message.get("user_id"), name=message.get("name"), bot=message.get("bot"))
+            user_objects[message.get("user_id")] = user_object
         with self.processing:
             session = self.session_creator()
             for each in session.query(Message).filter(Message.id.in_(message_objects.keys())).all():
                 message_objects.pop(each.id)
             for each in session.query(User).filter(User.id.in_(user_objects.keys())).all():
                 user_objects.pop(each.id)
-            session.execute(User.__table__.insert(), list(user_objects.values()))
-            # session.bulk_save_objects(user_objects.values())
-            # session.bulk_save_objects(message_objects.values())
-            session.execute(Message.__table__.insert(), list(message_objects.values()))
+            session.bulk_save_objects(user_objects.values())
+            session.bulk_save_objects(message_objects.values())
             print(len(message_objects))
             session.commit()
             self.session_creator.remove()
