@@ -255,6 +255,8 @@ class DBApiClient(commands.Cog):
             tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
         while True:
             if len([True for task in tasks if not task.done()]) < 10:
+                print(len([True for task in tasks if not task.done()]))
+                print([task.done() for task in tasks])
                 channel_id = channels_to_do.pop()
                 tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
             await self.send_update(sent_message)
