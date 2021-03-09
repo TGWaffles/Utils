@@ -36,7 +36,8 @@ class SQLAlchemyTest(commands.Cog):
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
                         web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
-                        web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie)])
+                        web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
+                        web.post("/many_messages", self.add_messages)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -139,41 +140,6 @@ class SQLAlchemyTest(commands.Cog):
                 executor.submit(partial(self.database.save_message, message))
         task.cancel()
 
-    @commands.command()
-    @is_owner()
-    async def full_guild(self, ctx):
-        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
-        tasks = []
-        pool = ThreadPoolExecutor(max_workers=20000)
-        for channel in ctx.guild.text_channels:
-            tasks.append(self.bot.loop.create_task(self.load_channel(channel, pool)))
-        while any([not task.done() for task in tasks]):
-            await self.send_update(sent_message)
-            await asyncio.sleep(1)
-        await asyncio.gather(*tasks)
-        await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
-
-    async def load_channel(self, channel: discord.TextChannel, executor):
-        last_edit = time.time()
-        resume_from = self.data.get("resume_from_{}".format(channel.id), None)
-        if resume_from is not None:
-            resume_from = await channel.fetch_message(resume_from)
-        print(resume_from)
-        # noinspection DuplicatedCode
-        async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
-            now = time.time()
-            if now - last_edit > 3:
-                embed = discord.Embed(title="Processing messages",
-                                      description="Last Message text: {}, from {}, in {}".format(
-                                          message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
-                                          channel.mention), colour=discord.Colour.orange())
-                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-                embed.timestamp = message.created_at
-                self.last_update = embed
-                last_edit = now
-                self.data[f"resume_from_{channel.id}"] = message.id
-            await self.bot.loop.run_in_executor(executor, partial(self.database.save_message, message))
-
     async def leaderboard(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -269,6 +235,18 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
                          message.timestamp.isoformat("T")}
         return web.json_response(response_json)
+
+    async def add_messages(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        messages = request_json.get("messages", [])
+        await self.bot.loop.run_in_executor(None, partial(self.database.add_many_messages, *messages))
+        return web.json_response({"success": True})
 
     async def count(self, request: web.Request):
         try:

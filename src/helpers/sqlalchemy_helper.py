@@ -299,3 +299,21 @@ class DatabaseHelper:
             results = query.all()
             self.session_creator.remove()
             return results[0][0]
+
+    def add_many_messages(self, *messages):
+        message_objects = {}
+        for message in messages:
+            message_object = Message(id=message.get("id"), channel_id=message.get("channel_id"),
+                                     guild_id=message.get("guild_id"),
+                                     user_id=message.get("user_id"), content=message.get("content"),
+                                     embed_json=message.get("embed_json"),
+                                     timestamp=datetime.datetime.fromisoformat(message.get("timestamp")), deleted=False)
+            message_objects[message.get("id")] = message_object
+        with self.processing:
+            session = self.session_creator()
+            for each in session.query(Message).filter(Message.id.in_(message_objects.keys())).all():
+                message_objects.pop(each.id)
+            session.bulk_save_objects(message_objects.values())
+            print(len(message_objects))
+            session.commit()
+            self.session_creator.remove()

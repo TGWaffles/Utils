@@ -5,7 +5,7 @@ import aiohttp
 import aiohttp.client_exceptions
 import discord
 import re
-import base64
+import time
 import concurrent.futures
 from io import BytesIO
 from discord.ext import commands, tasks
@@ -15,7 +15,9 @@ from functools import partial
 from main import UtilsBot
 from src.storage.token import api_token
 from src.storage import config
+from src.checks.user_check import is_owner
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
+from src.helpers.storage_helper import DataHelper
 
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
@@ -28,8 +30,10 @@ class DBApiClient(commands.Cog):
         self.bot.database_handler = self
         self.session = aiohttp.ClientSession()
         self.restarting = False
+        self.data = DataHelper()
         self.db_url = "tgwaffles.me"
         self.bot.loop.create_task(self.ping_db_server())
+        self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
         self.update_motw.start()
 
@@ -217,6 +221,65 @@ class DBApiClient(commands.Cog):
                     return True
             except exceptions:
                 await self.restart_db_server()
+
+    async def send_update(self, sent_message):
+        if len(self.last_update.description) < 2000:
+            await sent_message.edit(embed=self.last_update)
+
+    @commands.command()
+    @is_owner()
+    async def full_guild(self, ctx):
+        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
+        tasks = []
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=20000)
+        for channel in ctx.guild.text_channels:
+            tasks.append(self.bot.loop.create_task(self.load_channel(channel, pool)))
+        while any([not task.done() for task in tasks]):
+            await self.send_update(sent_message)
+            await asyncio.sleep(1)
+        await asyncio.gather(*tasks)
+        await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
+
+    async def load_channel(self, channel: discord.TextChannel, executor):
+        last_edit = time.time()
+        resume_from = self.data.get("resume_from_{}".format(channel.id), None)
+        if resume_from is not None:
+            resume_from = await channel.fetch_message(resume_from)
+        print(resume_from)
+        messages_to_send = []
+        # noinspection DuplicatedCode
+        async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
+            now = time.time()
+            if now - last_edit > 3:
+                embed = discord.Embed(title="Processing messages",
+                                      description="Last Message text: {}, from {}, in {}".format(
+                                          message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
+                                          channel.mention), colour=discord.Colour.orange())
+                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+                embed.timestamp = message.created_at
+                self.last_update = embed
+                last_edit = now
+                self.data[f"resume_from_{channel.id}"] = message.id
+            if len(message.embeds) > 0:
+                embed_json = message.embeds[0].to_dict()
+            else:
+                embed_json = None
+            messages_to_send.append({"id": message.id, "channel_id": message.channel.id,
+                                     "guild_id": message.guild.id, "user_id": message.author.id,
+                                     "content": message.content, "embed_json": embed_json,
+                                     "timestamp": message.created_at.isoformat()})
+            if len(messages_to_send) >= 100:
+                while True:
+                    try:
+                        req = await self.session.post(url=f"http://{self.db_url}:6970/many_messages", timeout=10,
+                                                      json={"token": api_token, "messages": messages_to_send})
+                        messages_to_send = []
+                        response = await req.json()
+                        if not response.get("success"):
+                            print("it managed to fail?")
+                        break
+                    except exceptions:
+                        await self.restart_db_server()
 
     @commands.command()
     async def leaderboard(self, ctx):
