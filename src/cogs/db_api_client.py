@@ -145,7 +145,7 @@ class DBApiClient(commands.Cog):
                     data = request_json.get("chart")
                     file = BytesIO(base64.b64decode(data))
                     file.seek(0)
-                    discord_file = discord.File(fp=file, filename="image.png")
+                    discord_file = discord.File(fp=file, filename="image.jpg")
                     await ctx.reply(file=discord_file)
                     await sent.delete()
                     return

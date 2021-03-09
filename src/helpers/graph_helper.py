@@ -1,6 +1,8 @@
 import pandas
 import matplotlib.pyplot as plt
 import numpy as np
+import PIL
+import PIL.Image
 
 from io import BytesIO
 
@@ -21,6 +23,7 @@ def file_from_timestamps(times, group):
 
 def pie_chart_from_amount_and_labels(labels, amounts):
     file = BytesIO()
+    second_file = BytesIO()
     amounts = np.array(amounts)
     fig = plt.figure()
     axes = fig.add_axes([0, 0, 1, 1])
@@ -28,4 +31,7 @@ def pie_chart_from_amount_and_labels(labels, amounts):
     axes.pie(amounts, labels=labels, autopct='%1.3f%%')
     fig.savefig(file)
     file.seek(0)
-    return file.read()
+    image: PIL.Image = PIL.Image.open(file)
+    image.save(second_file, format="JPEG", optimize=True, quality=90)
+    second_file.seek(0)
+    return second_file.read()
