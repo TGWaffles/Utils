@@ -39,6 +39,7 @@ class Misc(commands.Cog):
         self.bot = bot
         self.current_presence = 0
         self.update_status.start()
+        self.data = DataHelper()
 
     @commands.command(pass_context=True)
     @is_staff()
@@ -214,6 +215,52 @@ class Misc(commands.Cog):
             random_user_id = await self.bot.database_handler.get_someone_id(message.guild.id)
             random_person = message.channel.guild.get_member(random_user_id)
             await message.reply("Your @someone was: {}".format(random_person.mention))
+
+    @commands.command()
+    @is_staff()
+    async def poll(self, ctx, *, poll_info):
+        polls = self.data.get("polls", {})
+        if str(ctx.channel.id) in polls:
+            await ctx.reply(embed=self.bot.create_error_embed(f"There's already a poll in this channel! \n"
+                                                              f"Do {config.bot_prefix}endpoll to end it!"))
+            return
+        embed = self.bot.create_completed_embed("Poll", poll_info)
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+        embed.timestamp = datetime.datetime.now()
+        sent: discord.Message = await ctx.reply(embed=embed)
+        await sent.add_reaction(emoji="✅")
+        await sent.add_reaction(emoji="❌")
+        polls[str(ctx.channel.id)] = sent.id
+        self.data["polls"] = polls
+
+    @commands.command()
+    @is_staff()
+    async def endpoll(self, ctx):
+        polls = self.data.get("polls", {})
+        if str(ctx.channel.id) not in polls:
+            await ctx.reply(embed=self.bot.create_error_embed(f"There's not already a poll in this channel! \n"
+                                                              f"Do {config.bot_prefix}poll to start one!"))
+            return
+        polls.pop(str(ctx.channel.id))
+        self.data["polls"] = polls
+        message: discord.Message = await ctx.channel.fetch_message(polls.get(str(ctx.channel.id)))
+        if message is None:
+            await ctx.reply(embed=self.bot.create_error_embed(f"The previous poll in this channel was deleted."))
+            return
+        plus_reactions = [reaction for reaction in message.reactions if reaction.emoji == "✅"][0].count - 1
+        negative_reactions = [reaction for reaction in message.reactions
+                              if reaction.emoji == "❌"][0].count - 1
+        colour = (discord.Colour.red(), discord.Colour.green())[plus_reactions >= negative_reactions]
+        if plus_reactions == negative_reactions:
+            colour = discord.Colour.orange()
+        embed = discord.Embed(
+            colour=colour, title="Poll Results",
+            description=f"Poll: \"{message.embeds[0].description}\" "
+                        f"has finished!\n"
+                        f"It was {round((plus_reactions / (plus_reactions + negative_reactions)) * 100, 1)}% positive!")
+        embed.add_field(name="✅", value=plus_reactions, inline=True)
+        embed.add_field(name="❌", value=negative_reactions, inline=True)
+        await message.reply(embed=embed)
 
 
 def setup(bot):
