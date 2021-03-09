@@ -325,6 +325,7 @@ class DatabaseHelper:
                 user_objects.pop(each.id)
             for each in session.query(Channel).filter(Channel.id.in_(channel_objects.keys())).all():
                 channel_objects.pop(each.id)
+            session.bulk_save_objects(channel_objects.values())
             session.bulk_save_objects(user_objects.values())
             session.bulk_save_objects(message_objects.values())
             print(len(message_objects))
