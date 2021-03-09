@@ -306,7 +306,7 @@ class DatabaseHelper:
         for message in messages:
             message_object = Message(id=message.get("id"), channel_id=message.get("channel_id"),
                                      guild_id=message.get("guild_id"),
-                                     user_id=message.get("user_id"), content=message.get("content").encode("utf-8"),
+                                     user_id=message.get("user_id"), content=message.get("content"),
                                      embed_json=message.get("embed_json"),
                                      timestamp=datetime.datetime.fromisoformat(message.get("timestamp")), deleted=False)
             message_objects[message.get("id")] = message_object
