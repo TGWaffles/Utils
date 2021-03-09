@@ -322,7 +322,9 @@ class DBApiClient(commands.Cog):
                         break
                     except exceptions:
                         await self.restart_db_server()
-        self.active_channel_ids.remove(channel_id)
+        async with self.channel_lock:
+            print(f"removing {channel_id} from the list...")
+            self.active_channel_ids.remove(channel_id)
 
     @commands.command()
     async def leaderboard(self, ctx):
