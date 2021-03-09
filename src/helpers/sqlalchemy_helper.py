@@ -307,7 +307,7 @@ class DatabaseHelper:
                                   func.count(Message.user_id).label("amount")).join(
                 Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).filter(
                 Message.guild_id == guild_id
-            ).group_by(Message.user_id).order_by("amount").limit(limit)
+            ).group_by(Message.user_id).order_by(desc("amount")).limit(limit)
             results = query.all()
             dicted_results = {}
             for row in results:
