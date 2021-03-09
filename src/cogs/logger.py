@@ -170,7 +170,16 @@ class SQLAlchemyTest(commands.Cog):
         labels = []
         amounts = []
         for user_id, score in results:
-            labels.append(self.bot.get_user(user_id).name)
+            user = self.bot.get_user(user_id)
+            if user is None:
+                user = await self.bot.fetch_user(user_id)
+                if user is None:
+                    name = "Unknown"
+                else:
+                    name = user.name
+            else:
+                name = user.name
+            labels.append(name)
             amounts.append(score)
         smaller_amounts = amounts[15:]
         labels = labels[:15]
