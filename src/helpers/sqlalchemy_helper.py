@@ -216,7 +216,7 @@ class DatabaseHelper:
             list_of_tuples = [(user_id, score) for user_id, score in scores.items()]
             list_of_tuples.sort(key=lambda x: x[1], reverse=True)
             self.session_creator.remove()
-            return list_of_tuples[:12]
+            return list_of_tuples
 
     def get_last_week_score(self, member):
         with self.processing:
@@ -299,25 +299,3 @@ class DatabaseHelper:
             results = query.all()
             self.session_creator.remove()
             return results[0][0]
-
-    def get_message_counts(self, guild_id, limit):
-        with self.processing:
-            session = self.session_creator()
-            query = session.query(Message.user_id, Member,
-                                  func.count(Message.user_id).label("amount")).join(
-                Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).filter(
-                Message.guild_id == guild_id
-            ).group_by(Message.user_id).order_by(desc("amount")).limit(limit)
-            results = query.all()
-            dicted_results = {}
-            this_total = 0
-            for row in results:
-                if row[1].nick is not None:
-                    name = row[1].nick
-                else:
-                    name = row[1].user.name
-                dicted_results[name] = row[2]
-                this_total += row[2]
-        guild_total = self.all_messages(guild_id)
-        dicted_results["other"] = guild_total - this_total
-        return dicted_results

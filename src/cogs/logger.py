@@ -1,5 +1,6 @@
 import asyncio
 import re
+import base64
 import time
 import datetime
 import json
@@ -35,7 +36,7 @@ class SQLAlchemyTest(commands.Cog):
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
                         web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
-                        web.get("/percentage", self.percentage)])
+                        web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -185,7 +186,29 @@ class SQLAlchemyTest(commands.Cog):
         if guild_id is None:
             return web.Response(status=400)
         results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, guild_id))
-        response_json = {"results": results}
+        response_json = {"results": results[:12]}
+        return web.json_response(response_json)
+
+    async def get_leaderboard_pie(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        guild_id = request_json.get("guild_id", None)
+        if guild_id is None:
+            return web.Response(status=400)
+        results = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_messages, guild_id))
+        labels = []
+        amounts = []
+        for user_id, score in results:
+            labels.append(self.bot.get_user(user_id).name)
+            amounts.append(score)
+        with ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels, labels, amounts))
+        response_json = {"chart": base64.b64encode(data)}
         return web.json_response(response_json)
 
     @commands.command()
@@ -298,18 +321,6 @@ class SQLAlchemyTest(commands.Cog):
             print("Compiled embed")
             await ctx.reply(embed=embed, file=discord_file)
             print("Embed sent.")
-
-    @commands.command()
-    async def test(self, ctx, limit=10):
-        dicted = await self.bot.loop.run_in_executor(None, partial(self.database.get_message_counts,
-                                                                   ctx.guild.id, limit))
-        with ProcessPoolExecutor() as pool:
-            data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
-                                                                     list(dicted.keys()), list(dicted.values())))
-        file = BytesIO(data)
-        file.seek(0)
-        discord_file = discord.File(fp=file, filename="image.png")
-        await ctx.reply(file=discord_file)
 
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):

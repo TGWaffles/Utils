@@ -5,6 +5,8 @@ import aiohttp
 import aiohttp.client_exceptions
 import discord
 import re
+import base64
+from io import BytesIO
 from discord.ext import commands, tasks
 from typing import Optional
 
@@ -123,6 +125,30 @@ class DBApiClient(commands.Cog):
                     embed.timestamp = timestamp
                     await sent.edit(embed=embed)
                     return True
+            except exceptions:
+                await self.restart_db_server()
+
+    @commands.command(description="Get leaderboard pie!")
+    async def leaderpie(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
+                                                                      "Processing messages for leaderboard..."))
+        params = {'token': api_token, 'guild_id': ctx.guild.id}
+        while True:
+            try:
+                async with self.session.get(url=f"http://{self.db_url}:6970/leaderboard_pie", timeout=10,
+                                            json=params) as request:
+                    if request.status != 200:
+                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
+                                                                          f"(status: {request.status})"))
+                        return
+                    request_json = await request.json()
+                    data = request_json.get("chart")
+                    file = BytesIO(base64.b64decode(data))
+                    file.seek(0)
+                    discord_file = discord.File(fp=file, filename="image.png")
+                    await ctx.reply(file=discord_file)
+                    await sent.delete()
+                    return
             except exceptions:
                 await self.restart_db_server()
 
