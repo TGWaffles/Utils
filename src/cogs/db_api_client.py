@@ -275,9 +275,13 @@ class DBApiClient(commands.Cog):
                         req = await self.session.post(url=f"http://elastic.thom.club:6970/many_messages", timeout=10,
                                                       json={"token": api_token, "messages": messages_to_send})
                         messages_to_send = []
-                        response = await req.json()
-                        if not response.get("success"):
-                            print("it managed to fail?")
+                        try:
+                            response = await req.json()
+                            if not response.get("success"):
+                                print("it managed to fail?")
+                        except aiohttp.client_exceptions.ContentTypeError:
+                            print(await req.text())
+                            raise AssertionError
                         break
                     except exceptions:
                         await self.restart_db_server()
