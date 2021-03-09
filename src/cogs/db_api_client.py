@@ -106,9 +106,9 @@ class DBApiClient(commands.Cog):
                 await self.restart_db_server()
 
     @commands.command()
-    async def snipe(self, ctx):
+    async def snipe(self, ctx, amount=1):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
-        params = {'token': api_token, 'channel_id': ctx.channel.id}
+        params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
         while True:
             try:
                 async with self.session.get(url=f"http://{self.db_url}:6970/snipe", timeout=10, json=params) as request:

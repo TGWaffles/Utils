@@ -161,8 +161,6 @@ class Hypixel(commands.Cog):
                 break
             except asyncpixel.exceptions.exceptions.RateLimitError:
                 await asyncio.sleep(0.25)
-            except:
-                # print("LINE 165 EXCEPTION")
         member_online = bool(player.lastLogout < player.lastLogin)
         experience = player.stats["Bedwars"]["Experience"]
         try:

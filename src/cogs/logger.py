@@ -262,9 +262,10 @@ class SQLAlchemyTest(commands.Cog):
         except AssertionError:
             return web.Response(status=401)
         channel_id = request_json.get("channel_id", None)
+        amount = request_json.get("amount", 1)
         if channel_id is None:
             return web.Response(status=400)
-        message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel_id))
+        message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel_id, amount))
         response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
                          message.timestamp.isoformat("T")}
         return web.json_response(response_json)

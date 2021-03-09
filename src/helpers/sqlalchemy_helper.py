@@ -252,16 +252,16 @@ class DatabaseHelper:
             self.session_creator.remove()
             return score
 
-    def snipe(self, channel_id):
+    def snipe(self, channel_id, amount=1):
         with self.processing:
             session = self.session_creator()
             sub_query = session.query(Message).with_hint(Message, "USE INDEX(snipe)").filter(
                 Message.channel_id == channel_id, Message.deleted == 1).subquery()
             query = session.query(sub_query).order_by(
-                desc(sub_query.c.timestamp)).limit(1)
+                desc(sub_query.c.timestamp)).limit(amount)
             print(query.statement.compile(self.engine))
             self.session_creator.remove()
-            return query.first()
+            return query.all()[-1]
 
     def count_messages(self, member_id, guild_id):
         with self.processing:
