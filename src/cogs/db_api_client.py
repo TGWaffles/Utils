@@ -269,7 +269,7 @@ class DBApiClient(commands.Cog):
                                      "guild_id": message.guild.id, "user_id": message.author.id,
                                      "content": message.content, "embed_json": embed_json,
                                      "timestamp": message.created_at.isoformat(), "name": message.author.name,
-                                     "bot": message.author.bot})
+                                     "bot": message.author.bot, "channel_name": message.channel.name})
             if len(messages_to_send) >= 100:
                 while True:
                     try:
