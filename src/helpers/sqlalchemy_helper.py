@@ -307,18 +307,14 @@ class DatabaseHelper:
                                   func.count(Message.user_id).label("amount")).join(
                 Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).filter(
                 Message.guild_id == guild_id
-            ).group_by(Message.user_id).limit(limit)
+            ).group_by(Message.user_id).order_by("amount").limit(limit)
             results = query.all()
             dicted_results = {}
             for row in results:
-                print(row[0])
-                print(row[1])
-                print(row[2])
-                print(dir(row))
-                if row.nick is not None:
-                    name = row.Member.nick
+                if row[1].nick is not None:
+                    name = row[1].nick
                 else:
-                    name = row.Member.user.name
-                dicted_results[name] = row.amount
+                    name = row[1].user.name
+                dicted_results[name] = row[2]
                 print(name, row.amount)
             return dicted_results
