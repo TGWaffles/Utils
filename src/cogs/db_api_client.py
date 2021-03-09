@@ -143,6 +143,7 @@ class DBApiClient(commands.Cog):
                         return
                     request_json = await request.json()
                     data = request_json.get("chart")
+                    print(data)
                     file = BytesIO(base64.b64decode(data))
                     file.seek(0)
                     discord_file = discord.File(fp=file, filename="image.jpg")

@@ -209,6 +209,7 @@ class SQLAlchemyTest(commands.Cog):
         with ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels, labels, amounts))
         encoded_data = base64.b64encode(data)
+        print(encoded_data)
         response_json = {"chart": str(encoded_data)}
         return web.json_response(response_json)
 
