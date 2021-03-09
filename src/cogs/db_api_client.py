@@ -170,7 +170,7 @@ class DBApiClient(commands.Cog):
                     response_json = await request.json()
                     amount = response_json.get("amount")
                     percentage = response_json.get("percentage")
-                    embed = self.bot.create_completed_embed(f"Amount of messages {member.diplay_name}'s sent!",
+                    embed = self.bot.create_completed_embed(f"Amount of messages {member.display_name}'s sent!",
                                                             f"{member.display_name} has sent {amount:,} messages. "
                                                             f"That's {percentage}% "
                                                             f"of the server's total!")
