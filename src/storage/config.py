@@ -3,6 +3,8 @@ import src.storage.token as token
 
 version_number = "2.5.6"
 
+port = 8080
+
 bot_prefix = "!"
 description = "Discord Utility Bot"
 owner_id = 230778630597246983
