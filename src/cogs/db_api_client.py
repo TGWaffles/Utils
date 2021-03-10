@@ -183,7 +183,7 @@ class DBApiClient(commands.Cog):
                     if referenced_message.resolved is not None:
                         author = referenced_message.resolved.author
                         embed.set_author(name=author.name, url=author.avatar_url)
-                    embed.add_field(name="\u200b", value=f"[Previous Message]({referenced_message.jump_url})",
+                    embed.add_field(name="\u200b", value=f"[Jump to Message]({referenced_message.jump_url})",
                                     inline=False)
                     await sent.edit(embed=embed)
                     return
