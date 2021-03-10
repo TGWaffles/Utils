@@ -149,6 +149,43 @@ class DBApiClient(commands.Cog):
             except exceptions:
                 await self.restart_db_server()
 
+    @commands.command()
+    async def edits(self, ctx):
+        if ctx.message.reference is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Please reply to a message with this command!"))
+            return
+        referenced_message = ctx.message.reference
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
+        params = {'token': api_token, 'message_id': referenced_message.id}
+        while True:
+            try:
+                async with self.session.get(url=f"http://{self.db_url}:6970/edits", timeout=timeout, json=params) as request:
+                    if request.status != 200:
+                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! "
+                                                                          f"(status: {request.status})"))
+                        return
+                    response_json = await request.json()
+                    edits = response_json.get("edits")
+                    original_message = response_json.get("original")
+                    original_timestamp_string = datetime.datetime.fromisoformat(
+                        original_message.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
+                    if len(edits) == 0:
+                        await sent.edit(embed=self.bot.create_error_embed("That message has no known edits."))
+                        return
+                    embed = discord.Embed(title="Edits for Message", colour=discord.Colour.gold())
+                    embed.add_field(name=f"Original Message ({original_timestamp_string})",
+                                    value=edits[-1].get("edited_content"))
+                    for index, edit in enumerate(edits[::-1]):
+                        edited_timestamp_string = datetime.datetime.fromisoformat(
+                            edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
+                        embed.add_field(name=f"Edit {index} ({edited_timestamp_string})",
+                                        value=edit.get("edited_content"))
+                    await ctx.reply(embed=embed)
+                    return
+            except exceptions:
+                await self.restart_db_server()
+
+
     @commands.command(description="Get leaderboard pie!")
     async def leaderpie(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",

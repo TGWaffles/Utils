@@ -37,7 +37,7 @@ class SQLAlchemyTest(commands.Cog):
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
                         web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
                         web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
-                        web.post("/many_messages", self.add_messages)])
+                        web.post("/many_messages", self.add_messages), web.get("/edits", self.edits)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -279,6 +279,26 @@ class SQLAlchemyTest(commands.Cog):
             return web.Response(status=400)
         amount = await self.bot.loop.run_in_executor(None, partial(self.database.count, guild_id, phrase))
         response_json = {"amount": amount}
+        return web.json_response(response_json)
+
+    async def edits(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        message_id = request_json.get("message_id", None)
+        if message_id is None:
+            return web.Response(status=400)
+        original, edits = await self.bot.loop.run_in_executor(None, partial(self.database.get_edits, message_id))
+        formatted_edits = []
+        for edit in edits:
+            edit_json = {"timestamp": edit.timestamp.isoformat(), "edited_content": edit.edited_content}
+            formatted_edits.append(edit_json)
+        response_json = {"edits": formatted_edits, "original": {"content": original.content,
+                                                                "timestamp": original.timestamp.isoformat()}}
         return web.json_response(response_json)
 
     @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
