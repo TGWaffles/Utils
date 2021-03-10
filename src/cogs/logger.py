@@ -240,11 +240,17 @@ class SQLAlchemyTest(commands.Cog):
         amount = request_json.get("amount", 1)
         if channel_id is None:
             return web.Response(status=400)
-        message = await self.bot.loop.run_in_executor(None, partial(self.database.snipe, channel_id, amount))
+        message, edited_message = await self.bot.loop.run_in_executor(None,
+                                                                      partial(self.database.snipe, channel_id, amount))
         response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
                          message.timestamp.isoformat("T")}
         if message.embed_json is not None:
             response_json["embed_json"] = json.loads(message.embed_json)
+        if edited_message is not None:
+            if edited_message.edited_content is not None:
+                response_json["content"] = edited_message.edited_content
+            if edited_message.edited_embed_json is not None:
+                response_json["embed_json"] = json.loads(edited_message.edited_embed_json)
         return web.json_response(response_json)
 
     async def add_messages(self, request: web.Request):

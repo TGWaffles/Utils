@@ -260,9 +260,13 @@ class DatabaseHelper:
                 Message.channel_id == channel_id, Message.deleted == 1).subquery()
             query = session.query(sub_query).order_by(
                 desc(sub_query.c.timestamp)).limit(amount)
-            print(query.statement.compile(self.engine))
+            message = query.all()[-1]
+            try:
+                edited_message = session.query(MessageEdit).filter(MessageEdit.message_id == message.id).all()[-1]
+            except IndexError:
+                edited_message = None
             self.session_creator.remove()
-            return query.all()[-1]
+            return message, edited_message
 
     def count_messages(self, member_id, guild_id):
         with self.processing:
