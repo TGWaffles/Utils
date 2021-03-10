@@ -7,6 +7,7 @@ import discord
 import re
 import time
 import concurrent.futures
+import unidecode
 from io import BytesIO
 from discord.ext import commands, tasks
 from typing import Optional
@@ -388,23 +389,17 @@ class DBApiClient(commands.Cog):
                     embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
                     embed.description = "```"
                     embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
-                    regex_pattern = re.compile(pattern="["
-                                                       u"\U0001F600-\U0001F64F"
-                                                       u"\U0001F300-\U0001F5FF"
-                                                       u"\U0001F680-\U0001F6FF"
-                                                       u"\U0001F1E0-\U0001F1FF"
-                                                       "]+", flags=re.UNICODE)
                     lengthening = []
                     for index, user in enumerate(results):
                         member = ctx.guild.get_member(user[0])
-                        name = (member.nick or member.name).replace("✨", "aa")
-                        name = regex_pattern.sub('a', name)
+                        name = (member.nick or member.name)
+                        name = unidecode.unidecode(name)
                         name_length = len(name)
                         lengthening.append(name_length + len(str(index + 1)))
                     max_length = max(lengthening)
                     for i in range(len(results)):
                         member = ctx.guild.get_member(results[i][0])
-                        name = member.nick or member.name
+                        name = unidecode.unidecode(member.nick or member.name)
                         text = f"{i + 1}. {name}: " + " " * (max_length - lengthening[i]) + f"Score: {results[i][1]}\n"
                         embed.description += text
                     embed.description += "```"

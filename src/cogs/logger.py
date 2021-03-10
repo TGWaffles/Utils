@@ -5,6 +5,7 @@ import time
 import datetime
 import json
 import os
+import unidecode
 from io import BytesIO
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from functools import partial
@@ -300,6 +301,23 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"edits": formatted_edits, "original": {"content": original.content,
                                                                 "timestamp": original.timestamp.isoformat()}}
         return web.json_response(response_json)
+
+    async def format_leaderboard(self, request: web.Request):
+        try:
+            request_json = await request.json()
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        scores = request_json.get("scores", [])
+        lengthening = max([len(f"{index}. {unidecode.unidecode(user.get('name', ''))}")
+                           for index, user in enumerate(scores.keys())])
+        to_return = ""
+        for index, user in enumerate(scores):
+            name = unidecode.unidecode(user.get("name", ""))
+            score = user.get("score", 0)
+            name_part = f"{index}. {name}"
+            spaces = " " * (lengthening - len(name_part))
+            line = f"{name_part}{spaces}"
+
 
     @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
     async def count_user(self, ctx, member: Optional[discord.Member], *, phrase):

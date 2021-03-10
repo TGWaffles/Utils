@@ -63,6 +63,7 @@ discord_emoji = "<:discord:784309400524292117>"
 c4_yellow = "<:c4yellow:806008963803381810>"
 c4_red = "<:c4red:806009125497864204>"
 c4_none = ":black_large_square:"
+emoji_regex = u"[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]+"
 
 
 chess_difficulties = {"easiest": 0.1,
