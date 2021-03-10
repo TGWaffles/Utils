@@ -174,13 +174,13 @@ class DBApiClient(commands.Cog):
                         return
                     embed = discord.Embed(title="Edits for Message", colour=discord.Colour.gold())
                     embed.add_field(name=f"Original Message ({original_timestamp_string})",
-                                    value=edits[-1].get("edited_content"))
+                                    value=original_message.get("content"), inline=False)
                     for index, edit in enumerate(edits[::-1]):
                         edited_timestamp_string = datetime.datetime.fromisoformat(
                             edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
                         embed.add_field(name=f"Edit {index} ({edited_timestamp_string})",
-                                        value=edit.get("edited_content"))
-                    await ctx.reply(embed=embed)
+                                        value=edit.get("edited_content"), inline=False)
+                    await sent.edit(embed=embed)
                     return
             except exceptions:
                 await self.restart_db_server()
