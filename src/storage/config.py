@@ -18,7 +18,7 @@ if os.environ.get("DATABASE_SERVER", None) is not None:
     extensions = ["logger"]
 else:
     extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech",
-                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client"]
+                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client", "games"]
 
 dev = False
 if dev:
