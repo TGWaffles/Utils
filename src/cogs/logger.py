@@ -316,7 +316,7 @@ class SQLAlchemyTest(commands.Cog):
             score = user.get("score", 0)
             name_part = f"{index}. {name}"
             spaces = " " * (lengthening - len(name_part))
-            line = f"{name_part}{spaces}"
+            line = f"{name_part}{spaces} | Score: {score}"
 
 
     @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])

@@ -400,7 +400,7 @@ class DBApiClient(commands.Cog):
                     for i in range(len(results)):
                         member = ctx.guild.get_member(results[i][0])
                         name = unidecode.unidecode(member.nick or member.name)
-                        text = f"{i + 1}. {name}: " + " " * (max_length - lengthening[i]) + f"Score: {results[i][1]}\n"
+                        text = f"{i + 1}. {name}" + " " * (max_length - lengthening[i]) + f" | Score: {results[i][1]}\n"
                         embed.description += text
                     embed.description += "```"
                     await sent.edit(embed=embed)
