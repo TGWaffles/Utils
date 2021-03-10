@@ -1,6 +1,7 @@
 from src.storage import config, messages
 import discord
 import datetime
+import asyncio
 
 from discord.ext import commands, tasks
 from main import UtilsBot
@@ -127,8 +128,14 @@ class Suggestions(commands.Cog):
     @commands.Cog.listener()
     @monkey_check()
     async def on_message(self, message):
-        if message.author.bot or message.channel not in \
-                (self.decisions_channel, self.suggestions_channel, self.archive_channel):
+        if message.channel not in (self.decisions_channel, self.suggestions_channel, self.archive_channel):
+            return
+        if message.author.bot:
+            await asyncio.sleep(10)
+            try:
+                await message.delete()
+            except discord.errors.NotFound:
+                pass
             return
         return_val = None
         if message.channel == self.decisions_channel and is_staff_backend(message.author):
