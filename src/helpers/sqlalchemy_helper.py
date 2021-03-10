@@ -74,7 +74,6 @@ class DatabaseHelper:
             if content == "":
                 content = None
             embeds = payload.data.get("embeds", None)
-            print(embeds)
             if payload.data.get("author", {}).get("bot", False):
                 count = session.query(func.count(MessageEdit.message_id)).filter(
                     MessageEdit.message_id == payload.message_id).first()[0]
