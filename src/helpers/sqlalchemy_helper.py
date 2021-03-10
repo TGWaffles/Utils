@@ -74,6 +74,7 @@ class DatabaseHelper:
             if content == "":
                 content = None
             embeds = payload.data.get("embeds", None)
+            print(embeds)
             if payload.data.get("author", {}).get("bot", False):
                 return False
             edit_object = MessageEdit.from_raw(session, payload.message_id, timestamp, content, embeds)
