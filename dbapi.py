@@ -1,5 +1,6 @@
 import json
 import os
+from src.storage import config
 
 from aiohttp import web
 
@@ -39,4 +40,4 @@ async def update(request: web.Request):
 if __name__ == '__main__':
     app = web.Application()
     app.add_routes(routes)
-    web.run_app(app, port=6969)
+    web.run_app(app, port=config.restart_port)

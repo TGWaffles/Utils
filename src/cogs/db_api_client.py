@@ -97,7 +97,7 @@ class DBApiClient(commands.Cog):
                     else:
                         raise aiohttp.client_exceptions.ClientConnectorError
             except aiohttp.client_exceptions.ClientConnectorError:
-                await self.session.post(url=f"http://{self.db_url}:6969/restart", json=params)
+                await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
                 print("Force restarted DB server.")
             last_ping = self.last_ping
             while self.last_ping == last_ping:
@@ -410,7 +410,7 @@ class DBApiClient(commands.Cog):
 
     async def update(self):
         params = {'token': api_token}
-        await self.session.post(url=f"http://{self.db_url}:6969/update", json=params)
+        await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/update", json=params)
 
 
 def setup(bot: UtilsBot):

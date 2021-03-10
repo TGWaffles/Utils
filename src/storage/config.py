@@ -4,6 +4,7 @@ import src.storage.token as token
 version_number = "2.5.6"
 
 port = 8080
+restart_port = 8880
 
 bot_prefix = "!"
 description = "Discord Utility Bot"

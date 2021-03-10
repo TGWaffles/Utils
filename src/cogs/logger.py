@@ -310,6 +310,7 @@ class SQLAlchemyTest(commands.Cog):
         except (TypeError, json.JSONDecodeError):
             return web.Response(status=400)
         scores = request_json.get("scores", [])
+        print(request_json)
         lengthening = max([len(f"{index+1}. {unidecode.unidecode(user.get('name', ''))}")
                            for index, user in enumerate(scores)])
         to_return = "```"
