@@ -23,7 +23,8 @@ from src.helpers.storage_helper import DataHelper
 
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
-              aiohttp.client_exceptions.ClientConnectorError, aiohttp.client_exceptions.ClientOSError)
+              aiohttp.client_exceptions.ClientConnectorError)
+waiting_exceptions = (aiohttp.client_exceptions.ClientOSError, aiohttp.client_exceptions.ContentTypeError)
 timeout = 45
 
 
@@ -56,6 +57,8 @@ class DBApiClient(commands.Cog):
         except exceptions:
             await self.restart_db_server()
             return
+        except waiting_exceptions:
+            return
         members = [monkey_guild.get_member(user[0]) for user in results]
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
@@ -82,7 +85,7 @@ class DBApiClient(commands.Cog):
             except asyncio.exceptions.TimeoutError:
                 self.bot.loop.create_task(await self.restart_db_server())
                 await asyncio.sleep(3)
-            except aiohttp.client_exceptions.ClientOSError:
+            except waiting_exceptions:
                 await asyncio.sleep(2)
             await asyncio.sleep(1)
 
@@ -99,6 +102,9 @@ class DBApiClient(commands.Cog):
             except aiohttp.client_exceptions.ClientConnectorError:
                 await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
                 print("Force restarted DB server.")
+            except waiting_exceptions:
+                self.restarting = False
+                await self.restart_db_server()
             last_ping = self.last_ping
             while self.last_ping == last_ping:
                 await asyncio.sleep(0.1)
@@ -113,6 +119,8 @@ class DBApiClient(commands.Cog):
                     return response_json.get("member_id")
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     @commands.command()
     async def snipe(self, ctx, amount=1):
@@ -149,6 +157,8 @@ class DBApiClient(commands.Cog):
                     return True
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     @commands.command()
     async def edits(self, ctx):
@@ -190,6 +200,8 @@ class DBApiClient(commands.Cog):
                     return
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     @commands.command(description="Get leaderboard pie!")
     async def leaderpie(self, ctx):
@@ -219,6 +231,8 @@ class DBApiClient(commands.Cog):
                     return
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     @commands.command(description="Count how many times a phrase has been said!")
     async def count(self, ctx, *, phrase):
@@ -247,6 +261,8 @@ class DBApiClient(commands.Cog):
                     return True
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     @commands.command(aliases=["ratio", "percentage"])
     async def percent(self, ctx, member: Optional[discord.User]):
@@ -275,6 +291,8 @@ class DBApiClient(commands.Cog):
                     return True
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     async def send_update(self, sent_message):
         if len(self.last_update.description) < 2000:
@@ -370,6 +388,8 @@ class DBApiClient(commands.Cog):
                         break
                     except exceptions:
                         await self.restart_db_server()
+                    except waiting_exceptions:
+                        await asyncio.sleep(2)
 
     @commands.command()
     async def leaderboard(self, ctx):
@@ -407,6 +427,8 @@ class DBApiClient(commands.Cog):
                     return True
             except exceptions:
                 await self.restart_db_server()
+            except waiting_exceptions:
+                await asyncio.sleep(2)
 
     async def update(self):
         params = {'token': api_token}
