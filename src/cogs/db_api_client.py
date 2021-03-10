@@ -302,18 +302,18 @@ class DBApiClient(commands.Cog):
             print(guild.name)
             for channel in guild.text_channels:
                 print(channel.name)
-                channels_to_do.append(channel.id)
+                channels_to_do.append(channel)
         for i in range(10):
-            channel_id = channels_to_do.pop()
-            tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
+            channel = channels_to_do.pop()
+            tasks.append(self.bot.loop.create_task(self.load_channel(channel, True)))
         await asyncio.sleep(3)
         while len(self.active_channel_ids) > 0:
             if len(self.active_channel_ids) < 10:
                 print(len(self.active_channel_ids))
                 print(self.active_channel_ids)
-                channel_id = channels_to_do.pop()
-                print(f"Adding channel id {channel_id}")
-                tasks.append(self.bot.loop.create_task(self.load_channel(channel_id, True)))
+                channel = channels_to_do.pop()
+                print(f"Adding channel id {channel}")
+                tasks.append(self.bot.loop.create_task(self.load_channel(channel, True)))
             await self.send_update(sent_message)
             await asyncio.sleep(1)
         print("done??")
@@ -321,10 +321,7 @@ class DBApiClient(commands.Cog):
         await asyncio.gather(*tasks)
         await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
 
-    async def load_channel(self, channel_id: int, reset):
-        channel = await self.bot.fetch_channel(channel_id)
-        async with self.channel_lock:
-            self.active_channel_ids.append(channel_id)
+    async def load_channel(self, channel, reset):
         print(channel.name)
         last_edit = time.time()
         resume_from = self.data.get("resume_from_{}".format(channel.id), None)
@@ -358,7 +355,8 @@ class DBApiClient(commands.Cog):
             if len(messages_to_send) >= 100:
                 while True:
                     try:
-                        req = await self.session.post(url=f"http://elastic.thom.club:6970/many_messages", timeout=timeout,
+                        req = await self.session.post(url=f"http://elastic.thom.club:6970/many_messages",
+                                                      timeout=timeout,
                                                       json={"token": api_token, "messages": messages_to_send})
                         messages_to_send = []
                         try:
@@ -371,9 +369,6 @@ class DBApiClient(commands.Cog):
                         break
                     except exceptions:
                         await self.restart_db_server()
-        async with self.channel_lock:
-            print(f"removing {channel_id} from the list...")
-            self.active_channel_ids.remove(channel_id)
 
     @commands.command()
     async def leaderboard(self, ctx):
