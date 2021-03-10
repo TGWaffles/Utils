@@ -311,7 +311,7 @@ class SQLAlchemyTest(commands.Cog):
             return web.Response(status=400)
         scores = request_json.get("scores", [])
         lengthening = max([len(f"{index}. {unidecode.unidecode(user.get('name', ''))}")
-                           for index, user in enumerate(scores.keys())])
+                           for index, user in enumerate(scores)])
         to_return = "```"
         for index, user in enumerate(scores):
             name = unidecode.unidecode(user.get("name", ""))
