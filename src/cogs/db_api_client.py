@@ -138,10 +138,11 @@ class DBApiClient(commands.Cog):
                     else:
                         embed = discord.Embed.from_dict(embed_json)
                         if len(embed.fields) == 0 or not embed.fields[0].name.startswith("Previous Title"):
-                            embed.insert_field_at(0, name="Previous Title", value=embed.title)
+                            embed.insert_field_at(0, name="Previous Title", value=embed.title, inline=False)
                         embed.title = "Sniped Message!"
                     if preceding_message is not None:
-                        embed.add_field(name="\u200b", value=f"[Previous Message]({preceding_message.jump_url})")
+                        embed.add_field(name="\u200b", value=f"[Previous Message]({preceding_message.jump_url})",
+                                        inline=False)
                     embed.timestamp = timestamp
                     await sent.edit(embed=embed)
                     return True

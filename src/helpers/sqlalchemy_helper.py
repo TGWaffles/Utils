@@ -80,8 +80,6 @@ class DatabaseHelper:
                     MessageEdit.message_id == payload.message_id).first()[0]
                 if count > 10:
                     return False
-                else:
-                    print(count)
             edit_object = MessageEdit.from_raw(session, payload.message_id, timestamp, content, embeds)
             self.session_creator.remove()
             return edit_object
