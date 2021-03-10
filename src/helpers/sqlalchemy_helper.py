@@ -344,7 +344,7 @@ class DatabaseHelper:
         with self.processing:
             session = self.session_creator()
             query = session.query(MessageEdit).filter(
-                MessageEdit.message_id == message_id).order_by(desc(MessageEdit.timestamp)).limit(24)
+                MessageEdit.message_id == message_id).order_by(desc(MessageEdit.timestamp)).limit(23)
             edits_list = query.all()
             original_message = session.query(Message).filter(Message.id == message_id).first()
             self.session_creator.remove()

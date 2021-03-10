@@ -180,11 +180,15 @@ class DBApiClient(commands.Cog):
                             edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
                         embed.add_field(name=f"Edit {index} ({edited_timestamp_string})",
                                         value=edit.get("edited_content"), inline=False)
+                    if referenced_message.resolved is not None:
+                        author = referenced_message.resolved.author
+                        embed.set_author(name=author.name, url=author.avatar_url)
+                    embed.add_field(name="\u200b", value=f"[Previous Message]({referenced_message.jump_url})",
+                                    inline=False)
                     await sent.edit(embed=embed)
                     return
             except exceptions:
                 await self.restart_db_server()
-
 
     @commands.command(description="Get leaderboard pie!")
     async def leaderpie(self, ctx):
