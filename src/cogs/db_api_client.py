@@ -156,7 +156,7 @@ class DBApiClient(commands.Cog):
             return
         referenced_message = ctx.message.reference
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
-        params = {'token': api_token, 'message_id': referenced_message.id}
+        params = {'token': api_token, 'message_id': referenced_message.message_id}
         while True:
             try:
                 async with self.session.get(url=f"http://{self.db_url}:6970/edits", timeout=timeout, json=params) as request:
