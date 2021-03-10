@@ -135,6 +135,11 @@ class Monkey(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.id == self.bot.user.id:
+            await asyncio.sleep(10)
+            try:
+                await message.delete()
+            except discord.errors.NotFound:
+                pass
             return
         if message.channel.id == config.counting_channel_id:
             count = 15
