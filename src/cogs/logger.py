@@ -38,7 +38,8 @@ class SQLAlchemyTest(commands.Cog):
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
                         web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
                         web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
-                        web.post("/many_messages", self.add_messages), web.get("/edits", self.edits)])
+                        web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
+                        web.post("/format_leaderboard", self.format_leaderboard)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(web._run_app(app, port=6970))
@@ -302,7 +303,8 @@ class SQLAlchemyTest(commands.Cog):
                                                                 "timestamp": original.timestamp.isoformat()}}
         return web.json_response(response_json)
 
-    async def format_leaderboard(self, request: web.Request):
+    @staticmethod
+    async def format_leaderboard(request: web.Request):
         try:
             request_json = await request.json()
         except (TypeError, json.JSONDecodeError):
@@ -310,14 +312,16 @@ class SQLAlchemyTest(commands.Cog):
         scores = request_json.get("scores", [])
         lengthening = max([len(f"{index}. {unidecode.unidecode(user.get('name', ''))}")
                            for index, user in enumerate(scores.keys())])
-        to_return = ""
+        to_return = "```"
         for index, user in enumerate(scores):
             name = unidecode.unidecode(user.get("name", ""))
             score = user.get("score", 0)
             name_part = f"{index}. {name}"
             spaces = " " * (lengthening - len(name_part))
-            line = f"{name_part}{spaces} | Score: {score}"
-
+            line = f"{name_part}{spaces} | Score: {score}\n"
+            to_return += line
+        to_return += "```"
+        return web.json_response({"description": to_return})
 
     @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
     async def count_user(self, ctx, member: Optional[discord.Member], *, phrase):
