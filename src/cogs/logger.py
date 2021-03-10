@@ -394,7 +394,10 @@ class SQLAlchemyTest(commands.Cog):
         await asyncio.sleep(2)
         if message_edit is None:
             channel: discord.TextChannel = self.bot.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
+            try:
+                message = await channel.fetch_message(payload.message_id)
+            except discord.errors.NotFound:
+                return
             await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit, message))
 
     @commands.Cog.listener()
