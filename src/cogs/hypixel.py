@@ -157,7 +157,7 @@ class Hypixel(commands.Cog):
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, "0.0.0.0", 2052)
-        self.bot.loop.create_task(site)
+        self.bot.loop.create_task(site.start())
         return
 
     async def get_user_stats(self, user_uuid):
