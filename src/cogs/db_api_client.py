@@ -35,7 +35,7 @@ class DBApiClient(commands.Cog):
         self.session = aiohttp.ClientSession()
         self.restarting = False
         self.data = DataHelper()
-        self.db_url = "thom.club"
+        self.db_url = "elastic.thom.club"
         self.bot.loop.create_task(self.ping_db_server())
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
