@@ -10,7 +10,7 @@ from pretty_help import PrettyHelp
 from discord.ext import commands
 from src.storage import config
 from src.helpers.storage_helper import DataHelper
-from traceback import format_exc
+from traceback import format_exc, print_tb
 from src.storage.token import token  # token.py is just one variable - token = "token"
 
 
@@ -138,6 +138,7 @@ def get_bot():
             embed.description = format_exc()[:2000]
             embed.add_field(name="Command passed error", value=error)
             embed.add_field(name="Context", value=ctx.message.content)
+            print_tb(error.__traceback__)
             guild_error_channel_id = data.get("guild_error_channels", {}).get(str(ctx.guild.id), 795057163768037376)
             error_channel = bot.get_channel(guild_error_channel_id)
             await error_channel.send(embed=embed)
