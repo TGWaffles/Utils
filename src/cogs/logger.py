@@ -111,7 +111,6 @@ class SQLAlchemyTest(commands.Cog):
             except asyncio.CancelledError:
                 return
 
-
     @commands.command()
     async def score(self, ctx, member: Optional[discord.Member]):
         if member is None:
@@ -318,13 +317,13 @@ class SQLAlchemyTest(commands.Cog):
             return web.Response(status=400)
         scores = request_json.get("scores", [])
         print(request_json)
-        lengthening = max([len(f"{index+1}. {unidecode.unidecode(user.get('name', ''))}")
+        lengthening = max([len(f"{index + 1}. {unidecode.unidecode(user.get('name', ''))}")
                            for index, user in enumerate(scores)])
         to_return = "```"
         for index, user in enumerate(scores):
             name = unidecode.unidecode(user.get("name", ""))
             score = user.get("score", 0)
-            name_part = f"{index+1}. {name}"
+            name_part = f"{index + 1}. {name}"
             spaces = " " * (lengthening - len(name_part))
             line = f"{name_part}{spaces} | Score: {score}\n"
             to_return += line
