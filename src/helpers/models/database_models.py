@@ -210,7 +210,7 @@ class User(Base):
     def from_discord(cls, session, user: discord.User):
         with session.no_autoflush, user_lock:
             try:
-                user_object = session.query(User).filter_by(id=user.id).first()
+                user_object = session.query(User).get(id=user.id)
             except:
                 session.rollback()
                 return cls.from_discord(session, user)
