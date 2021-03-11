@@ -151,8 +151,14 @@ class Hypixel(commands.Cog):
         self.external_ip = None
         app = web.Application()
         app.add_routes([web.get('/{user}-{uid}.png', self.request_image)])
-        # noinspection PyProtectedMember
-        self.bot.loop.create_task(web._run_app(app, port=8800))
+        self.bot.loop.create_task(self.setup_website(app))
+
+    async def setup_website(self, app):
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", 2052)
+        self.bot.loop.create_task(site)
+        return
 
     async def get_user_stats(self, user_uuid):
         while True:
@@ -421,7 +427,7 @@ class Hypixel(commands.Cog):
                 self.user_to_files[member["name"].lower()] = file
             token = secrets.token_urlsafe(16).replace("-", "")
             embed = await self.get_user_embed(member)
-            embed.set_image(url="http://{}:8800/{}-{}.png".format(self.external_ip, member["name"], token))
+            embed.set_image(url="http://{}:2052/{}-{}.png".format(self.external_ip, member["name"], token))
             if new_messages:
                 await channel.send(embed=embed)
             else:
