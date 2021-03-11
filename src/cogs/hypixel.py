@@ -8,7 +8,7 @@ import PIL.ImageChops
 import asyncpixel
 import asyncpixel.exceptions.exceptions
 import discord
-import logging
+import traceback
 import mcuuid.api
 import mcuuid.tools
 import concurrent.futures
@@ -479,7 +479,7 @@ class Hypixel(commands.Cog):
             await asyncio.gather(*pending_tasks)
         except Exception as e:
             print("hypixel error")
-            print(e)
+            print(traceback.print_tb(e.__traceback__))
 
     @commands.Cog.listener()
     async def on_message(self, message):
