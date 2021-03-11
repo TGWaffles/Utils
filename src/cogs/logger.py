@@ -42,7 +42,14 @@ class SQLAlchemyTest(commands.Cog):
                         web.post("/format_leaderboard", self.format_leaderboard)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
-        self.bot.loop.create_task(web._run_app(app, port=config.port))
+        self.bot.loop.create_task(self.start_site(app))
+
+    async def start_site(self, app):
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", config.port)
+        self.bot.loop.create_task(site.start())
+        return
 
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
