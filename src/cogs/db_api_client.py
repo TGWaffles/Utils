@@ -138,7 +138,9 @@ class DBApiClient(commands.Cog):
                     content = response_json.get("content")
                     embed_json = response_json.get("embed_json")
                     timestamp = datetime.datetime.fromisoformat(response_json.get("timestamp"))
+                    print(user_id)
                     user = self.bot.get_user(user_id)
+                    print(user)
                     embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
                     embed.set_author(name=user.name, icon_url=user.avatar_url)
                     preceding_message = (await ctx.channel.history(before=timestamp, limit=1).flatten())[0] or None
