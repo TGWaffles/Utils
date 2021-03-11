@@ -128,7 +128,8 @@ class Suggestions(commands.Cog):
     @commands.Cog.listener()
     @monkey_check()
     async def on_message(self, message):
-        if message.channel not in (self.decisions_channel, self.suggestions_channel, self.archive_channel):
+        if message.channel not in (self.decisions_channel, self.suggestions_channel, self.archive_channel)\
+                or (len(message.embeds) > 0 and message.embeds[0].title == "New User Suggestion"):
             return
         if message.author.bot:
             await asyncio.sleep(10)
