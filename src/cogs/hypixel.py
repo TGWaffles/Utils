@@ -8,6 +8,7 @@ import PIL.ImageChops
 import asyncpixel
 import asyncpixel.exceptions.exceptions
 import discord
+import logging
 import mcuuid.api
 import mcuuid.tools
 import concurrent.futures
@@ -433,7 +434,10 @@ class Hypixel(commands.Cog):
             else:
                 embed_member_name = editable_messages[i].embeds[0].title
                 if embed_member_name != member["name"] or not member["unchanged"]:
+                    log = logging.getLogger("discord.http")
+                    log.setLevel(logging.DEBUG)
                     await editable_messages[i].edit(embed=embed)
+                    log.setLevel(logging.INFO)
                 i += 1
 
     @tasks.loop(seconds=5, count=None)
