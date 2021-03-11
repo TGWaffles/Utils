@@ -434,10 +434,13 @@ class Hypixel(commands.Cog):
             else:
                 embed_member_name = editable_messages[i].embeds[0].title
                 if embed_member_name != member["name"] or not member["unchanged"]:
-                    log = logging.getLogger("discord.http")
-                    log.setLevel(logging.DEBUG)
+                    print(self.bot.loop)
+                    print(asyncio.get_event_loop())
+                    print(asyncio.get_running_loop())
                     await editable_messages[i].edit(embed=embed)
-                    log.setLevel(logging.INFO)
+                    print(self.bot.loop)
+                    print(asyncio.get_event_loop())
+                    print(asyncio.get_running_loop())
                 i += 1
 
     @tasks.loop(seconds=5, count=None)
