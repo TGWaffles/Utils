@@ -140,6 +140,7 @@ class DatabaseHelper:
             self.session_creator.remove()
 
     def count(self, guild_id, phrase):
+        phrase = phrase.replace("@", "")
         with self.processing:
             session = self.session_creator()
             query = session.query(func.count(Message.id)).filter(Message.content.match(phrase),
@@ -149,6 +150,7 @@ class DatabaseHelper:
         return amount
 
     def count_member(self, member, phrase):
+        phrase = phrase.replace("@", "")
         with self.processing:
             session = self.session_creator()
             query = session.query(func.count(Message.id)).filter(Message.content.match(phrase),
@@ -159,6 +161,7 @@ class DatabaseHelper:
         return amount
 
     def phrase_times(self, guild, phrase):
+        phrase = phrase.replace("@", "")
         with self.processing:
             session = self.session_creator()
             query = session.query(Message.timestamp).filter(
