@@ -327,7 +327,7 @@ class DatabaseHelper:
             user_object = User(id=message.get("user_id"), name=message.get("name"), bot=message.get("bot"))
             user_objects[message.get("user_id")] = user_object
             channel_objects[message.get("channel_id")] = channel_object
-        with self.processing:
+        with self.processing, user_lock, channel_lock, message_lock:
             session = self.session_creator()
             for each in session.query(Message).filter(Message.id.in_(message_objects.keys())).all():
                 message_objects.pop(each.id)
