@@ -18,3 +18,12 @@ def apollo_check():
         return apollo_backend_check(ctx.guild)
 
     return commands.check(predicate)
+
+def cat_backend_check(guild):
+    return guild.id == config.cat_guild_id
+
+def cat_check():
+    async def predicate(ctx):
+        return cat_backend_check(ctx.guild)
+
+    return commands.check(predicate)

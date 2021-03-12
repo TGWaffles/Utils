@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "2.5.8"
+version_number = "2.5.9"
 
 port = 8080
 restart_port = 8880
@@ -12,6 +12,7 @@ owner_id = 230778630597246983
 power_id = 739600091480064010
 zex_id = 734597893624692778
 lexi_id = 280843294508974103
+darby_id = 513116059470004275
 lexibot_id = 730015197980262424
 
 # extensions = ["logger"]
@@ -21,7 +22,8 @@ if os.environ.get("DATABASE_SERVER", None) is not None:
     extensions = ["logger"]
 else:
     extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech",
-                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client", "games", "hypixel"]
+                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client", "games", "hypixel",
+                  "cat_guild"]
 
 dev = False
 if dev:
@@ -31,6 +33,9 @@ if dev:
 
 monkey_guild_id = 725886999646437407
 apollo_guild_id = 770972021487304714
+cat_guild_id = 689012589455474710
+
+darby_channel_id = 819870859107237919
 error_channel_id = 795057163768037376
 staff_role_id = 726453086331338802
 mod_role_id = 725894916839964682
