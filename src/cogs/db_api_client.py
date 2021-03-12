@@ -106,7 +106,13 @@ class DBApiClient(commands.Cog):
                 self.restarting = False
                 await self.restart_db_server()
             last_ping = self.last_ping
+            seconds_waited = 0
             while self.last_ping == last_ping:
+                if seconds_waited > 30:
+                    await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
+                    print("Force restarted DB server.")
+                    seconds_waited = 0
+                seconds_waited += 0.1
                 await asyncio.sleep(0.1)
             self.restarting = False
 
