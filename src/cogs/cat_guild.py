@@ -15,7 +15,7 @@ class Cat(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         print("starting spotify...")
-        if after.id == config.darby_id and after.guild == config.cat_guild_id:
+        if after.id == config.darby_id and after.guild.id == config.cat_guild_id:
             darby = after
         else:
             return
