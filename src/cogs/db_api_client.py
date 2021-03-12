@@ -203,8 +203,12 @@ class DBApiClient(commands.Cog):
                             break
                         edited_timestamp_string = datetime.datetime.fromisoformat(
                             edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
+                        if len(edit.get("edited_content")) > 1024:
+                            content = edit.get("edited_content")[:1021] + "..."
+                        else:
+                            content = edit.get("edited_content")
                         embed.insert_field_at(index=1, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
-                                              value=edit.get("edited_content"), inline=False)
+                                              value=content, inline=False)
                     if referenced_message.resolved is not None:
                         author = referenced_message.resolved.author
                         embed.set_author(name=author.name, url=author.avatar_url)
