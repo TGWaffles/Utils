@@ -11,13 +11,14 @@ class Cat(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.last_title = ""
-        self.update_spotify_embed.start()
 
-    @tasks.loop(seconds=15, count=None)
-    async def update_spotify_embed(self):
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
         print("starting spotify...")
-        cat_guild = self.bot.get_guild(config.cat_guild_id)
-        darby: discord.Member = await cat_guild.fetch_member(config.darby_id)
+        if after.id == config.darby_id and after.guild == config.cat_guild_id:
+            darby = after
+        else:
+            return
         music_channel = self.bot.get_channel(config.darby_channel_id)
         print("got channel")
         print(darby)
