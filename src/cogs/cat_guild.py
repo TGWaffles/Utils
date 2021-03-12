@@ -13,13 +13,15 @@ class Cat(commands.Cog):
         self.last_title = ""
         self.update_spotify_embed.start()
 
-    @tasks.loop(seconds=5, count=None)
+    @tasks.loop(seconds=15, count=None)
     async def update_spotify_embed(self):
         print("starting spotify...")
         cat_guild = self.bot.get_guild(config.cat_guild_id)
         darby: discord.Member = await cat_guild.fetch_member(config.darby_id)
         music_channel = self.bot.get_channel(config.darby_channel_id)
         print("got channel")
+        print(darby)
+        print(darby.activities)
         if darby.activities:
             print("she has activities!")
             for activity in darby.activities:
