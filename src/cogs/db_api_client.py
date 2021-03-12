@@ -21,7 +21,6 @@ from src.checks.user_check import is_owner
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
 
-
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
               aiohttp.client_exceptions.ClientConnectorError)
 waiting_exceptions = (aiohttp.client_exceptions.ClientOSError, aiohttp.client_exceptions.ContentTypeError)
@@ -73,7 +72,8 @@ class DBApiClient(commands.Cog):
         while True:
             try:
                 params = {'timestamp': datetime.datetime.utcnow().timestamp()}
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/ping", timeout=5, json=params) as request:
+                async with self.session.get(url=f"http://{self.db_url}:{config.port}/ping", timeout=5,
+                                            json=params) as request:
                     json_info = await request.json()
                     self.last_ping = datetime.datetime.now()
                     if json_info.get("time_delay", 100) > 3:
@@ -94,7 +94,8 @@ class DBApiClient(commands.Cog):
             params = {'token': api_token}
             self.restarting = True
             try:
-                async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=timeout, json=params) as request:
+                async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=timeout,
+                                             json=params) as request:
                     if request.status == 202:
                         print("Restarted DB server")
                     else:
@@ -120,7 +121,8 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, "guild_id": guild_id}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/someone", timeout=timeout, json=params) as request:
+                async with self.session.get(url=f"http://{self.db_url}:{config.port}/someone", timeout=timeout,
+                                            json=params) as request:
                     response_json = await request.json()
                     return response_json.get("member_id")
             except exceptions:
@@ -134,7 +136,8 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/snipe", timeout=timeout, json=params) as request:
+                async with self.session.get(url=f"http://{self.db_url}:{config.port}/snipe", timeout=timeout,
+                                            json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe! "
                                                                           f"(status: {request.status})"))
@@ -178,7 +181,8 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'message_id': referenced_message.message_id}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/edits", timeout=timeout, json=params) as request:
+                async with self.session.get(url=f"http://{self.db_url}:{config.port}/edits", timeout=timeout,
+                                            json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! "
                                                                           f"(status: {request.status})"))
@@ -194,11 +198,13 @@ class DBApiClient(commands.Cog):
                     embed = discord.Embed(title="Edits for Message", colour=discord.Colour.gold())
                     embed.add_field(name=f"Original Message ({original_timestamp_string})",
                                     value=original_message.get("content"), inline=False)
-                    for index, edit in enumerate(edits[::-1]):
+                    for index, edit in enumerate(edits):
+                        if len(embed) >= 5000:
+                            break
                         edited_timestamp_string = datetime.datetime.fromisoformat(
                             edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
-                        embed.add_field(name=f"Edit {index + 1} ({edited_timestamp_string})",
-                                        value=edit.get("edited_content"), inline=False)
+                        embed.insert_field_at(index=1, name=f"Edit {index + 1} ({edited_timestamp_string})",
+                                              value=edit.get("edited_content"), inline=False)
                     if referenced_message.resolved is not None:
                         author = referenced_message.resolved.author
                         embed.set_author(name=author.name, url=author.avatar_url)
@@ -253,7 +259,8 @@ class DBApiClient(commands.Cog):
         params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
         while True:
             try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/global_phrase_count", timeout=timeout,
+                async with self.session.get(url=f"http://{self.db_url}:{config.port}/global_phrase_count",
+                                            timeout=timeout,
                                             json=params) as request:
                     if request.status != 200:
                         await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "

@@ -14,17 +14,17 @@ class Cat(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        if after.guild.id == config.cat_guild_id:
-            member = after
+        if after.id == config.darby_id and after.guild.id == config.cat_guild_id:
+            darby = after
         else:
             return
         music_channel = self.bot.get_channel(config.darby_channel_id)
-        if member.activities:
-            for activity in member.activities:
+        if darby.activities:
+            for activity in darby.activities:
                 if isinstance(activity, discord.Spotify):
                     if activity.title != self.last_title:
                         embed = discord.Embed(
-                            title=f"{member.name}'s Spotify",
+                            title=f"{darby.name}'s Spotify",
                             description="Listening to {}".format(activity.title),
                             color=discord.Colour.green())
                         self.last_title = activity.title
