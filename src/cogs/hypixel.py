@@ -31,7 +31,7 @@ class Hypixel(commands.Cog):
         self.data = DataHelper()
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
-        self.hypixel = asyncpixel.Client("e823fbc4-e526-4fbb-bf15-37e543aebdd6")
+        self.hypixel = asyncpixel.Client("b1c61297-25bf-487d-b8d4-c4b76e29e36c")
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
