@@ -203,7 +203,7 @@ class DBApiClient(commands.Cog):
                             break
                         edited_timestamp_string = datetime.datetime.fromisoformat(
                             edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
-                        embed.insert_field_at(index=1, name=f"Edit {index + 1} ({edited_timestamp_string})",
+                        embed.insert_field_at(index=1, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
                                               value=edit.get("edited_content"), inline=False)
                     if referenced_message.resolved is not None:
                         author = referenced_message.resolved.author
