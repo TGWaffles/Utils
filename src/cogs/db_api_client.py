@@ -196,8 +196,12 @@ class DBApiClient(commands.Cog):
                         await sent.edit(embed=self.bot.create_error_embed("That message has no known edits."))
                         return
                     embed = discord.Embed(title="Edits for Message", colour=discord.Colour.gold())
+                    if len(edit.get("content")) > 1024:
+                        content = edit.get("content")[:1021] + "..."
+                    else:
+                        content = edit.get("content")
                     embed.add_field(name=f"Original Message ({original_timestamp_string})",
-                                    value=original_message.get("content"), inline=False)
+                                    value=content, inline=False)
                     for index, edit in enumerate(edits):
                         if len(embed) >= 5000:
                             break
