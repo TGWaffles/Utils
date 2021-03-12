@@ -24,7 +24,7 @@ class Guild(Base):
 
     @classmethod
     def from_discord(cls, session: Session, guild: discord.Guild):
-        with session.no_autoflush, guild_lock:
+        with guild_lock:
             try:
                 guild_object = session.query(Guild).filter_by(id=guild.id).first()
             except:
@@ -32,7 +32,7 @@ class Guild(Base):
                 return cls.from_discord(session, guild)
             if guild_object is None:
                 guild_object = Guild(id=guild.id)
-                session.add(guild_object)
+                session.merge(guild_object)
         guild_object.name = guild.name
         guild_object.removed = False
         session.commit()
@@ -53,7 +53,7 @@ class Guild(Base):
 
     @classmethod
     def delete(cls, session, guild):
-        with session.no_autoflush, guild_lock:
+        with guild_lock:
             try:
                 guild_object = session.query(Guild).filter_by(id=guild.id).first()
             except:
@@ -79,7 +79,7 @@ class Role(Base):
 
     @classmethod
     def from_discord_and_guild(cls, session, role: discord.Role, guild_object: Guild):
-        with session.no_autoflush, role_lock:
+        with role_lock:
             try:
                 role_object = session.query(Role).filter_by(id=role.id).first()
             except:
@@ -87,7 +87,7 @@ class Role(Base):
                 cls.from_discord_and_guild(session, role, guild_object)
             if role_object is None:
                 role_object = Role(id=role.id, guild=guild_object)
-                session.add(role_object)
+                session.merge(role_object)
         role_object.role_permissions = role.permissions.value
         role_object.name = role.name
         role_object.colour = role.colour.value
@@ -103,7 +103,7 @@ class Role(Base):
 
     @classmethod
     def delete(cls, session, role: discord.Role):
-        with session.no_autoflush, role_lock:
+        with role_lock:
             try:
                 role_object = session.query(Role).filter_by(id=role.id).first()
             except:
@@ -128,7 +128,7 @@ class Member(Base):
     def update_member(cls, session, discord_member: discord.Member):
         if not isinstance(discord_member, discord.Member):
             return None
-        with session.no_autoflush, member_lock:
+        with member_lock:
             try:
                 member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
                                                                   guild_id=discord_member.guild.id).first()
@@ -140,7 +140,7 @@ class Member(Base):
                                          guild_id=discord_member.guild.id)
                 # noinspection PyTypeChecker
                 member_to_guild.user = User.from_discord(session, discord_member)
-                session.add(member_to_guild)
+                session.merge(member_to_guild)
         member_to_guild.nick = discord_member.nick
         member_to_guild.joined_at = discord_member.joined_at
         member_to_roles: list = member_to_guild.roles.copy()
@@ -159,7 +159,7 @@ class Member(Base):
 
     @classmethod
     def delete_member(cls, session, discord_member: discord.Member):
-        with session.no_autoflush, member_lock:
+        with member_lock:
             try:
                 member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
                                                                   guild_id=discord_member.guild.id).first()
@@ -185,7 +185,7 @@ class MemberToRole(Base):
 
     @classmethod
     def from_member_and_role(cls, session, member: Member, role: Role):
-        with session.no_autoflush, member_roles_lock:
+        with member_roles_lock:
             try:
                 role_to_member = session.query(MemberToRole).filter_by(role_id=role.id, user_id=member.user_id,
                                                                        guild_id=member.guild_id).first()
@@ -208,7 +208,7 @@ class User(Base):
 
     @classmethod
     def from_discord(cls, session, user: discord.User):
-        with session.no_autoflush, user_lock:
+        with user_lock:
             try:
                 user_object = session.query(User).get(user.id)
             except:
@@ -216,7 +216,7 @@ class User(Base):
                 return cls.from_discord(session, user)
             if user_object is None:
                 user_object = User(id=user.id)
-                session.add(user_object)
+                session.merge(user_object)
         user_object.name = user.name
         user_object.bot = user.bot
         session.commit()
@@ -232,7 +232,7 @@ class Channel(Base):
 
     @classmethod
     def from_discord_and_guild(cls, session, text_channel: discord.TextChannel, guild: Guild):
-        with session.no_autoflush, channel_lock:
+        with channel_lock:
             try:
                 text_channel_object = session.query(Channel).filter_by(id=text_channel.id).first()
             except:
@@ -240,7 +240,7 @@ class Channel(Base):
                 return cls.from_discord_and_guild(session, text_channel, guild)
             if text_channel_object is None:
                 text_channel_object = Channel(id=text_channel.id)
-                session.add(text_channel_object)
+                session.merge(text_channel_object)
                 session.commit()
         text_channel_object.name = text_channel.name
         text_channel_object.guild = guild
@@ -254,7 +254,7 @@ class Channel(Base):
 
     @classmethod
     def delete_channel(cls, session, channel):
-        with session.no_autoflush, channel_lock:
+        with channel_lock:
             try:
                 text_channel_object = session.query(Channel).filter_by(id=channel.id).first()
             except:
@@ -283,7 +283,7 @@ class Message(Base):
     def from_discord(cls, session, message: discord.Message):
         channel = Channel.from_discord(session, message.channel)
         _ = User.from_discord(session, message.author)
-        with session.no_autoflush, message_lock:
+        with message_lock:
             try:
                 message_object = session.query(Message).filter_by(id=message.id).first()
             except:
@@ -291,7 +291,7 @@ class Message(Base):
                 return cls.from_discord(session, message)
             if message_object is None:
                 message_object = Message(id=message.id)
-                session.add(message_object)
+                session.merge(message_object)
         message_object.user_id = message.author.id
         message_object.channel = channel
         message_object.guild_id = channel.guild_id
@@ -331,7 +331,7 @@ class MessageEdit(Base):
         message_object = Message.from_discord(session, message)
         if message.edited_at is None:
             return False
-        with session.no_autoflush, edit_lock:
+        with edit_lock:
             try:
                 edit_object = session.query(MessageEdit).filter_by(message_id=message.id).order_by(
                     MessageEdit.timestamp.desc()).first()
@@ -341,7 +341,7 @@ class MessageEdit(Base):
             if edit_object is None or edit_object.timestamp != message.edited_at.replace(tzinfo=None, microsecond=0):
                 edit_object = MessageEdit(timestamp=message.edited_at.replace(tzinfo=None, microsecond=0),
                                           message_id=message.id)
-                session.add(edit_object)
+                session.merge(edit_object)
         edit_object.message = message_object
         edit_object.edited_content = message.content
         if len(message.embeds) > 0:
@@ -355,7 +355,7 @@ class MessageEdit(Base):
         if embeds is None:
             embeds = []
         edited_at = edited_at.replace(tzinfo=None, microsecond=0)
-        with session.no_autoflush, edit_lock:
+        with edit_lock:
             try:
                 message_object = session.query(Message).filter_by(id=message_id).first()
             except:
@@ -371,7 +371,7 @@ class MessageEdit(Base):
                 return cls.from_raw(session, message_id, edited_at, content, embeds)
             if edit_object is None or edit_object.timestamp != edited_at:
                 edit_object = MessageEdit(timestamp=edited_at, message_id=message_id)
-                session.add(edit_object)
+                session.merge(edit_object)
         edit_object.message = message_object
         edit_object.edited_content = content
         if len(embeds) > 0:
