@@ -109,7 +109,7 @@ class DBApiClient(commands.Cog):
                         except exceptions:
                             await asyncio.sleep(0.5)
                             print("Failed to force a restart. trying again.")
-                    print("Force restarted DB server.")
+                    print("Force restarted DB server due to error in normal restart.")
                 except waiting_exceptions:
                     self.restarting = False
                     await self.restart_db_server()
@@ -118,7 +118,7 @@ class DBApiClient(commands.Cog):
                 while self.last_ping == last_ping:
                     if seconds_waited > 30:
                         await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
-                        print("Force restarted DB server.")
+                        print("Force restarted DB server due to ping not working..")
                         seconds_waited = 0
                     seconds_waited += 0.1
                     await asyncio.sleep(0.1)
