@@ -90,31 +90,39 @@ class DBApiClient(commands.Cog):
             await asyncio.sleep(1)
 
     async def restart_db_server(self):
-        if not self.restarting:
-            params = {'token': api_token}
-            self.restarting = True
-            try:
-                async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=timeout,
-                                             json=params) as request:
-                    if request.status == 202:
-                        print("Restarted DB server")
-                    else:
-                        raise aiohttp.client_exceptions.ClientConnectorError
-            except aiohttp.client_exceptions.ClientConnectorError:
-                await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
-                print("Force restarted DB server.")
-            except waiting_exceptions:
-                self.restarting = False
-                await self.restart_db_server()
-            last_ping = self.last_ping
-            seconds_waited = 0
-            while self.last_ping == last_ping:
-                if seconds_waited > 30:
-                    await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
+        try:
+            if not self.restarting:
+                params = {'token': api_token}
+                self.restarting = True
+                try:
+                    async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=timeout,
+                                                 json=params) as request:
+                        if request.status == 202:
+                            print("Restarted DB server")
+                        else:
+                            raise aiohttp.client_exceptions.ClientConnectorError
+                except (aiohttp.client_exceptions.ClientConnectorError, *exceptions):
+                    while True:
+                        try:
+                            await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
+                            break
+                        except exceptions:
+                            await asyncio.sleep(0.5)
+                            print("Failed to force a restart. trying again.")
                     print("Force restarted DB server.")
-                    seconds_waited = 0
-                seconds_waited += 0.1
-                await asyncio.sleep(0.1)
+                except waiting_exceptions:
+                    self.restarting = False
+                    await self.restart_db_server()
+                last_ping = self.last_ping
+                seconds_waited = 0
+                while self.last_ping == last_ping:
+                    if seconds_waited > 30:
+                        await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
+                        print("Force restarted DB server.")
+                        seconds_waited = 0
+                    seconds_waited += 0.1
+                    await asyncio.sleep(0.1)
+        finally:
             self.restarting = False
 
     async def get_someone_id(self, guild_id):
