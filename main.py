@@ -4,6 +4,7 @@ import sys
 import json
 import os
 import datetime
+import time
 import subprocess
 
 from pretty_help import PrettyHelp
@@ -153,4 +154,7 @@ def get_bot():
 
 if __name__ == '__main__':
     utils_bot = get_bot()
-    utils_bot.run(token)
+    try:
+        utils_bot.run(token)
+    except discord.errors.LoginFailure:
+        time.sleep(18000)
