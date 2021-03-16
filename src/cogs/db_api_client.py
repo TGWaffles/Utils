@@ -90,8 +90,8 @@ class DBApiClient(commands.Cog):
             await asyncio.sleep(1)
 
     async def restart_db_server(self):
-        try:
-            if not self.restarting:
+        if not self.restarting:
+            try:
                 params = {'token': api_token}
                 self.restarting = True
                 try:
@@ -122,8 +122,8 @@ class DBApiClient(commands.Cog):
                         seconds_waited = 0
                     seconds_waited += 0.1
                     await asyncio.sleep(0.1)
-        finally:
-            self.restarting = False
+            finally:
+                self.restarting = False
 
     async def get_someone_id(self, guild_id):
         params = {'token': api_token, "guild_id": guild_id}
