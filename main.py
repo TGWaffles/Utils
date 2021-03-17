@@ -158,3 +158,9 @@ if __name__ == '__main__':
         utils_bot.run(token)
     except discord.errors.LoginFailure:
         time.sleep(18000)
+        exit()
+    except discord.errors.ConnectionClosed:
+        if not asyncio.get_event_loop().is_closed():
+            asyncio.get_event_loop().close()
+        print("Connection Closed, exiting...")
+        exit()

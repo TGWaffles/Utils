@@ -42,7 +42,7 @@ class Audit(commands.Cog):
 
     async def audit_roles(self, ctx, member: Optional[discord.Member]):
         if member is None:
-            await ctx.send(self.bot.create_error_embed("No member mentioned!"))
+            await ctx.send(embed=self.bot.create_error_embed("No member mentioned!"))
             return
         sent_message = await ctx.send("Searching... check this message for updates when completed.")
         # noinspection PyTypeChecker
