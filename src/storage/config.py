@@ -51,7 +51,8 @@ suggestions_channel_id = 798972358878167080
 archive_channel_id = 725920625956225055
 motw_channel_id = 816299775108055081
 main_channel_id = 725896089542197278
-message_count_channel = 816702703509700618
+monkey_message_count_channel = 816702703509700618
+jace_message_count_channel = 822123300116234301
 
 # suggestions_decisions_id = 727563806762598450
 suggestions_decisions_id = 798972358878167080

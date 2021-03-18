@@ -53,9 +53,13 @@ class SQLAlchemyTest(commands.Cog):
 
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
-        count_channel: discord.TextChannel = self.bot.get_channel(config.message_count_channel)
+        count_channel: discord.TextChannel = self.bot.get_channel(config.monkey_message_count_channel)
         count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild.id))
         await count_channel.edit(name=f"Messages: {count:,}")
+        jace_count_channel = self.bot.get_channel(config.jace_message_count_channel)
+        count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages,
+                                                                  jace_count_channel.guild.id))
+        await jace_count_channel.edit(name=f"Messages: {count:,}")
 
     @staticmethod
     async def check_up(request: web.Request):
