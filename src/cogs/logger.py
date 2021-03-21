@@ -1,27 +1,28 @@
 import asyncio
-import re
-import base64
-import time
 import datetime
 import json
 import os
-import unidecode
-from io import BytesIO
+import time
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from functools import partial
+from io import BytesIO
 from typing import Optional
-from aiohttp import web
 
 import discord
-import src.storage.config as config
-from src.storage.token import api_token
+import unidecode
+from aiohttp import web
 from discord.ext import commands, tasks
 
+import src.storage.config as config
 from main import UtilsBot
 from src.checks.user_check import is_owner
+from src.helpers.graph_helper import file_from_timestamps
 from src.helpers.sqlalchemy_helper import DatabaseHelper
 from src.helpers.storage_helper import DataHelper
-from src.helpers.graph_helper import file_from_timestamps, pie_chart_from_amount_and_labels
+from src.storage.token import api_token
+
+
+routes = web.RouteTableDef()
 
 
 class SQLAlchemyTest(commands.Cog):
@@ -34,12 +35,7 @@ class SQLAlchemyTest(commands.Cog):
         self.data = DataHelper()
         self.update_message_count.start()
         app = web.Application()
-        app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
-                        web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
-                        web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
-                        web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
-                        web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
-                        web.post("/format_leaderboard", self.format_leaderboard)])
+        app.add_routes(routes)
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
@@ -62,6 +58,7 @@ class SQLAlchemyTest(commands.Cog):
         await jace_count_channel.edit(name=f"Messages: {count:,}")
 
     @staticmethod
+    @routes.get("/ping")
     async def check_up(request: web.Request):
         try:
             request_json = await request.json()
@@ -74,6 +71,7 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"time_delay": current_time - sent_time}
         return web.json_response(response_json)
 
+    @routes.post("/restart")
     async def nice_restart(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -86,6 +84,7 @@ class SQLAlchemyTest(commands.Cog):
         await response.prepare(request)
         self.bot.restart()
 
+    @routes.get("/someone")
     async def send_random_someone(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -152,6 +151,7 @@ class SQLAlchemyTest(commands.Cog):
                 executor.submit(partial(self.database.save_message, message))
         task.cancel()
 
+    @routes.get("/leaderboard")
     async def leaderboard(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -167,6 +167,7 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"results": results[:12]}
         return web.json_response(response_json)
 
+    @routes.get("/leaderboard_pie")
     async def get_leaderboard_pie(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -223,6 +224,7 @@ class SQLAlchemyTest(commands.Cog):
         await sent.delete()
         await ctx.reply(embed=embed, file=discord_file)
 
+    @routes.get("/percentage")
     async def percentage(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -240,6 +242,7 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"amount": amount, "percentage": percentage}
         return web.json_response(response_json)
 
+    @routes.get("/snipe")
     async def snipe(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -265,6 +268,7 @@ class SQLAlchemyTest(commands.Cog):
                 response_json["embed_json"] = json.loads(edited_message.edited_embed_json)
         return web.json_response(response_json)
 
+    @routes.post("/many_messages")
     async def add_messages(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -277,6 +281,7 @@ class SQLAlchemyTest(commands.Cog):
         await self.bot.loop.run_in_executor(None, partial(self.database.add_many_messages, *messages))
         return web.json_response({"success": True})
 
+    @routes.get("/global_phrase_count")
     async def count(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -293,6 +298,7 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"amount": amount}
         return web.json_response(response_json)
 
+    @routes.get("/edits")
     async def edits(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -314,6 +320,7 @@ class SQLAlchemyTest(commands.Cog):
         return web.json_response(response_json)
 
     @staticmethod
+    @routes.post("/format_leaderboard")
     async def format_leaderboard(request: web.Request):
         try:
             request_json = await request.json()
