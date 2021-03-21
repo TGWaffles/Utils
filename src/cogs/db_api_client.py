@@ -24,7 +24,8 @@ from src.helpers.storage_helper import DataHelper
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
               aiohttp.client_exceptions.ClientConnectorError)
 waiting_exceptions = (aiohttp.client_exceptions.ClientOSError, aiohttp.client_exceptions.ContentTypeError)
-timeout = 45
+default_timeout = 45
+timeout = 30
 
 
 class DBApiClient(commands.Cog):
@@ -42,6 +43,31 @@ class DBApiClient(commands.Cog):
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
 
+    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout):
+        attempts = 0
+        while True:
+            if attempts > 5:
+                return None
+            try:
+                if request_type == "get":
+                    request = await self.session.get(f"http://{self.db_url}:{config.port}/{endpoint}", timeout=timeout,
+                                                     json=parameters)
+                else:
+                    request = await self.session.post(f"http://{self.db_url}:{config.port}/{endpoint}", timeout=timeout,
+                                                      json=parameters)
+                if request.status != 200:
+                    attempts += 1
+                    continue
+                response_json = await request.json()
+                return response_json
+            except exceptions:
+                await self.restart_db_server()
+                attempts += 1
+            except waiting_exceptions:
+                await asyncio.sleep(1)
+                attempts += 1
+
+
     @tasks.loop(seconds=1800, count=None)
     async def update_motw(self):
         monkey_guild: discord.Guild = self.bot.get_guild(config.monkey_guild_id)
@@ -49,7 +75,7 @@ class DBApiClient(commands.Cog):
         motw_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
         params = {'token': api_token, 'guild_id': config.monkey_guild_id}
         try:
-            async with self.session.get(url=f"http://{self.db_url}:{config.port}/leaderboard", timeout=timeout,
+            async with self.session.get(url=f"http://{self.db_url}:{config.port}/leaderboard", timeout=30,
                                         json=params) as request:
                 response_json = await request.json()
                 results = response_json.get("results")
@@ -127,57 +153,41 @@ class DBApiClient(commands.Cog):
 
     async def get_someone_id(self, guild_id):
         params = {'token': api_token, "guild_id": guild_id}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/someone", timeout=timeout,
-                                            json=params) as request:
-                    response_json = await request.json()
-                    return response_json.get("member_id")
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("someone", parameters=params)
+        if response_json is None:
+            return None
+        return response_json.get("member_id")
 
     @commands.command()
     async def snipe(self, ctx, amount=1):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
         params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/snipe", timeout=timeout,
-                                            json=params) as request:
-                    if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe! "
-                                                                          f"(status: {request.status})"))
-                        return
-                    response_json = await request.json()
-                    user_id = response_json.get("user_id")
-                    content = response_json.get("content")
-                    embed_json = response_json.get("embed_json")
-                    timestamp = datetime.datetime.fromisoformat(response_json.get("timestamp"))
-                    user = self.bot.get_user(user_id)
-                    if user is None:
-                        user = await self.bot.fetch_user(user_id)
-                    embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
-                    embed.set_author(name=user.name, icon_url=user.avatar_url)
-                    preceding_message = (await ctx.channel.history(before=timestamp, limit=1).flatten())[0] or None
-                    if embed_json is None:
-                        embed.description = content
-                    else:
-                        embed = discord.Embed.from_dict(embed_json)
-                        if len(embed.fields) == 0 or not embed.fields[0].name.startswith("Previous Title"):
-                            embed.insert_field_at(0, name="Previous Title", value=embed.title, inline=False)
-                        embed.title = "Sniped Message!"
-                    if preceding_message is not None:
-                        embed.add_field(name="\u200b", value=f"[Previous Message]({preceding_message.jump_url})",
-                                        inline=False)
-                    embed.timestamp = timestamp
-                    await sent.edit(embed=embed)
-                    return True
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("snipe", parameters=params)
+        if response_json is None:
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!"))
+            return
+        user_id = response_json.get("user_id")
+        content = response_json.get("content")
+        embed_json = response_json.get("embed_json")
+        timestamp = datetime.datetime.fromisoformat(response_json.get("timestamp"))
+        user = self.bot.get_user(user_id)
+        if user is None:
+            user = await self.bot.fetch_user(user_id)
+        embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
+        embed.set_author(name=user.name, icon_url=user.avatar_url)
+        preceding_message = (await ctx.channel.history(before=timestamp, limit=1).flatten())[0] or None
+        if embed_json is None:
+            embed.description = content
+        else:
+            embed = discord.Embed.from_dict(embed_json)
+            if len(embed.fields) == 0 or not embed.fields[0].name.startswith("Previous Title"):
+                embed.insert_field_at(0, name="Previous Title", value=embed.title, inline=False)
+            embed.title = "Sniped Message!"
+        if preceding_message is not None:
+            embed.add_field(name="\u200b", value=f"[Previous Message]({preceding_message.jump_url})",
+                            inline=False)
+        embed.timestamp = timestamp
+        await sent.edit(embed=embed)
 
     @commands.command()
     async def edits(self, ctx):
