@@ -18,7 +18,7 @@ lexibot_id = 730015197980262424
 # extensions = ["logger"]
 
 
-if os.environ.get("DATABASE_SERVER", None) is not None:
+if os.environ.get("DATABASE_SERVER", None) is not None and not os.path.exists("second"):
     extensions = ["logger"]
 else:
     extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech",
