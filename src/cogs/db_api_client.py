@@ -41,7 +41,7 @@ class DBApiClient(commands.Cog):
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
 
-    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout) -> Dict[Any]:
+    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout) -> Dict[Any, Any]:
         attempts = 0
         last_status = -1
         while True:
