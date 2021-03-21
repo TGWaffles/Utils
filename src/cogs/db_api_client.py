@@ -4,7 +4,7 @@ import datetime
 import time
 from functools import partial
 from io import BytesIO
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 import aiohttp
 import aiohttp.client_exceptions
@@ -41,7 +41,7 @@ class DBApiClient(commands.Cog):
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
 
-    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout) -> dict[Any]:
+    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout) -> Dict[Any]:
         attempts = 0
         last_status = -1
         while True:
