@@ -1,31 +1,29 @@
 import asyncio
+import concurrent.futures
 import datetime
+import time
+from functools import partial
+from io import BytesIO
+from typing import Optional, Any
 
 import aiohttp
 import aiohttp.client_exceptions
 import discord
-import re
-import time
-import concurrent.futures
 import unidecode
-from io import BytesIO
 from discord.ext import commands, tasks
-from typing import Optional
-from functools import partial
 
 from main import UtilsBot
-from src.storage.token import api_token
-from src.storage import config
 from src.checks.custom_check import restart_check
 from src.checks.user_check import is_owner
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
+from src.storage import config
+from src.storage.token import api_token
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
               aiohttp.client_exceptions.ClientConnectorError)
 waiting_exceptions = (aiohttp.client_exceptions.ClientOSError, aiohttp.client_exceptions.ContentTypeError)
 default_timeout = 45
-timeout = 30
 
 
 class DBApiClient(commands.Cog):
@@ -43,11 +41,12 @@ class DBApiClient(commands.Cog):
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
 
-    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout):
+    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout) -> dict[Any]:
         attempts = 0
+        last_status = -1
         while True:
             if attempts > 5:
-                return None
+                return {"failure": True, "status": last_status}
             try:
                 if request_type == "get":
                     request = await self.session.get(f"http://{self.db_url}:{config.port}/{endpoint}", timeout=timeout,
@@ -56,6 +55,7 @@ class DBApiClient(commands.Cog):
                     request = await self.session.post(f"http://{self.db_url}:{config.port}/{endpoint}", timeout=timeout,
                                                       json=parameters)
                 if request.status != 200:
+                    last_status = request.status
                     attempts += 1
                     continue
                 response_json = await request.json()
@@ -66,7 +66,6 @@ class DBApiClient(commands.Cog):
             except waiting_exceptions:
                 await asyncio.sleep(1)
                 attempts += 1
-
 
     @tasks.loop(seconds=1800, count=None)
     async def update_motw(self):
@@ -121,7 +120,7 @@ class DBApiClient(commands.Cog):
                 params = {'token': api_token}
                 self.restarting = True
                 try:
-                    async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=timeout,
+                    async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=60,
                                                  json=params) as request:
                         if request.status == 202:
                             print("Restarted DB server")
@@ -130,7 +129,8 @@ class DBApiClient(commands.Cog):
                 except (aiohttp.client_exceptions.ClientConnectorError, *exceptions):
                     while True:
                         try:
-                            await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
+                            await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart",
+                                                    json=params)
                             break
                         except exceptions:
                             await asyncio.sleep(0.5)
@@ -163,8 +163,9 @@ class DBApiClient(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
         params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
         response_json = await self.send_request("snipe", parameters=params)
-        if response_json is None:
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!"))
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!"
+                                                              f"Status: {response_json.get('status')}"))
             return
         user_id = response_json.get("user_id")
         content = response_json.get("content")
@@ -197,82 +198,64 @@ class DBApiClient(commands.Cog):
         referenced_message = ctx.message.reference
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
         params = {'token': api_token, 'message_id': referenced_message.message_id}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/edits", timeout=timeout,
-                                            json=params) as request:
-                    if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! "
-                                                                          f"(status: {request.status})"))
-                        return
-                    response_json = await request.json()
-                    edits = response_json.get("edits")
-                    original_message = response_json.get("original")
-                    original_timestamp_string = datetime.datetime.fromisoformat(
-                        original_message.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
-                    if len(edits) == 0:
-                        await sent.edit(embed=self.bot.create_error_embed("That message has no known edits."))
-                        return
-                    embed = discord.Embed(title="Edits for Message", colour=discord.Colour.gold())
-                    if len(original_message.get("content")) > 1024:
-                        content = original_message.get("content")[:1021] + "..."
-                    else:
-                        content = original_message.get("content")
-                    embed.add_field(name=f"Original Message ({original_timestamp_string})",
-                                    value=content, inline=False)
-                    for index, edit in enumerate(edits):
-                        if len(embed) >= 5000:
-                            break
-                        edited_timestamp_string = datetime.datetime.fromisoformat(
-                            edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
-                        if len(edit.get("edited_content")) > 1024:
-                            content = edit.get("edited_content")[:1021] + "..."
-                        else:
-                            content = edit.get("edited_content")
-                        embed.insert_field_at(index=1, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
-                                              value=content, inline=False)
-                    if referenced_message.resolved is not None:
-                        author = referenced_message.resolved.author
-                        embed.set_author(name=author.name, url=author.avatar_url)
-                    embed.add_field(name="\u200b", value=f"[Jump to Message]({referenced_message.jump_url})",
-                                    inline=False)
-                    await sent.edit(embed=embed)
-                    return
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("edits", parameters=params)
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits!\n"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        edits = response_json.get("edits")
+        original_message = response_json.get("original")
+        original_timestamp_string = datetime.datetime.fromisoformat(
+            original_message.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
+        if len(edits) == 0:
+            await sent.edit(embed=self.bot.create_error_embed("That message has no known edits."))
+            return
+        embed = discord.Embed(title="Edits for Message", colour=discord.Colour.gold())
+        if len(original_message.get("content")) > 1024:
+            content = original_message.get("content")[:1021] + "..."
+        else:
+            content = original_message.get("content")
+        embed.add_field(name=f"Original Message ({original_timestamp_string})",
+                        value=content, inline=False)
+        for index, edit in enumerate(edits):
+            if len(embed) >= 5000:
+                break
+            edited_timestamp_string = datetime.datetime.fromisoformat(
+                edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
+            if len(edit.get("edited_content")) > 1024:
+                content = edit.get("edited_content")[:1021] + "..."
+            else:
+                content = edit.get("edited_content")
+            embed.insert_field_at(index=1, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
+                                  value=content, inline=False)
+        if referenced_message.resolved is not None:
+            author = referenced_message.resolved.author
+            embed.set_author(name=author.name, url=author.avatar_url)
+        embed.add_field(name="\u200b", value=f"[Jump to Message]({referenced_message.jump_url})",
+                        inline=False)
+        await sent.edit(embed=embed)
 
     @commands.command(description="Get leaderboard pie!")
     async def leaderpie(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
         params = {'token': api_token, 'guild_id': ctx.guild.id}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/leaderboard_pie", timeout=timeout,
-                                            json=params) as request:
-                    if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
-                                                                          f"(status: {request.status})"))
-                        return
-                    request_json = await request.json()
-                    labels = request_json.get("labels")
-                    amounts = request_json.get("amounts")
-                    await sent.edit(embed=self.bot.create_processing_embed("Got leaderboard!", "Generating pie chart."))
-                    with concurrent.futures.ProcessPoolExecutor() as pool:
-                        data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
-                                                                                 labels, amounts))
-                    file = BytesIO(data)
-                    file.seek(0)
-                    discord_file = discord.File(fp=file, filename="image.png")
-                    await ctx.reply(file=discord_file)
-                    await sent.delete()
-                    return
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("leaderboard_pie", parameters=params)
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard!\n"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        labels = response_json.get("labels")
+        amounts = response_json.get("amounts")
+        await sent.edit(embed=self.bot.create_processing_embed("Got leaderboard!", "Generating pie chart."))
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
+                                                                     labels, amounts))
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
+        await ctx.reply(file=discord_file)
+        await sent.delete()
 
     @commands.command(description="Count how many times a phrase has been said!")
     async def count(self, ctx, *, phrase):
@@ -283,27 +266,17 @@ class DBApiClient(commands.Cog):
                                                                       f"Counting how many times \"{phrase}\" "
                                                                       f"has been said..."))
         params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/global_phrase_count",
-                                            timeout=timeout,
-                                            json=params) as request:
-                    if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
-                                                                          f"(status: {request.status})"))
-                        return
-                    response_json = await request.json()
-                    amount = response_json.get("amount")
-                    embed = self.bot.create_completed_embed(
-                        f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
-                    embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes ("
-                                          "\"\")!")
-                    await sent.edit(embed=embed)
-                    return True
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("global_phrase_count", parameters=params)
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count!\n"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        amount = response_json.get("amount")
+        embed = self.bot.create_completed_embed(
+            f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
+        embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes ("
+                              "\"\")!")
+        await sent.edit(embed=embed)
 
     @commands.command(aliases=["ratio", "percentage"])
     async def percent(self, ctx, member: Optional[discord.User]):
@@ -313,27 +286,18 @@ class DBApiClient(commands.Cog):
                                                                       f"Counting {member.name}'s amount of "
                                                                       f"messages!"))
         params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/percentage", timeout=timeout,
-                                            json=params) as request:
-                    if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
-                                                                          f"(status: {request.status})"))
-                        return
-                    response_json = await request.json()
-                    amount = response_json.get("amount")
-                    percentage = response_json.get("percentage")
-                    embed = self.bot.create_completed_embed(f"Amount of messages {member.name} has sent!",
-                                                            f"{member.name} has sent {amount:,} messages. "
-                                                            f"That's {percentage}% "
-                                                            f"of the server's total!")
-                    await sent.edit(embed=embed)
-                    return True
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("percentage", parameters=params)
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count!\n"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        amount = response_json.get("amount")
+        percentage = response_json.get("percentage")
+        embed = self.bot.create_completed_embed(f"Amount of messages {member.name} has sent!",
+                                                f"{member.name} has sent {amount:,} messages. "
+                                                f"That's {percentage}% "
+                                                f"of the server's total!")
+        await sent.edit(embed=embed)
 
     async def send_update(self, sent_message):
         if len(self.last_update.description) < 2000:
@@ -413,63 +377,39 @@ class DBApiClient(commands.Cog):
                                      "timestamp": message.created_at.isoformat(), "name": message.author.name,
                                      "bot": message.author.bot, "channel_name": message.channel.name})
             if len(messages_to_send) >= 100:
-                while True:
-                    try:
-                        req = await self.session.post(url=f"http://elastic.thom.club:{config.port}/many_messages",
-                                                      timeout=timeout,
-                                                      json={"token": api_token, "messages": messages_to_send})
-                        messages_to_send = []
-                        try:
-                            response = await req.json()
-                            if not response.get("success"):
-                                print("it managed to fail?")
-                        except aiohttp.client_exceptions.ContentTypeError:
-                            print(await req.text())
-                            raise AssertionError
-                        break
-                    except exceptions:
-                        await self.restart_db_server()
-                    except waiting_exceptions:
-                        await asyncio.sleep(2)
+                await self.send_request("many_messages", parameters={"token": api_token,
+                                                                     "messages": messages_to_send},
+                                        request_type="post")
 
     @commands.command()
     async def leaderboard(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
         params = {'token': api_token, 'guild_id': ctx.guild.id}
-        while True:
-            try:
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/leaderboard", timeout=timeout,
-                                            json=params) as request:
-                    if request.status != 200:
-                        await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
-                                                                          f"(status: {request.status})"))
-                        return
-                    request_json = await request.json()
-                    results = request_json.get("results")
-                    embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
-                    embed.description = "```"
-                    embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
-                    lengthening = []
-                    for index, user in enumerate(results):
-                        member = ctx.guild.get_member(user[0])
-                        name = (member.nick or member.name)
-                        name = unidecode.unidecode(name)
-                        name_length = len(name)
-                        lengthening.append(name_length + len(str(index + 1)))
-                    max_length = max(lengthening)
-                    for i in range(len(results)):
-                        member = ctx.guild.get_member(results[i][0])
-                        name = unidecode.unidecode(member.nick or member.name)
-                        text = f"{i + 1}. {name}" + " " * (max_length - lengthening[i]) + f" | Score: {results[i][1]}\n"
-                        embed.description += text
-                    embed.description += "```"
-                    await sent.edit(embed=embed)
-                    return True
-            except exceptions:
-                await self.restart_db_server()
-            except waiting_exceptions:
-                await asyncio.sleep(2)
+        response_json = await self.send_request("leaderboard", parameters=params)
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard!"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        results = response_json.get("results")
+        embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
+        embed.description = "```"
+        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        lengthening = []
+        for index, user in enumerate(results):
+            member = ctx.guild.get_member(user[0])
+            name = (member.nick or member.name)
+            name = unidecode.unidecode(name)
+            name_length = len(name)
+            lengthening.append(name_length + len(str(index + 1)))
+        max_length = max(lengthening)
+        for i in range(len(results)):
+            member = ctx.guild.get_member(results[i][0])
+            name = unidecode.unidecode(member.nick or member.name)
+            text = f"{i + 1}. {name}" + " " * (max_length - lengthening[i]) + f" | Score: {results[i][1]}\n"
+            embed.description += text
+        embed.description += "```"
+        await sent.edit(embed=embed)
 
     async def update(self):
         params = {'token': api_token}
