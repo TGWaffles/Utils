@@ -404,7 +404,7 @@ class SQLAlchemyTest(commands.Cog):
         formatted_message = request_json.get("message", None)
         if formatted_message is None:
             return web.Response(status=400)
-        await self.bot.loop.run_in_executor(None, partial(self.database.save_message,
+        await self.bot.loop.run_in_executor(None, partial(self.database.save_dict_message,
                                                           formatted_message))
         return web.json_response({"success": True})
 
