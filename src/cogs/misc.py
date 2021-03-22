@@ -4,6 +4,7 @@ from io import BytesIO
 from typing import Optional
 
 import discord
+import random
 import psutil
 import webcolors
 from discord.ext import commands, tasks
@@ -268,6 +269,9 @@ class Misc(commands.Cog):
         embed.colour = discord.Colour.red()
         await message.edit(embed=embed)
 
+    @commands.command()
+    async def choose(self, ctx, *choices):
+        await ctx.reply(embed=self.bot.create_completed_embed("Random Choice", f"I choose {random.choice(choices)}"))
 
 def setup(bot):
     cog = Misc(bot)
