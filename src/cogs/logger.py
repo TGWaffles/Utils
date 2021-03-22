@@ -38,7 +38,7 @@ class SQLAlchemyTest(commands.Cog):
                         web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
                         web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
                         web.post("/format_leaderboard", self.format_leaderboard),
-                        web.post("/on_message", self.on_api_message)])
+                        web.post("/on_message", self.on_api_message), web.post("/on_edit", self.on_api_raw_edit)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
@@ -408,21 +408,20 @@ class SQLAlchemyTest(commands.Cog):
                                                           formatted_message))
         return web.json_response({"success": True})
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message):
-    #     await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
-
-    @commands.Cog.listener()
-    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
-        message_edit = await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit_raw, payload))
-        await asyncio.sleep(2)
-        if message_edit is None:
-            channel: discord.TextChannel = self.bot.get_channel(payload.channel_id)
-            try:
-                message = await channel.fetch_message(payload.message_id)
-            except discord.errors.NotFound:
-                return
-            await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit, message))
+    async def on_api_raw_edit(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        payload_data = request_json.get("payload_data", None)
+        if payload_data is None:
+            return web.Response(status=400)
+        payload = discord.RawMessageUpdateEvent(data=payload_data)
+        await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit_raw, payload))
+        return web.json_response({"success": True})
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):

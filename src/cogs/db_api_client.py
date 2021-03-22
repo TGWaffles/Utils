@@ -421,6 +421,12 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'message': message_dict}
         await self.send_request("on_message", parameters=params, request_type="post", timeout=120)
 
+    @commands.Cog.listener()
+    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+        payload_data = payload.data
+        params = {'token': api_token, 'payload_data': payload_data}
+        await self.send_request("on_edit", parameters=params, request_type="post", timeout=120)
+
 
 def setup(bot: UtilsBot):
     cog = DBApiClient(bot)
