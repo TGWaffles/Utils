@@ -216,7 +216,7 @@ class SQLAlchemyTest(commands.Cog):
         file = BytesIO(data)
         file.seek(0)
         discord_file = discord.File(fp=file, filename="image.png")
-        embed = discord.Embed(title=f"Your stats for this {english_group[group]}:")
+        embed = discord.Embed(title=f"{member.display_name}'s stats, ordered by {english_group[group]}:")
         embed.set_image(url="attachment://image.png")
         await sent.delete()
         await ctx.reply(embed=embed, file=discord_file)
