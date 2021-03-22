@@ -8,7 +8,7 @@ from typing import Optional, Any, Dict
 
 import aiohttp
 import aiohttp.client_exceptions
-import discord
+import json
 import unidecode
 from discord.ext import commands, tasks
 
@@ -17,6 +17,7 @@ from src.checks.custom_check import restart_check
 from src.checks.user_check import is_owner
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
+from src.helpers.api_helper import *
 from src.storage import config
 from src.storage.token import api_token
 
@@ -413,6 +414,12 @@ class DBApiClient(commands.Cog):
     async def update(self):
         params = {'token': api_token}
         await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/update", json=params)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        message_dict = message_to_json(message)
+        params = {'token': api_token, 'message': message_dict}
+        await self.send_request("on_message", parameters=params, request_type="post", timeout=120)
 
 
 def setup(bot: UtilsBot):

@@ -37,7 +37,8 @@ class SQLAlchemyTest(commands.Cog):
                         web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
                         web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
                         web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
-                        web.post("/format_leaderboard", self.format_leaderboard)])
+                        web.post("/format_leaderboard", self.format_leaderboard),
+                        web.post("/on_message", self.on_api_message)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
@@ -253,7 +254,7 @@ class SQLAlchemyTest(commands.Cog):
         message, edited_message = await self.bot.loop.run_in_executor(None,
                                                                       partial(self.database.snipe, channel_id, amount))
         response_json = {"user_id": message.user_id, "content": message.content, "timestamp":
-                         message.timestamp.isoformat("T")}
+            message.timestamp.isoformat("T")}
         if message.embed_json is not None:
             response_json["embed_json"] = json.loads(message.embed_json)
         if edited_message is not None:
@@ -392,9 +393,24 @@ class SQLAlchemyTest(commands.Cog):
     async def on_member_remove(self, member):
         await self.bot.loop.run_in_executor(None, partial(self.database.delete_member, member))
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
+    async def on_api_message(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        formatted_message = request_json.get("message", None)
+        if formatted_message is None:
+            return web.Response(status=400)
+        await self.bot.loop.run_in_executor(None, partial(self.database.save_message,
+                                                          formatted_message))
+        return web.json_response({"success": True})
+
+    # @commands.Cog.listener()
+    # async def on_message(self, message):
+    #     await self.bot.loop.run_in_executor(None, partial(self.database.save_message, message))
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):

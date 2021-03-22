@@ -63,6 +63,12 @@ class DatabaseHelper:
             Message.from_discord(session, message)
             self.session_creator.remove()
 
+    def save_dict_message(self, message: dict):
+        with self.processing:
+            session = self.session_creator()
+            Message.from_dict(session, message)
+            self.session_creator.remove()
+
     def save_message_edit_raw(self, payload):
         with self.processing:
             session = self.session_creator()

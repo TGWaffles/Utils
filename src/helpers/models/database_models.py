@@ -1,5 +1,6 @@
 import discord
 import json
+import datetime
 from threading import Lock
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, Session
@@ -34,6 +35,22 @@ class Guild(Base):
                 guild_object = Guild(id=guild.id)
                 session.add(guild_object)
         guild_object.name = guild.name
+        guild_object.removed = False
+        session.commit()
+        return guild_object
+
+    @classmethod
+    def from_dict(cls, session: Session, guild: dict):
+        with session.no_autoflush, guild_lock:
+            try:
+                guild_object = session.query(Guild).filter_by(id=guild.get("id")).first()
+            except:
+                session.rollback()
+                return cls.from_dict(session, guild)
+            if guild_object is None:
+                guild_object = Guild(id=guild.get("id"))
+                session.add(guild_object)
+        guild_object.name = guild.get("name")
         guild_object.removed = False
         session.commit()
         return guild_object
@@ -222,6 +239,22 @@ class User(Base):
         session.commit()
         return user_object
 
+    @classmethod
+    def from_dict(cls, session, user: dict):
+        with session.no_autoflush, user_lock:
+            try:
+                user_object = session.query(User).get(user.get("id"))
+            except:
+                session.rollback()
+                return cls.from_dict(session, user)
+            if user_object is None:
+                user_object = User(id=user.get("id"))
+                session.add(user_object)
+        user_object.name = user.get("name")
+        user_object.bot = user.get("bot")
+        session.commit()
+        return user_object
+
 
 class Channel(Base):
     __tablename__ = "channel"
@@ -251,6 +284,28 @@ class Channel(Base):
     def from_discord(cls, session, text_channel: discord.TextChannel):
         guild_object = Guild.from_discord(session, text_channel.guild)
         return cls.from_discord_and_guild(session, text_channel, guild_object)
+
+    @classmethod
+    def from_dict_and_guild(cls, session: Session, text_channel: dict, guild: Guild):
+        with session.no_autoflush, channel_lock:
+            try:
+                text_channel_object = session.query(Channel).filter_by(id=text_channel.get("id")).first()
+            except:
+                session.rollback()
+                return cls.from_dict_and_guild(session, text_channel, guild)
+            if text_channel_object is None:
+                text_channel_object = Channel(id=text_channel.get("id"))
+                session.add(text_channel_object)
+                session.commit()
+        text_channel_object.name = text_channel.get("name")
+        text_channel_object.guild = guild
+        session.commit()
+        return text_channel_object
+
+    @classmethod
+    def from_dict(cls, session, channel: dict):
+        guild_object = Guild.from_dict(session, channel)
+        return cls.from_dict_and_guild(session, channel, guild_object)
 
     @classmethod
     def delete_channel(cls, session, channel):
@@ -300,6 +355,30 @@ class Message(Base):
         if len(message.embeds) > 0:
             embed = message.embeds[0]
             message_object.embed_json = json.dumps(embed.to_dict())
+        message_object.deleted = False
+        session.commit()
+        return message_object
+
+    @classmethod
+    def from_dict(cls, session, message: dict):
+        channel = Channel.from_dict(session, message.get("channel"))
+        _ = User.from_dict(session, message.get("author"))
+        with session.no_autoflush, message_lock:
+            try:
+                message_object = session.query(Message).filter_by(id=message.get("id")).first()
+            except:
+                session.rollback()
+                return cls.from_dict(session, message)
+            if message_object is None:
+                message_object = Message(id=message.get("id"))
+                session.add(message_object)
+        message_object.user_id = message.get("author").get("id")
+        message_object.channel = channel
+        message_object.guild_id = channel.guild_id
+        message_object.content = message.get("content")
+        message_object.timestamp = datetime.datetime.fromisoformat(message.get("created_at"))
+        if message.get("embed_json") is not None:
+            message_object.embed_json = message.get("embed_json")
         message_object.deleted = False
         session.commit()
         return message_object
