@@ -45,7 +45,7 @@ class DBApiClient(commands.Cog):
         attempts = 0
         last_status = -1
         while True:
-            if attempts > 5:
+            if attempts > 10:
                 return {"failure": True, "status": last_status}
             try:
                 if request_type == "get":
@@ -57,6 +57,7 @@ class DBApiClient(commands.Cog):
                 if request.status != 200:
                     last_status = request.status
                     attempts += 1
+                    await asyncio.sleep(0.5)
                     continue
                 response_json = await request.json()
                 return response_json
@@ -66,6 +67,7 @@ class DBApiClient(commands.Cog):
             except waiting_exceptions:
                 await asyncio.sleep(1)
                 attempts += 1
+            await asyncio.sleep(0.5)
 
     @tasks.loop(seconds=1800, count=None)
     async def update_motw(self):
@@ -200,7 +202,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'message_id': referenced_message.message_id}
         response_json = await self.send_request("edits", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits!\n"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! "
                                                               f"Status: {response_json.get('status')}"))
             return
         edits = response_json.get("edits")
@@ -242,7 +244,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'guild_id': ctx.guild.id}
         response_json = await self.send_request("leaderboard_pie", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard!\n"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
                                                               f"Status: {response_json.get('status')}"))
             return
         labels = response_json.get("labels")
@@ -268,7 +270,7 @@ class DBApiClient(commands.Cog):
         params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
         response_json = await self.send_request("global_phrase_count", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count!\n"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
                                                               f"Status: {response_json.get('status')}"))
             return
         amount = response_json.get("amount")
@@ -288,7 +290,7 @@ class DBApiClient(commands.Cog):
         params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
         response_json = await self.send_request("percentage", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count!\n"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
                                                               f"Status: {response_json.get('status')}"))
             return
         amount = response_json.get("amount")
