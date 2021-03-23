@@ -51,10 +51,10 @@ class DatabaseHelper:
             Member.update_member(session, after)
             self.session_creator.remove()
 
-    def delete_member(self, member: discord.Member):
+    def delete_member(self, user_id, guild_id):
         with self.processing:
             session = self.session_creator()
-            Member.delete_member(session, member)
+            Member.delete_member(session, user_id, guild_id)
             self.session_creator.remove()
 
     def save_message(self, message: discord.Message):
@@ -261,7 +261,9 @@ class DatabaseHelper:
                 # total_messages[user_id] = total_messages.get(user_id, 0) + 1
                 if (timestamp - last_valid).total_seconds() >= 60:
                     last_valid = timestamp
+                    print(last_valid)
                     score += 1
+                    print(score)
             self.session_creator.remove()
             return score
 
