@@ -255,7 +255,6 @@ class DatabaseHelper:
                     Message.guild_id ==
                     member.guild.id).order_by(
                     Message.timestamp)
-            print(query.statement.compile(self.engine))
             results = query.all()
 
             for row in results:
@@ -267,6 +266,9 @@ class DatabaseHelper:
                     print(last_valid)
                     score += 1
                     print(score)
+            print(query.statement.compile(self.engine))
+            print(len(results))
+            print(query.count())
             self.session_creator.remove()
             return score
 
