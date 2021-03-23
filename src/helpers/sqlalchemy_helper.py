@@ -258,6 +258,7 @@ class DatabaseHelper:
             results = query.all()
             for row in results:
                 timestamp = row.timestamp
+                print(timestamp)
                 # total_messages[user_id] = total_messages.get(user_id, 0) + 1
                 if (timestamp - last_valid).total_seconds() >= 60:
                     last_valid = timestamp
