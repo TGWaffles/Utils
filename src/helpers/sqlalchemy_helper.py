@@ -255,7 +255,9 @@ class DatabaseHelper:
                     Message.guild_id ==
                     member.guild.id).order_by(
                     Message.timestamp)
+            print(query.statement.compile(self.engine))
             results = query.all()
+
             for row in results:
                 timestamp = row.timestamp
                 print(timestamp)
