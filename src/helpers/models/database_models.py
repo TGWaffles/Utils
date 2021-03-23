@@ -175,14 +175,14 @@ class Member(Base):
         return member_to_guild
 
     @classmethod
-    def delete_member(cls, session, discord_member: discord.Member):
+    def delete_member(cls, session, user_id, guild_id):
         with session.no_autoflush, member_lock:
             try:
-                member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
-                                                                  guild_id=discord_member.guild.id).first()
+                member_to_guild = session.query(Member).filter_by(user_id=user_id,
+                                                                  guild_id=guild_id).first()
             except:
                 session.rollback()
-                return cls.delete_member(session, discord_member)
+                return cls.delete_member(session, user_id, guild_id)
             if member_to_guild is None:
                 return False
         session.delete(member_to_guild)
@@ -304,7 +304,7 @@ class Channel(Base):
 
     @classmethod
     def from_dict(cls, session, channel: dict):
-        guild_object = Guild.from_dict(session, channel)
+        guild_object = Guild.from_dict(session, channel.get("guild"))
         return cls.from_dict_and_guild(session, channel, guild_object)
 
     @classmethod
