@@ -85,6 +85,13 @@ class DBApiClient(commands.Cog):
             return
         except waiting_exceptions:
             return
+        members = []
+        for user in results:
+            member = monkey_guild.get_member(user[0])
+            if member is None:
+                await self.request_member_remove(user[0], monkey_guild.id)
+                continue
+            members.append(member)
         members = [monkey_guild.get_member(user[0]) for user in results]
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
@@ -435,10 +442,13 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'payload_data': payload_data}
         await self.send_request("on_edit", parameters=params, request_type="post", timeout=120)
 
+    async def request_member_remove(self, member_id, guild_id):
+        params = {"token": api_token, "user_id": member_id, "guild_id": guild_id}
+        await self.send_request("on_member_remove", parameters=params, request_type="post", timeout=120)
+
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        params = {"token": api_token, "user_id": member.id, "guild_id": member.guild.id}
-        await self.send_request("on_member_remove", parameters=params, request_type="post", timeout=120)
+        await self.request_member_remove(member.id, member.guild.id)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
