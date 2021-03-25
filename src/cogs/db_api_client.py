@@ -8,7 +8,6 @@ from typing import Optional, Any, Dict
 
 import aiohttp
 import aiohttp.client_exceptions
-import json
 import unidecode
 from discord.ext import commands, tasks
 
@@ -398,7 +397,14 @@ class DBApiClient(commands.Cog):
         lengthening = []
         for index, user in enumerate(results):
             member = ctx.guild.get_member(user[0])
-            name = (member.nick or member.name)
+            if member is None:
+                member = await self.bot.fetch_user(user[0])
+                if member is None:
+                    name = "Unknown Member"
+                else:
+                    name = member.name
+            else:
+                name = (member.nick or member.name)
             name = unidecode.unidecode(name)
             name_length = len(name)
             lengthening.append(name_length + len(str(index + 1)))
@@ -417,6 +423,8 @@ class DBApiClient(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.channel.guild is None:
+            return
         message_dict = message_to_json(message)
         params = {'token': api_token, 'message': message_dict}
         await self.send_request("on_message", parameters=params, request_type="post", timeout=120)
@@ -426,6 +434,15 @@ class DBApiClient(commands.Cog):
         payload_data = payload.data
         params = {'token': api_token, 'payload_data': payload_data}
         await self.send_request("on_edit", parameters=params, request_type="post", timeout=120)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        params = {"token": api_token, "user_id": member.id, "guild_id": member.guild.id}
+        await self.send_request("on_member_remove", parameters=params, request_type="post", timeout=120)
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        pass
 
 
 def setup(bot: UtilsBot):
