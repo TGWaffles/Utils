@@ -92,7 +92,6 @@ class DBApiClient(commands.Cog):
                 await self.request_member_remove(user[0], monkey_guild.id)
                 continue
             members.append(member)
-        members = [monkey_guild.get_member(user[0]) for user in results]
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
                 await member.remove_roles(motw_role)
@@ -403,26 +402,30 @@ class DBApiClient(commands.Cog):
         embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
         lengthening = []
         for index, user in enumerate(results):
-            member = ctx.guild.get_member(user[0])
-            if member is None:
-                member = await self.bot.fetch_user(user[0])
-                if member is None:
-                    name = "Unknown Member"
-                else:
-                    name = member.name
-            else:
-                name = (member.nick or member.name)
+            name = await self.name_from_id(user[0], ctx.guild)
             name = unidecode.unidecode(name)
             name_length = len(name)
             lengthening.append(name_length + len(str(index + 1)))
         max_length = max(lengthening)
         for i in range(len(results)):
-            member = ctx.guild.get_member(results[i][0])
-            name = unidecode.unidecode(member.nick or member.name)
+            name = await self.name_from_id(results[i][0], ctx.guild)
+            name = unidecode.unidecode(name)
             text = f"{i + 1}. {name}" + " " * (max_length - lengthening[i]) + f" | Score: {results[i][1]}\n"
             embed.description += text
         embed.description += "```"
         await sent.edit(embed=embed)
+
+    async def name_from_id(self, user_id, guild):
+        member = guild.get_member(user_id)
+        if member is None:
+            member = await self.bot.fetch_user(user_id)
+            if member is None:
+                name = "Unknown Member"
+            else:
+                name = member.name
+        else:
+            name = (member.nick or member.name)
+        return name
 
     async def update(self):
         params = {'token': api_token}
