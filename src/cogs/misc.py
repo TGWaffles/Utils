@@ -256,11 +256,15 @@ class Misc(commands.Cog):
         colour = (discord.Colour.red(), discord.Colour.green())[plus_reactions >= negative_reactions]
         if plus_reactions == negative_reactions:
             colour = discord.Colour.orange()
+        if plus_reactions + negative_reactions != 0:
+            positive_amount = round((plus_reactions / (plus_reactions + negative_reactions)) * 100, 1)
+        else:
+            positive_amount = "N/A"
         embed = discord.Embed(
             colour=colour, title="Poll Results",
             description=f"Poll: \"{message.embeds[0].description}\" "
                         f"has finished!\n"
-                        f"It was {round((plus_reactions / (plus_reactions + negative_reactions)) * 100, 1)}% positive!")
+                        f"It was {positive_amount}% positive!")
         embed.add_field(name="✅", value=plus_reactions, inline=True)
         embed.add_field(name="❌", value=negative_reactions, inline=True)
         await message.reply(embed=embed)
