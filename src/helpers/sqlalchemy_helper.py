@@ -245,7 +245,7 @@ class DatabaseHelper:
                     Message.timestamp > last_week,
                     Message.user_id == member.id,
                     Message.guild_id ==
-                    member.guild.id, Message.channel_id == config.main_channel_id).order_by(
+                    member.guild.id).order_by(
                     Message.timestamp)
             else:
                 query = session.query(Message.user_id, Message.timestamp).with_hint(Message,
