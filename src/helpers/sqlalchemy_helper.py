@@ -2,7 +2,7 @@ import datetime
 
 import json
 import sqlalchemy
-from sqlalchemy import and_, desc, func, is_
+from sqlalchemy import and_, desc, func
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from src.helpers.models.database_models import *
@@ -230,22 +230,13 @@ class DatabaseHelper:
             last_valid = datetime.datetime(2015, 1, 1)
             score = 0
             # total_messages = {}
-            if member.guild.id == config.monkey_guild_id:
-                query = session.query(Message.user_id, Message.timestamp).with_hint(Message,
-                                                                                    "USE INDEX(whenMessage)").filter(
-                    Message.timestamp > last_week,
-                    Message.user_id == member.id,
-                    Message.guild_id ==
-                    member.guild.id).order_by(
-                    Message.timestamp)
-            else:
-                query = session.query(Message.user_id, Message.timestamp).with_hint(Message,
-                                                                                    "USE INDEX(whenMessage)").filter(
-                    Message.timestamp > last_week,
-                    Message.user_id == member.id,
-                    Message.guild_id ==
-                    member.guild.id).order_by(
-                    Message.timestamp)
+            query = session.query(Message.user_id, Message.timestamp).with_hint(Message,
+                                                                                "USE INDEX(whenMessage)").filter(
+                Message.timestamp > last_week,
+                Message.user_id == member.id,
+                Message.guild_id ==
+                member.guild.id, Message.channel.excluded_from_leaderboard == 0).order_by(
+                Message.timestamp)
             results = query.all()
 
             for row in results:
