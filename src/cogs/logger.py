@@ -38,7 +38,8 @@ class SQLAlchemyTest(commands.Cog):
                         web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
                         web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
                         web.post("/format_leaderboard", self.format_leaderboard),
-                        web.post("/on_message", self.on_api_message), web.post("/on_edit", self.on_api_raw_edit)])
+                        web.post("/on_message", self.on_api_message), web.post("/on_edit", self.on_api_raw_edit),
+                        web.post("/on_member_remove", self.on_member_remove_api)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
@@ -389,9 +390,23 @@ class SQLAlchemyTest(commands.Cog):
     async def on_member_join(self, member):
         await self.bot.loop.run_in_executor(None, partial(self.database.update_member, member))
 
-    @commands.Cog.listener()
-    async def on_member_remove(self, member):
-        await self.bot.loop.run_in_executor(None, partial(self.database.delete_member, member))
+    # async def on_member_join_api(self, request: web.Request):
+    #
+
+    async def on_member_remove_api(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        user_id = request_json.get("user_id", None)
+        guild_id = request_json.get("guild_id", None)
+        if user_id is None or guild_id is None:
+            return web.Response(status=400)
+        await self.bot.loop.run_in_executor(None, partial(self.database.delete_member, user_id, guild_id))
+        return web.json_response({"success": True})
 
     async def on_api_message(self, request: web.Request):
         try:
@@ -407,6 +422,20 @@ class SQLAlchemyTest(commands.Cog):
         await self.bot.loop.run_in_executor(None, partial(self.database.save_dict_message,
                                                           formatted_message))
         return web.json_response({"success": True})
+
+    async def on_api_exclusion(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        formatted_channel = request_json.get("channel", None)
+        if formatted_channel is None:
+            return web.Response(status=400)
+        new_value = await self.bot.loop.run_in_executor(None, partial(self.database.exclude_channel, formatted_channel))
+        return web.json_response({"excluded": new_value})
 
     async def on_api_raw_edit(self, request: web.Request):
         try:

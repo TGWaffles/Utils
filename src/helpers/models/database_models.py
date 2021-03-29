@@ -140,6 +140,7 @@ class Member(Base):
     nick = Column(String(32))
     roles = relationship("MemberToRole", back_populates="member", cascade="save-update, merge, delete, delete-orphan")
     joined_at = Column(DateTime)
+    excluded_from_leaderboard = Column(Boolean)
 
     @classmethod
     def update_member(cls, session, discord_member: discord.Member):
@@ -154,7 +155,8 @@ class Member(Base):
                 return cls.update_member(session, discord_member)
             if member_to_guild is None:
                 member_to_guild = Member(user_id=discord_member.id,
-                                         guild_id=discord_member.guild.id)
+                                         guild_id=discord_member.guild.id,
+                                         excluded_from_leaderboard=False)
                 # noinspection PyTypeChecker
                 member_to_guild.user = User.from_discord(session, discord_member)
                 session.add(member_to_guild)
@@ -262,6 +264,7 @@ class Channel(Base):
     name = Column(String(100))
     guild_id = Column(BigInteger, ForeignKey("guild.id"))
     guild = relationship("Guild", backref="text_channels")
+    excluded_from_leaderboard = Column(Boolean)
 
     @classmethod
     def from_discord_and_guild(cls, session, text_channel: discord.TextChannel, guild: Guild):
@@ -272,7 +275,7 @@ class Channel(Base):
                 session.rollback()
                 return cls.from_discord_and_guild(session, text_channel, guild)
             if text_channel_object is None:
-                text_channel_object = Channel(id=text_channel.id)
+                text_channel_object = Channel(id=text_channel.id, excluded_from_leaderboard=False)
                 session.add(text_channel_object)
                 session.commit()
         text_channel_object.name = text_channel.name
@@ -294,7 +297,7 @@ class Channel(Base):
                 session.rollback()
                 return cls.from_dict_and_guild(session, text_channel, guild)
             if text_channel_object is None:
-                text_channel_object = Channel(id=text_channel.get("id"))
+                text_channel_object = Channel(id=text_channel.get("id"), excluded_from_leaderboard=False)
                 session.add(text_channel_object)
                 session.commit()
         text_channel_object.name = text_channel.get("name")

@@ -24,3 +24,19 @@ def guild_to_json(guild: discord.Guild):
 def user_to_json(user: discord.User):
     user_dict = {"id": user.id, "name": user.name, "bot": user.bot}
     return user_dict
+
+
+def role_to_json(role: discord.Role):
+    role_dict = {"id": role.id, "name": role.name, "permissions": role.permissions.value, "colour": role.colour.value,
+                 "mentionable": role.mentionable, "hoist": role.hoist}
+    return role_dict
+
+
+def member_to_json(member: discord.Member):
+    member_dict = {"user": user_to_json(member), "nick": member.nick, "joined_at": member.joined_at.isoformat(),
+                   "guild": guild_to_json(member.guild)}
+    roles = []
+    for role in member.roles:
+        roles.append(role_to_json(role))
+    member_dict["roles"] = roles
+    return member_dict

@@ -415,6 +415,23 @@ class DBApiClient(commands.Cog):
         embed.description += "```"
         await sent.edit(embed=embed)
 
+    @commands.command()
+    async def exclude_channel(self, ctx, channel: Optional[discord.TextChannel]):
+        if channel is None:
+            channel = ctx.channel
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Excluding channel...",
+                                                                      "Sending exclusion request..."))
+        params = {'token': api_token, "channel": channel_to_json(channel)}
+        response_json = await self.send_request("exclude_channel", parameters=params, request_type="post", timeout=120)
+        if response_json.get("failure", False):
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't exclude channel!"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        await sent.edit(embed=self.bot.create_completed_embed("Changed excluded status!",
+                                                              f"Channel has been "
+                                                              f"{'un' if not response_json.get('excluded') else ''}"
+                                                              f"excluded!"))
+
     async def name_from_id(self, user_id, guild):
         member = guild.get_member(user_id)
         if member is None:

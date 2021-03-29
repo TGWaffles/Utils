@@ -2,7 +2,7 @@ import datetime
 
 import json
 import sqlalchemy
-from sqlalchemy import and_, desc, func
+from sqlalchemy import and_, desc, func, is_
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 from src.helpers.models.database_models import *
@@ -197,23 +197,15 @@ class DatabaseHelper:
             last_week = now - datetime.timedelta(days=7)
             last_valid = {}
             scores = {}
-            # total_messages = {}
-            if guild_id == config.monkey_guild_id:
-                query = session.query(Message.user_id,
-                                      Message.timestamp).with_hint(Message,
-                                                                   "USE INDEX(whenMessage)").join(
-                    Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
-                    User, Message.user_id == User.id).filter(Message.timestamp > last_week,
-                                                             Message.guild_id == guild_id,
-                                                             User.bot.is_(False))
-            else:
-                query = session.query(Message.user_id,
-                                      Message.timestamp).with_hint(Message,
-                                                                   "USE INDEX(whenMessage)").join(
-                    Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
-                    User, Message.user_id == User.id).filter(Message.timestamp > last_week,
-                                                             Message.guild_id == guild_id,
-                                                             User.bot.is_(False))
+            # total_messages = {})
+            query = session.query(Message.user_id,
+                                  Message.timestamp).with_hint(Message,
+                                                               "USE INDEX(whenMessage)").join(
+                Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
+                User, Message.user_id == User.id).filter(Message.timestamp > last_week,
+                                                         Message.guild_id == guild_id,
+                                                         User.bot.is_(False),
+                                                         Message.channel.excluded_from_leaderboard == 0)
             results = sorted(query.all(), key=lambda x: x.timestamp)
             for row in results:
                 user_id = row.user_id
@@ -363,3 +355,13 @@ class DatabaseHelper:
             original_message = session.query(Message).filter(Message.id == message_id).first()
             self.session_creator.remove()
         return original_message, edits_list
+
+    def exclude_channel(self, channel_json):
+        with self.processing:
+            session = self.session_creator()
+            channel = Channel.from_dict(session, channel_json)
+            new_value = not channel.excluded_from_leaderboard
+            channel.excluded_from_leaderboard = new_value
+            session.commit()
+            self.session_creator.remove()
+        return new_value
