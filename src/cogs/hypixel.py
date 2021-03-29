@@ -22,9 +22,6 @@ from src.helpers.hypixel_helper import *
 from src.helpers.storage_helper import DataHelper
 
 
-
-
-
 class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
@@ -63,7 +60,6 @@ class Hypixel(commands.Cog):
         try:
             fkdr = player.stats['Bedwars']['final_kills_bedwars'] / player.stats['Bedwars']['final_deaths_bedwars']
         except KeyError:
-
             fkdr = 0
         bedwars_level = get_level_from_xp(experience)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
@@ -298,7 +294,10 @@ class Hypixel(commands.Cog):
         for member in all_members:
             if member["uuid"] in channel_members:
                 our_members.append(member)
-        channel = await self.bot.fetch_channel(channel_id)
+        try:
+            channel = await self.bot.fetch_channel(channel_id)
+        except discord.errors.NotFound:
+            channel = None
         if channel is None:
             all_channels = self.data.get("hypixel_channels", {})
             all_channels.pop(str(channel_id))
