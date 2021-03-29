@@ -202,10 +202,10 @@ class DatabaseHelper:
                                   Message.timestamp).with_hint(Message,
                                                                "USE INDEX(whenMessage)").join(
                 Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
-                User, Message.user_id == User.id).filter(Message.timestamp > last_week,
-                                                         Message.guild_id == guild_id,
-                                                         User.bot.is_(False),
-                                                         Message.channel.excluded_from_leaderboard == 0)
+                User, Message.user_id == User.id).join(Channel).filter(Message.timestamp > last_week,
+                                                                       Message.guild_id == guild_id,
+                                                                       User.bot.is_(False),
+                                                                       Channel.excluded_from_leaderboard == 0)
             results = sorted(query.all(), key=lambda x: x.timestamp)
             for row in results:
                 user_id = row.user_id
@@ -231,11 +231,12 @@ class DatabaseHelper:
             score = 0
             # total_messages = {}
             query = session.query(Message.user_id, Message.timestamp).with_hint(Message,
-                                                                                "USE INDEX(whenMessage)").filter(
+                                                                                "USE INDEX(whenMessage)").join(
+                Channel).filter(
                 Message.timestamp > last_week,
                 Message.user_id == member.id,
                 Message.guild_id ==
-                member.guild.id, Message.channel.excluded_from_leaderboard == 0).order_by(
+                member.guild.id, Channel.excluded_from_leaderboard == 0).order_by(
                 Message.timestamp)
             results = query.all()
 
