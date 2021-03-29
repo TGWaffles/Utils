@@ -205,8 +205,7 @@ class DatabaseHelper:
                     Member, and_(Message.user_id == Member.user_id, Message.guild_id == Member.guild_id)).join(
                     User, Message.user_id == User.id).filter(Message.timestamp > last_week,
                                                              Message.guild_id == guild_id,
-                                                             User.bot.is_(False),
-                                                             Message.channel_id == config.main_channel_id)
+                                                             User.bot.is_(False))
             else:
                 query = session.query(Message.user_id,
                                       Message.timestamp).with_hint(Message,
