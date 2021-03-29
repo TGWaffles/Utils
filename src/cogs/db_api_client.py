@@ -14,6 +14,7 @@ from discord.ext import commands, tasks
 from main import UtilsBot
 from src.checks.custom_check import restart_check
 from src.checks.user_check import is_owner
+from src.checks.role_check import is_high_staff
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
 from src.helpers.api_helper import *
@@ -416,6 +417,7 @@ class DBApiClient(commands.Cog):
         await sent.edit(embed=embed)
 
     @commands.command()
+    @is_high_staff()
     async def exclude_channel(self, ctx, channel: Optional[discord.TextChannel]):
         if channel is None:
             channel = ctx.channel

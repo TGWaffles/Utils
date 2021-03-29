@@ -39,7 +39,8 @@ class SQLAlchemyTest(commands.Cog):
                         web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
                         web.post("/format_leaderboard", self.format_leaderboard),
                         web.post("/on_message", self.on_api_message), web.post("/on_edit", self.on_api_raw_edit),
-                        web.post("/on_member_remove", self.on_member_remove_api)])
+                        web.post("/on_member_remove", self.on_member_remove_api),
+                        web.post("/exclude_channel", self.on_api_exclusion)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
