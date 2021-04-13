@@ -210,6 +210,11 @@ class Misc(commands.Cog):
             self.current_presence = 0
         await self.bot.change_presence(status=discord.Status.online, activity=activity)
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if "@someone" in message.clean_content.lower() and not message.author.bot:
+            await message.reply("@someone has been removed. The time of fun is over. (it's too annoying lol)")
+
     @commands.command()
     @is_staff()
     async def poll(self, ctx, *, poll_info):
