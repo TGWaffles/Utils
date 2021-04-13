@@ -210,13 +210,6 @@ class Misc(commands.Cog):
             self.current_presence = 0
         await self.bot.change_presence(status=discord.Status.online, activity=activity)
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if "@someone" in message.clean_content.lower() and not message.author.bot:
-            random_user_id = await self.bot.database_handler.get_someone_id(message.guild.id)
-            random_person = message.channel.guild.get_member(random_user_id)
-            await message.reply("Your @someone was: {}".format(random_person.mention))
-
     @commands.command()
     @is_staff()
     async def poll(self, ctx, *, poll_info):
