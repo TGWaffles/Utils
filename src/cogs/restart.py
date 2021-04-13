@@ -66,7 +66,10 @@ class Restart(commands.Cog):
     async def changelog(self, ctx):
         last_commit_message = check_output(["git", "log", "-1", "--pretty=%s"]).decode("utf-8").strip()
         version_number = config.version_number
-        await ctx.reply(embed=self.bot.create_completed_embed(f"Version {version_number}", f"{last_commit_message}"))
+        embed = discord.Embed(title=f"Version {version_number}", colour=discord.Colour.purple())
+        embed.add_field(name="Most recent update", value=last_commit_message)
+        embed.set_footer(text="Update courtesy of Thomas_Waffles#0001")
+        await ctx.reply(embed=embed)
 
 
 def setup(bot):
