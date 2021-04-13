@@ -7,6 +7,7 @@ import discord
 import random
 import psutil
 import webcolors
+import subprocess
 from discord.ext import commands, tasks
 
 from main import UtilsBot

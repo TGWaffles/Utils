@@ -1,12 +1,13 @@
 import asyncio
 import discord
-from subprocess import Popen
+from subprocess import Popen, check_output
 
 from discord.ext import commands
 
 from src.checks.user_check import is_owner
 from src.checks.custom_check import restart_check
 from src.helpers.storage_helper import DataHelper
+from src.storage import config
 from main import UtilsBot
 
 
@@ -60,6 +61,12 @@ class Restart(commands.Cog):
                                                                   "Given {} permission to restart the bot.".format(
                                                                       member.mention)))
         data["restart_perms"] = restart_users
+
+    @commands.command()
+    async def changelog(self, ctx):
+        last_commit_message = check_output(["git", "log", "-1", "--pretty=%s"]).decode("utf-8").strip()
+        version_number = config.version_number
+        await ctx.reply(embed=self.bot.create_completed_embed(f"Version {version_number}", f"{last_commit_message}"))
 
 
 def setup(bot):
