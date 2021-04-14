@@ -1,15 +1,14 @@
-import re
-import discord
-import random
 import asyncio
+import re
 
+import discord
 from discord.ext import commands
 
 from main import UtilsBot
-from src.storage import config
-from src.helpers.storage_helper import DataHelper
-from src.checks.user_check import is_owner
 from src.checks.guild_check import monkey_check
+from src.checks.user_check import is_owner
+from src.helpers.storage_helper import DataHelper
+from src.storage import config
 
 
 class Monkey(commands.Cog):
@@ -141,6 +140,9 @@ class Monkey(commands.Cog):
             except discord.errors.NotFound:
                 pass
             return
+        if message.author.id != self.bot.user.id and message.channel.id == config.staff_polls_channel_id:
+            await message.delete(delay=1)
+            return
         if message.channel.id == config.counting_channel_id:
             count = 15
             while True:
@@ -234,15 +236,17 @@ class Monkey(commands.Cog):
                     role_list.append(role)
             try:
                 attempts = 0
+                error = Exception()
                 while attempts < 3:
                     try:
                         await member.add_roles(*role_list)
                         return
                     except Exception as e:
+                        error = e
                         print(e)
                         attempts += 1
                     await asyncio.sleep(2)
-                raise e
+                raise error
             except Exception as e:
                 print(e)
                 for role in all_members[str(member.id)]:

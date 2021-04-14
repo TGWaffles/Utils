@@ -34,7 +34,6 @@ monkey_guild_id = 725886999646437407
 apollo_guild_id = 770972021487304714
 cat_guild_id = 689012589455474710
 
-darby_channel_id = 819870859107237919
 error_channel_id = 795057163768037376
 staff_role_id = 726453086331338802
 mod_role_id = 725894916839964682
@@ -47,6 +46,7 @@ motw_role_id = 802584127634669609
 high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, head_mod_role_id, lexi_role_id]
 
 # Settings for the Suggestions cog
+staff_polls_channel_id = 831959824337076264
 suggestions_channel_id = 798972358878167080
 archive_channel_id = 725920625956225055
 motw_channel_id = 816299775108055081
