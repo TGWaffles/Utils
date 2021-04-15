@@ -58,7 +58,7 @@ class Hypixel(commands.Cog):
                 "bedwars_winstreak": player.stats["Bedwars"]["winstreak"], "uuid": user_uuid,
                 "threat_index": threat_index, "fkdr": fkdr}
 
-    def online_player(self, player, experience, user_uuid, threat_index, fkdr):
+    async def online_player(self, player, experience, user_uuid, threat_index, fkdr):
         while True:
             try:
                 status = await self.hypixel.get_player_status(user_uuid)
@@ -93,7 +93,7 @@ class Hypixel(commands.Cog):
         bedwars_level = get_level_from_xp(experience)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
         if member_online:
-            return self.online_player(player, experience, user_uuid, threat_index, fkdr)
+            return await self.online_player(player, experience, user_uuid, threat_index, fkdr)
         else:
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
 
