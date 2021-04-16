@@ -171,7 +171,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
         response_json = await self.send_request("snipe", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!\n"
                                                               f"Status: {response_json.get('status')}"))
             return
         user_id = response_json.get("user_id")
@@ -207,7 +207,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'message_id': referenced_message.message_id}
         response_json = await self.send_request("edits", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! "
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! \n"
                                                               f"Status: {response_json.get('status')}"))
             return
         edits = response_json.get("edits")
@@ -249,7 +249,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, 'guild_id': ctx.guild.id}
         response_json = await self.send_request("leaderboard_pie", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! "
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! \n"
                                                               f"Status: {response_json.get('status')}"))
             return
         labels = response_json.get("labels")
@@ -275,7 +275,7 @@ class DBApiClient(commands.Cog):
         params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
         response_json = await self.send_request("global_phrase_count", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! \n"
                                                               f"Status: {response_json.get('status')}"))
             return
         amount = response_json.get("amount")
@@ -295,7 +295,7 @@ class DBApiClient(commands.Cog):
         params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
         response_json = await self.send_request("percentage", parameters=params)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! "
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! \n"
                                                               f"Status: {response_json.get('status')}"))
             return
         amount = response_json.get("amount")
@@ -427,7 +427,7 @@ class DBApiClient(commands.Cog):
         params = {'token': api_token, "channel": channel_to_json(channel)}
         response_json = await self.send_request("exclude_channel", parameters=params, request_type="post", timeout=120)
         if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't exclude channel!"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't exclude channel!\n"
                                                               f"Status: {response_json.get('status')}"))
             return
         await sent.edit(embed=self.bot.create_completed_embed("Changed excluded status!",
@@ -447,9 +447,9 @@ class DBApiClient(commands.Cog):
                                                                       "Compiling graph for all "
                                                                       "the server's messages..."))
         params = {'token': api_token, 'guild_id': ctx.guild.id, "group": group}
-        response_json = await self.send_request("guild_graph", parameters=params)
+        response_json = await self.send_request("guild_graph", parameters=params, timeout=120)
         if response_json.get("failure", False) or response_json.get("data") is None:
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't process stats!"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't process stats!\n"
                                                               f"Status: {response_json.get('status')}"))
             return
         b64_data = response_json.get("data")
