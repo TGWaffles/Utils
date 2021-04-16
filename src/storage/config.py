@@ -5,6 +5,7 @@ version_number = "2.6.7"
 
 port = 8080
 restart_port = 8880
+api_port = 9987
 
 bot_prefix = "!"
 description = "Discord Utility Bot"

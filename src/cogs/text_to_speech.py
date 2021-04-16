@@ -11,11 +11,10 @@ from main import UtilsBot
 from src.checks.custom_check import speak_changer_check
 from src.checks.role_check import is_high_staff
 from src.checks.user_check import is_owner
-from src.cogs import api
 from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
-from src.storage import messages
 from src.storage import config
+from src.storage import messages
 
 
 class TTS(commands.Cog):
@@ -23,7 +22,6 @@ class TTS(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.index_num = 0
-        self.bot.loop.create_task(api.start_server(self))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
