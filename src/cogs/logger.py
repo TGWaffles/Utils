@@ -3,6 +3,7 @@ import datetime
 import json
 import os
 import time
+import base64
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from functools import partial
 from io import BytesIO
@@ -40,7 +41,8 @@ class SQLAlchemyTest(commands.Cog):
                         web.post("/format_leaderboard", self.format_leaderboard),
                         web.post("/on_message", self.on_api_message), web.post("/on_edit", self.on_api_raw_edit),
                         web.post("/on_member_remove", self.on_member_remove_api),
-                        web.post("/exclude_channel", self.on_api_exclusion)])
+                        web.post("/exclude_channel", self.on_api_exclusion),
+                        web.get("/guild_graph", self.get_server_graph)])
         os.system("tmux new -d -s MonkeyWatch sh start_watch.sh")
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
@@ -452,6 +454,24 @@ class SQLAlchemyTest(commands.Cog):
         payload = discord.RawMessageUpdateEvent(data=payload_data)
         await self.bot.loop.run_in_executor(None, partial(self.database.save_message_edit_raw, payload))
         return web.json_response({"success": True})
+
+    async def get_server_graph(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            assert request_json.get("token", "") == api_token
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        guild_id = request_json.get("guild_id", None)
+        group = request_json.get("group", None)
+        if guild_id is None or group is None:
+            return web.Response(status=400)
+        times = await self.bot.loop.run_in_executor(None, partial(self.database.get_guild_messages(guild_id)))
+        with ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+        b64_data = base64.b64encode(data)
+        return web.json_response({"data": b64_data})
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):

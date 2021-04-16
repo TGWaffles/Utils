@@ -294,6 +294,19 @@ class DatabaseHelper:
             self.session_creator.remove()
             return times
 
+    def get_guild_messages(self, guild_id):
+        with self.processing:
+            session = self.session_creator()
+            query = session.query(Message.timestamp).with_hint(Message,
+                                                               "USE INDEX(whenMessage)").filter(
+                Message.guild_id ==
+                guild_id).order_by(
+                Message.timestamp)
+            results = query.all()
+            times = [row.timestamp for row in results]
+            self.session_creator.remove()
+            return times
+
     def select_random(self, guild_id):
         with self.processing:
             session = self.session_creator()

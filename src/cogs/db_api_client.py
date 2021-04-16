@@ -9,12 +9,13 @@ from typing import Optional, Any, Dict
 import aiohttp
 import aiohttp.client_exceptions
 import unidecode
+import base64
 from discord.ext import commands, tasks
 
 from main import UtilsBot
 from src.checks.custom_check import restart_check
 from src.checks.user_check import is_owner
-from src.checks.role_check import is_high_staff
+from src.checks.role_check import is_high_staff, is_staff
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels
 from src.helpers.storage_helper import DataHelper
 from src.helpers.api_helper import *
@@ -433,6 +434,33 @@ class DBApiClient(commands.Cog):
                                                               f"Channel has been "
                                                               f"{'un' if not response_json.get('excluded') else ''}"
                                                               f"excluded!"))
+
+    @commands.command()
+    @is_staff()
+    async def server_stats(self, ctx, group: Optional[str] = "m"):
+        group = group.lower()
+        if group not in ['d', 'w', 'm', 'y']:
+            await ctx.reply(embed=self.bot.create_error_embed("Valid grouping options are d, w, m, y"))
+            return
+        english_group = {'d': "Day", 'w': "Week", 'm': "Month", 'y': "Year"}
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages",
+                                                                      "Compiling graph for all "
+                                                                      "the server's messages..."))
+        params = {'token': api_token, 'guild_id': ctx.guild.id}
+        response_json = await self.send_request("guild_graph", parameters=params)
+        if response_json.get("failure", False) or response_json.get("data") is None:
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't exclude channel!"
+                                                              f"Status: {response_json.get('status')}"))
+            return
+        b64_data = response_json.get("data")
+        data = base64.b64decode(b64_data)
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
+        embed = discord.Embed(title=f"{ctx.guild.name}'s stats, grouped by {english_group[group]}:")
+        embed.set_image(url="attachment://image.png")
+        await sent.delete()
+        await ctx.reply(embed=embed, file=discord_file)
 
     async def name_from_id(self, user_id, guild):
         member = guild.get_member(user_id)
