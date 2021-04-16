@@ -446,10 +446,10 @@ class DBApiClient(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages",
                                                                       "Compiling graph for all "
                                                                       "the server's messages..."))
-        params = {'token': api_token, 'guild_id': ctx.guild.id}
+        params = {'token': api_token, 'guild_id': ctx.guild.id, "group": group}
         response_json = await self.send_request("guild_graph", parameters=params)
         if response_json.get("failure", False) or response_json.get("data") is None:
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't exclude channel!"
+            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't process stats!"
                                                               f"Status: {response_json.get('status')}"))
             return
         b64_data = response_json.get("data")
