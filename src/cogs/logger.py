@@ -467,7 +467,7 @@ class SQLAlchemyTest(commands.Cog):
         group = request_json.get("group", None)
         if guild_id is None or group is None:
             return web.Response(status=400)
-        times = await self.bot.loop.run_in_executor(None, partial(self.database.get_guild_messages(guild_id)))
+        times = await self.bot.loop.run_in_executor(None, partial(self.database.get_guild_messages, guild_id))
         with ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
         b64_data = base64.b64encode(data)
