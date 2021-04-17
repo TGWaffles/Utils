@@ -1,5 +1,7 @@
 import json
 import secrets
+from difflib import SequenceMatcher
+from nltk.corpus import words
 
 from aiohttp import web
 from discord.ext import commands
@@ -25,6 +27,20 @@ class API(commands.Cog):
         self.bot.loop.create_task(site.start())
         return
 
+    def find_autocorrect(self, word):
+        english_words = words.words()
+        if word in english_words:
+            return word
+        best_match = word
+        best_ratio = 0
+        for english_word in english_words:
+            ratio = SequenceMatcher(None, word, english_word).ratio()
+            # If the match is better, use this new word instead.
+            if ratio > best_ratio:
+                best_match = english_word
+                best_ratio = ratio
+        return best_match
+
     async def handle_speak_message(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -35,6 +51,7 @@ class API(commands.Cog):
             return web.Response(status=401)
         token = request_json.get("token", "")
         content = request_json.get("content", "")
+        autocorrect = request_json.get("autocorrect", False)
         if content == "":
             return web.Response(status=400)
         try:
@@ -45,6 +62,8 @@ class API(commands.Cog):
             if request_json.get("member_id", None) is not None:
                 member_id = int(request_json.get("member_id"))
         tts_cog = self.bot.get_cog("TTS")
+        if autocorrect:
+            content = ' '.join([self.find_autocorrect(word) for word in content.split(" ")])
         await tts_cog.speak_id_content(int(member_id), content)
         return web.Response(status=200)
 
