@@ -1,7 +1,6 @@
 import json
 import secrets
-from difflib import SequenceMatcher
-from nltk.corpus import words
+import aspell
 
 from aiohttp import web
 from discord.ext import commands
@@ -15,6 +14,7 @@ class API(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.data = DataHelper()
+        self.speller = aspell.Speller('lang', 'en')
         app = web.Application()
         app.add_routes([web.post('/speak', self.handle_speak_message)])
         # noinspection PyProtectedMember
@@ -28,18 +28,7 @@ class API(commands.Cog):
         return
 
     def find_autocorrect(self, word):
-        english_words = words.words()
-        if word in english_words:
-            return word
-        best_match = word
-        best_ratio = 0
-        for english_word in english_words:
-            ratio = SequenceMatcher(None, word, english_word).ratio()
-            # If the match is better, use this new word instead.
-            if ratio > best_ratio:
-                best_match = english_word
-                best_ratio = ratio
-        return best_match
+        return self.speller.suggest(word)[0]
 
     async def handle_speak_message(self, request: web.Request):
         try:
