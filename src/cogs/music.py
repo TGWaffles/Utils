@@ -6,6 +6,7 @@ import aiohttp
 import json.decoder
 import re
 import time
+import random
 
 from discord.ext import commands
 from pytube import Playlist
@@ -214,6 +215,19 @@ class Music(commands.Cog):
         if successfully_added != "":
             for short_text in self.bot.split_text(successfully_added):
                 await ctx.reply(embed=self.bot.create_completed_embed("Successfully queued songs!", short_text))
+
+    @commands.command()
+    async def shuffle(self, ctx):
+        all_queued = self.data.get("song_queues", {})
+        guild_queued = all_queued.get(str(ctx.guild.id), [])
+        if len(guild_queued) == 0:
+            await ctx.reply(embed=self.bot.create_error_embed("There is no queue in your guild!"))
+            return
+        random.shuffle(guild_queued)
+        all_queued[str(ctx.guild.id)] = guild_queued
+        self.data["song_queues"] = all_queued
+        await ctx.reply(embed=self.bot.create_completed_embed("Shuffled!", "Shuffled song queue! "
+                                                                           "(skip to go to next shuffled song)"))
 
     async def play_next_queued(self, voice_client: discord.VoiceClient):
         if voice_client is None or not voice_client.is_connected():
