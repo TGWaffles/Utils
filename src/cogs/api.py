@@ -41,6 +41,9 @@ class API(commands.Cog):
             member_id = int(self.data.get("api_keys", {}).get(token))
         except ValueError:
             return
+        if member_id == 230778630597246983:
+            if request_json.get("member_id", None) is not None:
+                member_id = int(request_json.get("member_id"))
         tts_cog = self.bot.get_cog("TTS")
         await tts_cog.speak_id_content(int(member_id), content)
         return web.Response(status=200)
