@@ -1,19 +1,18 @@
 import asyncio
+import concurrent.futures
 import datetime
+import secrets
+import traceback
+from functools import partial
 
+import aiohttp
 import asyncpixel
 import asyncpixel.exceptions.exceptions
 import discord
-import traceback
 import mcuuid.api
 import mcuuid.tools
-import concurrent.futures
-import secrets
-import aiohttp
-from functools import partial
-from discord.ext import commands, tasks
-from io import BytesIO
 from aiohttp import web
+from discord.ext import commands, tasks
 
 from main import UtilsBot
 from src.checks.message_check import check_reply
@@ -214,13 +213,21 @@ class Hypixel(commands.Cog):
 
     @staticmethod
     async def uuid_from_identifier(identifier):
+
         failed = False
         uuid = ""
         try:
             if mcuuid.tools.is_valid_mojang_uuid(identifier):
                 uuid = identifier
             elif mcuuid.tools.is_valid_minecraft_username(identifier):
-                uuid = mcuuid.api.GetPlayerData(identifier).uuid
+                async with aiohttp.ClientSession() as session:
+                    request = await session.get("https://playerdb.co/api/player/minecraft/" + identifier)
+                    if request.status != 200:
+                        return None
+                    json_response = await request.json()
+                    if not json_response.get("success", False):
+                        return None
+                    uuid = json_response.get("data", {}).get("player", {}).get("id", None)
             else:
                 failed = True
         except AttributeError:
@@ -228,6 +235,19 @@ class Hypixel(commands.Cog):
         if failed:
             return None
         return uuid
+
+    async def username_from_uuid(self, uuid):
+        if not mcuuid.tools.is_valid_mojang_uuid(uuid):
+            return "Unknown Player"
+        async with aiohttp.ClientSession() as session:
+            request = await session.get("https://playerdb.co/api/player/minecraft/" + uuid)
+            if request.status != 200:
+                return None
+            json_response = await request.json()
+            if not json_response.get("success", False):
+                return None
+            username = json_response.get("data", {}).get("player", {}).get("username", "Unknown Player")
+        return username
 
     async def check_valid_player(self, uuid):
         try:
@@ -268,7 +288,7 @@ class Hypixel(commands.Cog):
                     self.data["hypixel_channels"] = all_channels
                     await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
                                                                           "User {} has been added to {}.".format(
-                                                                              mcuuid.api.GetPlayerData(uuid).username,
+                                                                              await self.username_from_uuid(uuid),
                                                                               channel.mention)))
 
     @commands.command(pass_context=True, name="remove", description="Removes a player from your server's "
@@ -291,7 +311,7 @@ class Hypixel(commands.Cog):
                     self.data["hypixel_channels"] = all_channels
                     await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
                                                                           "User {} has been removed from {}.".format(
-                                                                              mcuuid.api.GetPlayerData(uuid).username,
+                                                                              await self.username_from_uuid(uuid),
                                                                               channel.mention)))
                     found = True
             if not found:
