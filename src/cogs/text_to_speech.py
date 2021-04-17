@@ -129,7 +129,6 @@ class TTS(commands.Cog):
         await ctx.reply(embed=self.bot.create_completed_embed("TLD Changed!",
                                                               "Attempted to change TLD to {}".format(new_tld)))
 
-
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def speakers(self, ctx):
