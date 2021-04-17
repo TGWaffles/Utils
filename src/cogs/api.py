@@ -28,7 +28,8 @@ class API(commands.Cog):
         return
 
     def find_autocorrect(self, word):
-        return self.speller.suggest(word)[0]
+        suggestions = self.speller.suggest(word)
+        return suggestions[0] if len(suggestions) > 0 else word
 
     async def handle_speak_message(self, request: web.Request):
         try:
