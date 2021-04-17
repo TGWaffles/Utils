@@ -14,7 +14,7 @@ class API(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         app = web.Application()
-        app.add_routes([web.get('/speak', self.handle_speak_message)])
+        app.add_routes([web.post('/speak', self.handle_speak_message)])
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
 
