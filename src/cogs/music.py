@@ -15,12 +15,13 @@ from functools import partial
 from main import UtilsBot
 from src.helpers.storage_helper import DataHelper
 from src.helpers.spotify_helper import SpotifySearcher
+from src.helpers.paginator import Paginator
 
 # TODO:
 """1. Add a true pagination system to the bot as a whole to allow !queue
-2. Add !queue, !clearqueue, !dequeue <index>
+2. Add !queue DONE, !clearqueue, !dequeue <index>
 3. Add !volume DONE
-4. Add thumbnails (maybe) for "now playing" embeds.
+4. Add thumbnails (maybe) for "now playing" embeds. DONE
 5. Clean up help command for music related bot commands.
 6. Add variable prefix (set to something obscure at first)
 7. Add !pause DONE
@@ -108,6 +109,7 @@ class Music(commands.Cog):
         self.data["song_queues"] = {}
         self.called_from = {}
         self.spotify = SpotifySearcher(self.bot)
+        self.url_to_title_cache = {}
 
     def enqueue(self, guild, song_url, time=None, start=False):
         all_queues = self.data.get("song_queues", {})
@@ -133,6 +135,8 @@ class Music(commands.Cog):
         return playlist_info
 
     async def title_from_url(self, video_url):
+        if video_url in self.url_to_title_cache:
+            return self.url_to_title_cache[video_url]
         params = {"format": "json", "url": video_url}
         url = "https://www.youtube.com/oembed"
         async with aiohttp.ClientSession() as session:
@@ -141,7 +145,9 @@ class Music(commands.Cog):
                 json_response = await request.json()
             except json.decoder.JSONDecodeError:
                 json_response = await YTDLSource.get_video_data(video_url, self.bot.loop)
-        return json_response["title"]
+        title = json_response["title"]
+        self.url_to_title_cache[video_url] = title
+        return title
 
     def thumbnail_from_url(self, video_url):
         exp = r"^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*"
@@ -176,6 +182,37 @@ class Music(commands.Cog):
             return None
         else:
             return link_playlist
+
+    async def send_queue(self, channel, reply_message=None):
+        all_queued = self.data.get("song_queues", {})
+        guild_queued = all_queued.get(str(channel.guild.id), [])
+        if len(guild_queued) == 0:
+            return False
+        futures = []
+        titles = []
+        for url in guild_queued:
+            if url in self.url_to_title_cache:
+                titles.append(self.url_to_title_cache[url])
+                continue
+            titles.append(None)
+            futures.append(self.bot.loop.create_task(self.title_from_url(url), name=url))
+        waited_titles = await asyncio.gather(*futures)
+        for index, title in enumerate(titles.copy()):
+            if title is None:
+                # noinspection PyUnresolvedReferences
+                titles[index] = waited_titles.pop()
+        successfully_added = ""
+        for index, title in enumerate(titles):
+            successfully_added += f"{index + 1}. **{title}**\n"
+        paginator = Paginator(self.bot, channel, "Queued Songs", successfully_added, 1000, reply_message=reply_message)
+        await paginator.start()
+        return True
+
+    @commands.command()
+    async def queue(self, ctx):
+        if not await self.send_queue(ctx.channel, ctx):
+            await ctx.reply(embed=self.bot.create_error_embed("No songs queued!"))
+            return
 
     @commands.command()
     async def play(self, ctx, *, to_play):
@@ -213,8 +250,7 @@ class Music(commands.Cog):
                 self.enqueue(ctx.guild, playlist_info[index])
                 successfully_added += f"{index + 1}. **{title}**\n"
         if successfully_added != "":
-            for short_text in self.bot.split_text(successfully_added):
-                await ctx.reply(embed=self.bot.create_completed_embed("Successfully queued songs!", short_text))
+            await self.send_queue(ctx.channel, ctx)
 
     @commands.command()
     async def shuffle(self, ctx):
@@ -258,6 +294,12 @@ class Music(commands.Cog):
                                                                                                     next_song_url))
         embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
         history = await self.called_from[voice_client.guild.id].history(limit=1).flatten()
+        if len(history) > 0 and history[0].author.id == self.bot.user.id:
+            old_message = history[0]
+            if len(old_message.embeds) > 0:
+                if old_message.embeds[0].title == "Playing next song!":
+                    await old_message.edit(embed=embed)
+                    return
         await self.called_from[voice_client.guild.id].send(embed=embed)
 
     @commands.command()
