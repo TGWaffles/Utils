@@ -49,7 +49,7 @@ class Restart(commands.Cog):
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
 
     async def wait_on_events(self, message):
-        await message.edit(self.bot.create_processing_embed("Waiting on restart tasks...",
+        await message.edit(embed=self.bot.create_processing_embed("Waiting on restart tasks...",
                                                             "Waiting on restart tasks to finish up then restarting..."))
         self.bot.restart_event.set()
         await asyncio.sleep(0.5)
