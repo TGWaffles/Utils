@@ -389,7 +389,9 @@ class Music(commands.Cog):
         currently_playing_url = voice_client.source.webpage_url
         current_time = int(time.time() - voice_client.source.start_time)
         self.enqueue(voice_client.guild, currently_playing_url, int(current_time), start=True)
-        self.data["resume_voice"] = self.data.get("resume_voice", []).append(voice_client.channel.id)
+        resume_from = self.data.get("resume_voice", [])
+        resume_from.append(voice_client.channel.id)
+        self.data["resume_voice"] = resume_from
         voice_client.stop()
         await voice_client.disconnect()
 
