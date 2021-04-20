@@ -238,11 +238,20 @@ class Music(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("That is not a valid queue position!"))
             return
         index -= 1
-        song = guild_queued[index]
+        song = guild_queued.pop(index)
+        all_queued[str(ctx.guild.id)] = guild_queued
+        self.data["song_queues"] = all_queued
         title = await self.title_from_url(song)
         await ctx.reply(embed=self.bot.create_completed_embed("Successfully removed song from queue!",
                                                               f"Successfully removed [{title}]({song})"
                                                               f" from the queue!"))
+
+    @dequeue.error
+    async def dequeue_error(self, ctx, error):
+        if isinstance(error, commands.ConversionError):
+            await ctx.reply(embed=self.bot.create_error_embed("Please refer to the song by index, not name, "
+                                                              "so I don't guess wrong! \n"
+                                                              "(do !queue to see the queue with indexes)"))
 
     @commands.command()
     async def play(self, ctx, *, to_play):
