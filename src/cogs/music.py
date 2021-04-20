@@ -221,7 +221,7 @@ class Music(commands.Cog):
         successfully_added = ""
         for index, title in enumerate(titles):
             successfully_added += f"{index + 1}. **{title}**\n"
-        paginator = Paginator(self.bot, channel, "Queued Songs", successfully_added, 1000, reply_message=reply_message)
+        paginator = Paginator(self.bot, channel, "Queued Songs", successfully_added, 500, reply_message=reply_message)
         await paginator.start()
         return True
 
@@ -286,9 +286,9 @@ class Music(commands.Cog):
     async def play_next_queued(self, voice_client: discord.VoiceClient):
         if voice_client is None or not voice_client.is_connected():
             return
+        await asyncio.sleep(1)
         while voice_client.is_playing():
             await asyncio.sleep(0.5)
-        await asyncio.sleep(1)
         all_queued = self.data.get("song_queues", {})
         guild_queued = all_queued.get(str(voice_client.guild.id), [])
         if len(guild_queued) == 0:

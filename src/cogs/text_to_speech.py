@@ -22,6 +22,9 @@ class TTS(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.index_num = 0
+        self.queue_change_lock = asyncio.Lock()
+        self.guild_queues = {}
+        self.uid = 0
 
     @commands.command(pass_context=True)
     @speak_changer_check()
@@ -193,14 +196,24 @@ class TTS(commands.Cog):
             tld = self.data.get("server_tlds", {}).get(str(voice_channel.guild.id), "com")
             output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, content,
                                                                        lang, speed, tld))
+        if member.guild.id not in self.guild_queues:
+            async with self.queue_change_lock:
+                self.guild_queues[member.guild.id] = []
+        async with self.queue_change_lock:
+            our_uid = self.uid
+            self.uid += 1
+            self.guild_queues[member.guild.id].append(our_uid)
         while voice_client.is_playing():
+            await asyncio.sleep(0.1)
+        while self.guild_queues[member.guild.id][0] != our_uid:
             await asyncio.sleep(0.1)
         try:
             voice_client.play(discord.PCMAudio(output))
         except discord.errors.ClientException:
             pass
         while voice_client.is_playing():
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.1)
+        self.guild_queues[member.guild.id].pop(0)
         return True
 
     @commands.Cog.listener()
