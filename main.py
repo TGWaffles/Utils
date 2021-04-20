@@ -29,7 +29,7 @@ class UtilsBot(commands.Bot):
         self.database_handler = None
         self.latest_joins = {}
 
-    async def determine_prefix(self, _, message):
+    async def determine_prefix(self, bot, message):
         music_cog: commands.Cog = self.get_cog("Music")
         if music_cog is not None:
             for command in music_cog.get_commands():
@@ -37,7 +37,7 @@ class UtilsBot(commands.Bot):
                 possible_command = ['!' + x for x in possible_command]
                 if message.content.split(" ")[0] in possible_command:
                     return commands.when_mentioned_or("u!")
-        return commands.when_mentioned_or("!", "u!")
+        return commands.when_mentioned_or("!", "u!")(bot, message)
 
     async def get_latest_joins(self):
         for guild in self.guilds:
