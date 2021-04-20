@@ -230,6 +230,20 @@ class Music(commands.Cog):
         all_queued["guild_queued"] = []
         self.data["song_queues"] = all_queued
 
+    @commands.command(aliases=["unqueue"])
+    async def dequeue(self, ctx, index: int):
+        all_queued = self.data.get("song_queues", {})
+        guild_queued = all_queued.get(str(ctx.guild.id), [])
+        if not 0 < index < len(guild_queued) + 1:
+            await ctx.reply(embed=self.bot.create_error_embed("That is not a valid queue position!"))
+            return
+        index -= 1
+        song = guild_queued[index]
+        title = await self.title_from_url(song)
+        await ctx.reply(embed=self.bot.create_completed_embed("Successfully removed song from queue!",
+                                                              f"Successfully removed [{title}]({song})"
+                                                              f" from the queue!"))
+
     @commands.command()
     async def play(self, ctx, *, to_play):
         async with ctx.typing():
