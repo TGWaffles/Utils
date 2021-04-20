@@ -162,6 +162,7 @@ class Music(commands.Cog):
             return self.url_to_title_cache[video_url]
         if "open.spotify.com" in video_url:
             _, title = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, video_url))
+            self.url_to_title_cache[video_url] = title
             return title
         params = {"format": "json", "url": video_url}
         url = "https://www.youtube.com/oembed"
@@ -175,7 +176,8 @@ class Music(commands.Cog):
         self.url_to_title_cache[video_url] = title
         return title
 
-    def thumbnail_from_url(self, video_url):
+    @staticmethod
+    def thumbnail_from_url(video_url):
         exp = r"^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*"
         s = re.findall(exp, video_url)[0][-1]
         thumbnail = f"https://i.ytimg.com/vi/{s}/hqdefault.jpg"
@@ -217,7 +219,6 @@ class Music(commands.Cog):
             return False
         futures = []
         titles = []
-        print(guild_queued)
         for url in guild_queued:
             if type(url) == tuple or type(url) == list:
                 url, _ = url
@@ -226,14 +227,11 @@ class Music(commands.Cog):
                 continue
             titles.append(None)
             futures.append(self.bot.loop.create_task(self.title_from_url(url), name=url))
-        print(titles)
         waited_titles = await asyncio.gather(*futures)
         for index, title in enumerate(titles.copy()):
-            print(f"{index}. {title}")
             if title is None:
                 # noinspection PyUnresolvedReferences
-                titles[index] = waited_titles.pop()
-        print(titles)
+                titles[index] = waited_titles.pop(0)
         successfully_added = ""
         for index, title in enumerate(titles):
             successfully_added += f"{index + 1}. **{title}**\n"
