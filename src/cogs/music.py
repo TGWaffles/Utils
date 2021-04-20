@@ -396,9 +396,10 @@ class Music(commands.Cog):
         self.data["resume_voice"] = []
 
     async def pause_voice_client(self, voice_client):
-        currently_playing_url = voice_client.source.webpage_url
-        current_time = int(time.time() - voice_client.source.start_time)
-        self.enqueue(voice_client.guild, currently_playing_url, int(current_time), start=True)
+        if voice_client.source is not None:
+            currently_playing_url = voice_client.source.webpage_url
+            current_time = int(time.time() - voice_client.source.start_time)
+            self.enqueue(voice_client.guild, currently_playing_url, int(current_time), start=True)
         voice_client.stop()
         await voice_client.disconnect()
 
