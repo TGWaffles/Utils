@@ -247,10 +247,11 @@ class Music(commands.Cog):
         all_queued = self.data.get("song_queues", {})
         guild_queued = all_queued.get(str(ctx.guild.id), [])
         if len(guild_queued) == 0:
-            await ctx.reply(self.bot.create_error_embed("There are no songs queued."))
+            await ctx.reply(embed=self.bot.create_error_embed("There are no songs queued."))
             return
         all_queued["guild_queued"] = []
         self.data["song_queues"] = all_queued
+        await ctx.reply(embed=self.bot.create_completed_embed("Cleared Queue!", "Queue cleared!"))
 
     @commands.command(aliases=["unqueue"])
     async def dequeue(self, ctx, index: int):
