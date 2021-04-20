@@ -132,7 +132,7 @@ class Hypixel(commands.Cog):
     async def request_image(self, request: web.Request):
         username = request.match_info['user']
         now = datetime.datetime.now()
-        data, last_timestamp = self.user_to_files.get(username.lower(), None)
+        data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
         if data is None or (now - last_timestamp).total_seconds() > 300:
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:

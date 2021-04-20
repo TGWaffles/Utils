@@ -30,11 +30,12 @@ class UtilsBot(commands.Bot):
         self.latest_joins = {}
 
     async def determine_prefix(self, _, message):
-        music_cog: commands.Cog = self.get_cog("music")
+        music_cog: commands.Cog = self.get_cog("Music")
         if music_cog is not None:
             for command in music_cog.get_commands():
                 possible_command = [command.name] + command.aliases
                 possible_command = ['!' + x for x in possible_command]
+                print(possible_command)
                 if message.content.split(" ")[0] in possible_command:
                     return "u!"
         return "!"
