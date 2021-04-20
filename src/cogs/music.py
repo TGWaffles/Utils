@@ -96,8 +96,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         except youtube_dl.utils.DownloadError:
             return None
         if 'entries' in data and len(data['entries']) > 0:
+            print(data["entries"][0].keys())
+            data = sorted(data['entries'], key=lambda x: x.get("view_count"))[0]
             # take first item from a playlist
-            data = data['entries'][0]
+            # data = data['entries'][0]
         if data.get('url', None) is None:
             return None
         return data
