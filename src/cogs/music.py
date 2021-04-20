@@ -170,20 +170,12 @@ class Music(commands.Cog):
             await asyncio.sleep(2)
 
     async def transform_spotify(self, to_play):
-        string_playlist = await self.spotify.handle_spotify(to_play)
-        if string_playlist is None:
+        spotify_playlist = await self.spotify.handle_spotify(to_play)
+        if spotify_playlist is None:
             return None
-        tasks = []
-        for string_song in string_playlist:
-            task = self.bot.loop.create_task(self.song_from_yt(string_song))
-            task.set_name(string_song)
-            tasks.append(task)
-        link_playlist = await asyncio.gather(*tasks)
-        link_playlist = [x for x in link_playlist if x is not None]
-        if len(link_playlist) == 0:
-            return None
-        else:
-            return link_playlist
+        for song in spotify_playlist:
+            self.url_to_title_cache[song[0]] = song[1]
+        return [song[0] for song in spotify_playlist]
 
     async def transform_single_song(self, song):
         if "open.spotify.com" not in song:
@@ -193,12 +185,6 @@ class Music(commands.Cog):
             return None
         youtube_link = await self.song_from_yt(string_song)
         return youtube_link
-
-    async def spotify_to_links(self, to_play):
-        links_playlist = await self.spotify.handle_spotify_links(to_play)
-        if links_playlist is None:
-            return None
-        return links_playlist
 
     async def send_queue(self, channel, reply_message=None):
         all_queued = self.data.get("song_queues", {})
@@ -235,7 +221,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *, to_play):
         async with ctx.typing():
             if "spotify" in to_play:
-                playlist_info = await self.spotify_to_links(to_play)
+                playlist_info = await self.transform_spotify(to_play)
                 if playlist_info is None:
                     await ctx.reply(embed=self.bot.create_error_embed("I couldn't recognise that song, sorry!"))
             else:
