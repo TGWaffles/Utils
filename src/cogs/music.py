@@ -217,6 +217,7 @@ class Music(commands.Cog):
             return False
         futures = []
         titles = []
+        print(guild_queued)
         for url in guild_queued:
             if type(url) == tuple or type(url) == list:
                 url, _ = url
@@ -225,11 +226,14 @@ class Music(commands.Cog):
                 continue
             titles.append(None)
             futures.append(self.bot.loop.create_task(self.title_from_url(url), name=url))
+        print(titles)
         waited_titles = await asyncio.gather(*futures)
         for index, title in enumerate(titles.copy()):
+            print(f"{index}. {title}")
             if title is None:
                 # noinspection PyUnresolvedReferences
                 titles[index] = waited_titles.pop()
+        print(titles)
         successfully_added = ""
         for index, title in enumerate(titles):
             successfully_added += f"{index + 1}. **{title}**\n"
