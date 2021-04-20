@@ -112,7 +112,7 @@ class Music(commands.Cog):
             self.data["called_from"] = {}
         self.spotify = SpotifySearcher(self.bot)
         self.url_to_title_cache = {}
-        self.bot.loop.create_task(self.restart_watcher)
+        self.bot.loop.create_task(self.restart_watcher())
 
     async def restart_watcher(self):
         await self.bot.wait_until_ready()
