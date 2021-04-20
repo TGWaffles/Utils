@@ -33,6 +33,7 @@ class Hypixel(commands.Cog):
         app = web.Application()
         app.add_routes([web.get('/{user}-{uid}.png', self.request_image)])
         self.bot.loop.create_task(self.setup_website(app))
+        self.bot.loop.create_task(self.hypixel_api.queue_loop())
 
     async def setup_website(self, app):
         runner = web.AppRunner(app)
