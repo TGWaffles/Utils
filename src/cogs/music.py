@@ -402,7 +402,7 @@ class Music(commands.Cog):
         voice_client.stop()
         await voice_client.disconnect()
 
-    @commands.command(aliases=["stop"])
+    @commands.command(aliases=["stop", "leave", "quit"])
     async def pause(self, ctx):
         await self.pause_voice_client(ctx.voice_client)
         await ctx.reply(embed=self.bot.create_completed_embed("Successfully paused.", "Song paused successfully."))
