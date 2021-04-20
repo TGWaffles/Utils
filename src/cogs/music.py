@@ -107,7 +107,7 @@ class Music(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.data = DataHelper()
-        self.data["song_queues"] = {}
+        # self.data["song_queues"] = {}
         self.called_from = {}
         self.spotify = SpotifySearcher(self.bot)
         self.url_to_title_cache = {}

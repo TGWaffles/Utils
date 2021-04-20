@@ -36,7 +36,7 @@ class UtilsBot(commands.Bot):
                 possible_command = [command.name] + command.aliases
                 possible_command = [config.bot_prefix + x for x in possible_command]
                 if message.content.split(" ")[0] in possible_command:
-                    return commands.when_mentioned_or("u" + config.bot_prefix)
+                    return commands.when_mentioned_or("u" + config.bot_prefix)(bot, message)
         return commands.when_mentioned_or(config.bot_prefix, "u" + config.bot_prefix)(bot, message)
 
     async def get_latest_joins(self):
