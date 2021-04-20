@@ -16,6 +16,7 @@ from main import UtilsBot
 from src.helpers.storage_helper import DataHelper
 from src.helpers.spotify_helper import SpotifySearcher
 from src.helpers.paginator import Paginator
+from src.checks.role_check import is_staff
 
 # TODO:
 """1. Add a true pagination system to the bot as a whole to allow !queue
@@ -217,6 +218,17 @@ class Music(commands.Cog):
         if not await self.send_queue(ctx.channel, ctx):
             await ctx.reply(embed=self.bot.create_error_embed("No songs queued!"))
             return
+
+    @commands.command(aliases=["clearqueue"])
+    @is_staff()
+    async def clear_queue(self, ctx):
+        all_queued = self.data.get("song_queues", {})
+        guild_queued = all_queued.get(str(ctx.guild.id), [])
+        if len(guild_queued) == 0:
+            await ctx.reply(self.bot.create_error_embed("There are no songs queued."))
+            return
+        all_queued["guild_queued"] = []
+        self.data["song_queues"] = all_queued
 
     @commands.command()
     async def play(self, ctx, *, to_play):
