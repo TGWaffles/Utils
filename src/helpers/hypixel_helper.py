@@ -19,14 +19,8 @@ API_URL = "https://api.hypixel.net/"
 class HypixelAPI:
     def __init__(self, key):
         self.key = key
-        self.session = None
         self.request_queue = asyncio.Queue()
         self.process_lock = asyncio.Lock()
-
-    async def get_or_open_session(self):
-        if self.session is None or self.session.closed:
-            self.session = aiohttp.ClientSession()
-        return self.session
 
     async def safe_request(self, endpoint, parameters=None):
         returned_json = {}
@@ -43,7 +37,7 @@ class HypixelAPI:
             if parameters is None:
                 parameters = {}
             parameters["key"] = self.key
-            async with self.get_or_open_session() as session:
+            async with aiohttp.ClientSession() as session:
                 while True:
                     response: aiohttp.ClientResponse = await session.get(f"{API_URL}{endpoint}", params=parameters)
                     try:
