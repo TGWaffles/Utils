@@ -115,19 +115,24 @@ class Music(commands.Cog):
         self.bot.loop.create_task(self.restart_watcher())
 
     async def restart_watcher(self):
-        await self.bot.wait_until_ready()
-        await self.post_restart_resume()
-        await self.bot.restart_event.wait()
-        async with self.bot.restart_waiter_lock:
-            self.bot.restart_waiters += 1
-        for voice_client in self.bot.voice_clients:
-            if not isinstance(voice_client, discord.VoiceClient):
-                continue
-            if not isinstance(voice_client.source, YTDLSource):
-                continue
-            await self.pause_voice_client(voice_client)
-        async with self.bot.restart_waiter_lock:
-            self.bot.restart_waiters -= 1
+        while True:
+            try:
+                await self.bot.wait_until_ready()
+                await self.post_restart_resume()
+                await self.bot.restart_event.wait()
+                async with self.bot.restart_waiter_lock:
+                    self.bot.restart_waiters += 1
+                for voice_client in self.bot.voice_clients:
+                    if not isinstance(voice_client, discord.VoiceClient):
+                        continue
+                    if not isinstance(voice_client.source, YTDLSource):
+                        continue
+                    await self.pause_voice_client(voice_client)
+                async with self.bot.restart_waiter_lock:
+                    self.bot.restart_waiters -= 1
+                return
+            except RuntimeError:
+                pass
 
     def enqueue(self, guild, song_url, time=None, start=False):
         all_queues = self.data.get("song_queues", {})
