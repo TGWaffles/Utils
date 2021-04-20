@@ -249,7 +249,7 @@ class Music(commands.Cog):
         if len(guild_queued) == 0:
             await ctx.reply(embed=self.bot.create_error_embed("There are no songs queued."))
             return
-        all_queued["guild_queued"] = []
+        all_queued[str(ctx.guild.id)] = []
         self.data["song_queues"] = all_queued
         await ctx.reply(embed=self.bot.create_completed_embed("Cleared Queue!", "Queue cleared!"))
 
