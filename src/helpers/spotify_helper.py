@@ -35,6 +35,18 @@ class SpotifySearcher:
             playlist_as_names.append(f"{name} by {first_artist}")
         return playlist_as_names
 
+    def get_playlist_links(self, playlist):
+        try:
+            response = self.spotify.playlist_items(playlist)
+        except (requests.exceptions.HTTPError, spotipy.SpotifyException):
+            return None
+        items_response = response["items"]
+        playlist_as_names = []
+        for item in items_response:
+            url = item.get("track").get("external_urls").get("spotify")
+            playlist_as_names.append(f"{url}")
+        return playlist_as_names
+
     def get_track(self, track):
         try:
             response = self.spotify.track(track)
@@ -44,12 +56,30 @@ class SpotifySearcher:
         first_artist = response.get("artists")[0].get("name")
         return f"{name} by {first_artist}"
 
+    def get_track_link(self, track):
+        try:
+            response = self.spotify.track(track)
+        except (requests.exceptions.HTTPError, spotipy.SpotifyException):
+            return None
+        return f"{response.get('external_urls').get('spotify')}"
+
     async def handle_spotify(self, media_identifier):
         while not self.ready:
             await asyncio.sleep(1)
         playlist = await self.bot.loop.run_in_executor(None, partial(self.get_playlist, media_identifier))
         if playlist is None:
             track = await self.bot.loop.run_in_executor(None, partial(self.get_track, media_identifier))
+            if track is None:
+                return None
+            return [track]
+        return playlist
+
+    async def handle_spotify_links(self, media_identifier):
+        while not self.ready:
+            await asyncio.sleep(1)
+        playlist = await self.bot.loop.run_in_executor(None, partial(self.get_playlist_links, media_identifier))
+        if playlist is None:
+            track = await self.bot.loop.run_in_executor(None, partial(self.get_track_link, media_identifier))
             if track is None:
                 return None
             return [track]

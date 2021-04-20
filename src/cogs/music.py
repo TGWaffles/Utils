@@ -137,6 +137,8 @@ class Music(commands.Cog):
     async def title_from_url(self, video_url):
         if video_url in self.url_to_title_cache:
             return self.url_to_title_cache[video_url]
+        if "open.spotify.com" in video_url:
+            return await self.spotify.get_track(video_url)
         params = {"format": "json", "url": video_url}
         url = "https://www.youtube.com/oembed"
         async with aiohttp.ClientSession() as session:
@@ -183,6 +185,21 @@ class Music(commands.Cog):
         else:
             return link_playlist
 
+    async def transform_single_song(self, song):
+        if "open.spotify.com" not in song:
+            return song
+        string_song = await self.spotify.get_track(song)
+        if string_song is None:
+            return None
+        youtube_link = await self.song_from_yt(string_song)
+        return youtube_link
+
+    async def spotify_to_links(self, to_play):
+        links_playlist = await self.spotify.handle_spotify_links(to_play)
+        if links_playlist is None:
+            return None
+        return links_playlist
+
     async def send_queue(self, channel, reply_message=None):
         all_queued = self.data.get("song_queues", {})
         guild_queued = all_queued.get(str(channel.guild.id), [])
@@ -218,7 +235,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *, to_play):
         async with ctx.typing():
             if "spotify" in to_play:
-                playlist_info = await self.transform_spotify(to_play)
+                playlist_info = await self.spotify_to_links(to_play)
                 if playlist_info is None:
                     await ctx.reply(embed=self.bot.create_error_embed("I couldn't recognise that song, sorry!"))
             else:
@@ -227,6 +244,7 @@ class Music(commands.Cog):
                     video_info = await YTDLSource.get_video_data(to_play, self.bot.loop)
                     playlist_info = [video_info["webpage_url"]]
             first_song = playlist_info.pop(0)
+            first_song = await self.transform_single_song(first_song)
             self.enqueue(ctx.guild, first_song)
             self.called_from[ctx.guild.id] = ctx.channel
             if not ctx.voice_client.is_playing():
@@ -285,6 +303,10 @@ class Music(commands.Cog):
         all_queued[str(voice_client.guild.id)] = guild_queued
         self.data["song_queues"] = all_queued
         volume = self.data.get("song_volumes", {}).get(str(voice_client.guild.id), 0.5)
+        next_song_url = await self.transform_single_song(next_song_url)
+        if next_song_url is None:
+            self.bot.loop.create_task(self.play_next_queued(voice_client))
+            return
         data = await YTDLSource.get_video_data(next_song_url, self.bot.loop)
         source = YTDLSource(discord.FFmpegPCMAudio(data["url"], **local_ffmpeg_options),
                             data=data, volume=volume, resume_from=resume_from)
