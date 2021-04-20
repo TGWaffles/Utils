@@ -19,12 +19,12 @@ from src.helpers.paginator import Paginator
 from src.checks.role_check import is_staff
 
 # TODO:
-"""1. Add a true pagination system to the bot as a whole to allow !queue
+"""1. Add a true pagination system to the bot as a whole to allow !queue DONE
 2. Add !queue DONE, !clearqueue, !dequeue <index>
 3. Add !volume DONE
 4. Add thumbnails (maybe) for "now playing" embeds. DONE
 5. Clean up help command for music related bot commands.
-6. Add variable prefix (set to something obscure at first)
+6. Add variable prefix (set to something obscure at first) DONE
 7. Add !pause DONE
 8. <FUTURE> Start on web help page and change help handler to fully custom help handler."""
 
@@ -344,9 +344,8 @@ class Music(commands.Cog):
 
     @commands.command()
     async def volume(self, ctx, volume: float):
-        if volume > 1:
-            volume = volume / 100
-        elif volume < 0:
+        volume = volume / 100
+        if volume < 0:
             volume = 0
         all_guilds = self.data.get("song_volumes", {})
         all_guilds[str(ctx.guild.id)] = volume

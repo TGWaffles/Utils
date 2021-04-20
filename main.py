@@ -34,10 +34,10 @@ class UtilsBot(commands.Bot):
         if music_cog is not None:
             for command in music_cog.get_commands():
                 possible_command = [command.name] + command.aliases
-                possible_command = ['!' + x for x in possible_command]
+                possible_command = [config.bot_prefix + x for x in possible_command]
                 if message.content.split(" ")[0] in possible_command:
-                    return commands.when_mentioned_or("u!")
-        return commands.when_mentioned_or("!", "u!")(bot, message)
+                    return commands.when_mentioned_or("u" + config.bot_prefix)
+        return commands.when_mentioned_or(config.bot_prefix, "u" + config.bot_prefix)(bot, message)
 
     async def get_latest_joins(self):
         for guild in self.guilds:
