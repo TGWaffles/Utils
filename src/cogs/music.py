@@ -292,7 +292,7 @@ class Music(commands.Cog):
             first_song = await self.transform_single_song(first_song)
             self.enqueue(ctx.guild, first_song)
             callers = self.data.get("called_from", {})
-            callers[ctx.guild.id] = ctx.channel.id
+            callers[str(ctx.guild.id)] = ctx.channel.id
             self.data["called_from"] = callers
             if not ctx.voice_client.is_playing():
                 self.bot.loop.create_task(self.play_next_queued(ctx.voice_client))
@@ -362,7 +362,7 @@ class Music(commands.Cog):
         embed = self.bot.create_completed_embed("Playing next song!", "Playing **[{}]({})**".format(title,
                                                                                                     next_song_url))
         embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
-        called_channel = self.bot.get_channel(self.data["called_from"][voice_client.guild.id])
+        called_channel = self.bot.get_channel(self.data["called_from"][str(voice_client.guild.id)])
         history = await called_channel.history(limit=1).flatten()
         if len(history) > 0 and history[0].author.id == self.bot.user.id:
             old_message = history[0]
