@@ -50,7 +50,8 @@ class Restart(commands.Cog):
 
     async def wait_on_events(self, message):
         await message.edit(embed=self.bot.create_processing_embed("Waiting on restart tasks...",
-                                                            "Waiting on restart tasks to finish up then restarting..."))
+                                                                  "Waiting on restart tasks to finish up then "
+                                                                  "restarting..."))
         self.bot.restart_event.set()
         await asyncio.sleep(0.5)
         while self.bot.restart_waiters != 0:
@@ -65,7 +66,7 @@ class Restart(commands.Cog):
             restart_users.remove(str(member.id))
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Removed!", "Taken {}'s permissions to "
                                                                                     "restart the bot.".format(
-                                                                                        member.mention)))
+                member.mention)))
         else:
             restart_users.append(str(member.id))
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Granted!",
