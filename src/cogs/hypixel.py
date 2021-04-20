@@ -88,7 +88,7 @@ class Hypixel(commands.Cog):
         last_file = None
         if not reset:
             if player["name"].lower() in self.user_to_files:
-                last_file = BytesIO(self.user_to_files[player["name"].lower()])
+                last_file = BytesIO(self.user_to_files[player["name"].lower()][0])
             if last_file is None:
                 same_file = False
             else:
@@ -131,8 +131,9 @@ class Hypixel(commands.Cog):
 
     async def request_image(self, request: web.Request):
         username = request.match_info['user']
-        data = self.user_to_files.get(username.lower(), None)
-        if data is None:
+        now = datetime.datetime.now()
+        data, last_timestamp = self.user_to_files.get(username.lower(), None)
+        if data is None or (now - last_timestamp).total_seconds() > 300:
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 return web.Response(status=404)
@@ -142,7 +143,7 @@ class Hypixel(commands.Cog):
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 player = await self.get_expanded_player(uuid, pool, True)
             data = player["file"]
-            self.user_to_files[username.lower()] = data
+            self.user_to_files[username.lower()] = (data, datetime.datetime.now())
         response = web.StreamResponse()
         response.content_type = "image/png"
         response.content_length = len(data)
@@ -152,9 +153,10 @@ class Hypixel(commands.Cog):
 
     @commands.command(aliases=["hinfo"])
     async def info(self, ctx, username: str):
+        now = datetime.datetime.now()
         async with ctx.typing():
-            data = self.user_to_files.get(username.lower(), None)
-            if data is None:
+            data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
+            if data is None or (now - last_timestamp).total_seconds() > 300:
                 uuid = await self.uuid_from_identifier(username)
                 if uuid is None:
                     await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
@@ -166,7 +168,7 @@ class Hypixel(commands.Cog):
                 with concurrent.futures.ProcessPoolExecutor() as pool:
                     player = await self.get_expanded_player(uuid, pool, True)
                 data = player["file"]
-                self.user_to_files[username.lower()] = data
+                self.user_to_files[username.lower()] = (data, datetime.datetime.now())
             file = BytesIO(data)
             discord_file = discord.File(fp=file, filename=f"{username}.png`")
             await ctx.reply(file=discord_file)
@@ -328,8 +330,7 @@ class Hypixel(commands.Cog):
         else:
             new_messages = False
         for member, file in zip(our_members, member_files):
-            if not member["unchanged"] or member["name"].lower() not in self.user_to_files:
-                self.user_to_files[member["name"].lower()] = file
+            self.user_to_files[member["name"].lower()] = (file, datetime.datetime.now())
             token = secrets.token_urlsafe(16).replace("-", "")
             embed = await self.get_user_embed(member)
             embed.set_image(url="http://{}:2052/{}-{}.png".format(self.external_ip, member["name"], token))
@@ -339,10 +340,9 @@ class Hypixel(commands.Cog):
                 embed_member_name = editable_messages[i].embeds[0].title
                 if embed_member_name != member["name"] or not member["unchanged"]:
                     await editable_messages[i].edit(embed=embed)
-
                 i += 1
 
-    @tasks.loop(seconds=30, count=None)
+    @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
         try:
             if self.external_ip is None:
