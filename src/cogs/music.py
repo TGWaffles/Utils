@@ -115,6 +115,7 @@ class Music(commands.Cog):
         self.bot.loop.create_task(self.restart_watcher())
 
     async def restart_watcher(self):
+        self.bot.restart_event = asyncio.Event()
         while True:
             try:
                 await self.bot.wait_until_ready()
@@ -386,6 +387,7 @@ class Music(commands.Cog):
             voice_channel = self.bot.get_channel(voice_channel_id)
             voice_client = await voice_channel.connect()
             self.bot.loop.create_task(self.play_next_queued(voice_client))
+        self.data["resume_voice"] = []
 
     async def pause_voice_client(self, voice_client):
         currently_playing_url = voice_client.source.webpage_url
