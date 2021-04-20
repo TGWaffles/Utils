@@ -3,6 +3,9 @@ import PIL.Image
 import PIL.ImageDraw
 import PIL.ImageFont
 import PIL.ImageChops
+import aiohttp
+import asyncio
+import datetime
 from io import BytesIO
 
 EASY_LEVELS = 4
@@ -10,6 +13,69 @@ EASY_LEVELS_XP = 7000
 XP_PER_PRESTIGE = 96 * 5000 + EASY_LEVELS_XP
 LEVELS_PER_PRESTIGE = 100
 HIGHEST_PRESTIGE = 10
+API_URL = "https://api.hypixel.net/"
+
+
+class HypixelAPI:
+    def __init__(self, key):
+        self.key = key
+        self.session = None
+        self.request_queue = asyncio.Queue()
+        self.process_lock = asyncio.Lock()
+
+    async def get_or_open_session(self):
+        if self.session is None or self.session.closed:
+            self.session = aiohttp.ClientSession()
+        return self.session
+
+    async def safe_request(self, endpoint, parameters=None):
+        returned_json = {}
+        completed_event = asyncio.Event()
+        stored_task = (endpoint, parameters, completed_event, returned_json)
+        await self.request_queue.put(stored_task)
+        await completed_event.wait()
+        return returned_json
+
+    async def queue_loop(self):
+        while True:
+            waited_event = await self.request_queue.get()
+            endpoint, parameters, completed_event, returned_json = waited_event
+            if parameters is None:
+                parameters = {}
+            parameters["key"] = self.key
+            async with self.get_or_open_session() as session:
+                while True:
+                    response: aiohttp.ClientResponse = await session.get(f"{API_URL}{endpoint}", params=parameters)
+                    try:
+                        returned_json.update(await response.json())
+                    except aiohttp.ContentTypeError:
+                        await asyncio.sleep(5)
+                        continue
+                    if response.status == 429:
+                        sleep_time = int(response.headers.getone("retry-after"))
+                        await asyncio.sleep(sleep_time)
+                        continue
+                    if returned_json.get("cause", "") == "Invalid API key":
+                        print("INVALID HYPIXEL API KEY")
+                        continue
+                    break
+            completed_event.set()
+
+    async def get_player(self, uuid):
+        uuid = uuid.replace("-", "")
+        parameters = {"uuid": uuid}
+        data = await self.safe_request("player", parameters)
+        if "lastLogout" in data:
+            data["lastLogout"] = datetime.datetime.fromtimestamp(data["lastLogout"] / 1000)
+        if "lastLogin" in data:
+            data["lastLogin"] = datetime.datetime.fromtimestamp(data["lastLogin"] / 1000)
+        return data.get("player", {})
+
+    async def get_status(self, uuid):
+        uuid = uuid.replace("-", "")
+        parameters = {"uuid": uuid}
+        data = await self.safe_request("status", parameters)
+        return data.get("status", {})
 
 
 def get_xp_for_level(level):

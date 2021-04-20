@@ -1,13 +1,8 @@
-import asyncio
 import concurrent.futures
-import datetime
 import secrets
 import traceback
 from functools import partial
 
-import aiohttp
-import asyncpixel
-import asyncpixel.exceptions.exceptions
 import discord
 import mcuuid.api
 import mcuuid.tools
@@ -27,10 +22,9 @@ class Hypixel(commands.Cog):
         self.data = DataHelper()
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
-        self.hypixel = asyncpixel.Client("f062322c-b88c-49c7-b105-1f96838a1a5f")
+        self.hypixel_api = HypixelAPI(key="4822a8d3-2138-4e4e-a558-3c4f7cc08510")
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
-        self.update_hypixel_info.add_exception_type(asyncpixel.exceptions.exceptions.ApiNoSuccess)
         self.update_hypixel_info.start()
         self.user_to_files = {}
         self.token_last_used = {}
@@ -49,44 +43,35 @@ class Hypixel(commands.Cog):
 
     @staticmethod
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
-        return {"name": player.displayname,
-                "level": player.level, "last_logout": datetime.datetime.fromtimestamp(player.lastLogout.timestamp(),
-                                                                                      datetime.timezone.utc),
+        return {"name": player.get("displayname"),
+                "last_logout": datetime.datetime.fromtimestamp(player.get("lastLogout").timestamp(),
+                                                               datetime.timezone.utc),
                 "online": False,
                 "bedwars_level": get_level_from_xp(experience),
-                "bedwars_winstreak": player.stats["Bedwars"]["winstreak"], "uuid": user_uuid,
+                "bedwars_winstreak": player.get("stats")["Bedwars"]["winstreak"], "uuid": user_uuid,
                 "threat_index": threat_index, "fkdr": fkdr}
 
     async def online_player(self, player, experience, user_uuid, threat_index, fkdr):
-        while True:
-            try:
-                status = await self.hypixel.get_player_status(user_uuid)
-                break
-            except asyncpixel.exceptions.exceptions.RateLimitError:
-                await asyncio.sleep(0.25)
-        if not status.online:
+        status = await self.hypixel_api.get_status(user_uuid)
+        if not status.get("online"):
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
-        return {"name": player.displayname,
-                "level": player.level, "last_logout": datetime.datetime.fromtimestamp(player.lastLogout.timestamp(),
-                                                                                      datetime.timezone.utc),
+        return {"name": player.get("displayname"),
+                "last_logout": datetime.datetime.fromtimestamp(player.get("lastLogout").timestamp(),
+                                                               datetime.timezone.utc),
                 "online": True,
                 "bedwars_level": get_level_from_xp(experience),
-                "bedwars_winstreak": player.stats["Bedwars"]["winstreak"],
-                "game": status.gameType,
-                "mode": status.mode, "map": status.map, "uuid": user_uuid, "threat_index": threat_index,
+                "bedwars_winstreak": player.get("stats")["Bedwars"]["winstreak"],
+                "game": status.get("gameType"),
+                "mode": status.get("mode"), "map": status.get("map"), "uuid": user_uuid, "threat_index": threat_index,
                 "fkdr": fkdr}
 
     async def get_user_stats(self, user_uuid):
-        while True:
-            try:
-                player = await self.hypixel.get_player(user_uuid)
-                break
-            except asyncpixel.exceptions.exceptions.RateLimitError:
-                await asyncio.sleep(0.25)
-        member_online = bool(player.lastLogout < player.lastLogin)
-        experience = player.stats["Bedwars"]["Experience"]
+        player = await self.hypixel_api.get_player(user_uuid)
+        member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
+        experience = player.get("stats")["Bedwars"]["Experience"]
         try:
-            fkdr = player.stats['Bedwars']['final_kills_bedwars'] / player.stats['Bedwars']['final_deaths_bedwars']
+            fkdr = player.get("stats")['Bedwars']['final_kills_bedwars'] / player.get("stats")['Bedwars'][
+                'final_deaths_bedwars']
         except KeyError:
             fkdr = 0
         bedwars_level = get_level_from_xp(experience)
@@ -193,7 +178,7 @@ class Hypixel(commands.Cog):
                                                                                 "updates? \n "
                                                                                 "(THIS DELETES ALL CONTENTS) \n"
                                                                                 "Type \"yes\" if you're sure.".format(
-                                                                                    channel.mention)))
+            channel.mention)))
         try:
             await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
             await sent.delete()
@@ -356,7 +341,7 @@ class Hypixel(commands.Cog):
 
                 i += 1
 
-    @tasks.loop(seconds=5, count=None)
+    @tasks.loop(seconds=30, count=None)
     async def update_hypixel_info(self):
         try:
             if self.external_ip is None:
