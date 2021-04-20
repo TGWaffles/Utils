@@ -35,10 +35,9 @@ class UtilsBot(commands.Bot):
             for command in music_cog.get_commands():
                 possible_command = [command.name] + command.aliases
                 possible_command = ['!' + x for x in possible_command]
-                print(possible_command)
                 if message.content.split(" ")[0] in possible_command:
                     return "u!"
-        return "!"
+        return "!", "u!"
 
     async def get_latest_joins(self):
         for guild in self.guilds:
