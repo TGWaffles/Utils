@@ -129,6 +129,9 @@ class Music(commands.Cog):
                     if not isinstance(voice_client.source, YTDLSource):
                         continue
                     await self.pause_voice_client(voice_client)
+                    resume_from = self.data.get("resume_voice", [])
+                    resume_from.append(voice_client.channel.id)
+                    self.data["resume_voice"] = resume_from
                 async with self.bot.restart_waiter_lock:
                     self.bot.restart_waiters -= 1
                 return
@@ -396,9 +399,6 @@ class Music(commands.Cog):
         currently_playing_url = voice_client.source.webpage_url
         current_time = int(time.time() - voice_client.source.start_time)
         self.enqueue(voice_client.guild, currently_playing_url, int(current_time), start=True)
-        resume_from = self.data.get("resume_voice", [])
-        resume_from.append(voice_client.channel.id)
-        self.data["resume_voice"] = resume_from
         voice_client.stop()
         await voice_client.disconnect()
 
