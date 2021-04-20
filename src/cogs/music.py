@@ -138,7 +138,8 @@ class Music(commands.Cog):
         if video_url in self.url_to_title_cache:
             return self.url_to_title_cache[video_url]
         if "open.spotify.com" in video_url:
-            return await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, video_url))
+            _, title = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, video_url))
+            return title
         params = {"format": "json", "url": video_url}
         url = "https://www.youtube.com/oembed"
         async with aiohttp.ClientSession() as session:
@@ -180,7 +181,7 @@ class Music(commands.Cog):
     async def transform_single_song(self, song):
         if "open.spotify.com" not in song:
             return song
-        string_song = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, song))
+        _, string_song = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, song))
         if string_song is None:
             return None
         youtube_link = await self.song_from_yt(string_song)
