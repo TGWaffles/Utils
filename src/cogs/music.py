@@ -352,7 +352,10 @@ class Music(commands.Cog):
         all_guilds = self.data.get("song_volumes", {})
         all_guilds[str(ctx.guild.id)] = volume
         self.data["song_volumes"] = all_guilds
-        ctx.voice_client.source.volume = volume
+        try:
+            ctx.voice_client.source.volume = volume
+        except AttributeError:
+            pass
         await ctx.reply(embed=self.bot.create_completed_embed("Changed volume!", f"Set volume to "
                                                                                  f"{volume * 100}% for this guild!"))
 
@@ -364,7 +367,6 @@ class Music(commands.Cog):
     #         link = guild_queue[index]
     #         if index % 5 == 0:
 
-    @volume.before_invoke
     @pause.before_invoke
     @play.before_invoke
     @resume.before_invoke
