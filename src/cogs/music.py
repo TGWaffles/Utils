@@ -340,8 +340,6 @@ class Music(commands.Cog):
         if voice_client is None or not voice_client.is_connected():
             return
         await asyncio.sleep(0.5)
-        while voice_client.is_playing():
-            await asyncio.sleep(0.5)
         all_queued = self.data.get("song_queues", {})
         guild_queued = all_queued.get(str(voice_client.guild.id), [])
         if len(guild_queued) == 0:
@@ -363,6 +361,8 @@ class Music(commands.Cog):
         data = await YTDLSource.get_video_data(next_song_url, self.bot.loop)
         source = YTDLSource(discord.FFmpegPCMAudio(data["url"], **local_ffmpeg_options),
                             data=data, volume=volume, resume_from=resume_from)
+        while voice_client.is_playing():
+            await asyncio.sleep(0.5)
         voice_client.play(source, after=lambda e: self.bot.loop.create_task(self.play_next_queued(voice_client)))
         title = await self.title_from_url(next_song_url)
         embed = self.bot.create_completed_embed("Playing next song!", "Playing **[{}]({})**".format(title,
