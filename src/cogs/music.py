@@ -385,7 +385,10 @@ class Music(commands.Cog):
     async def post_restart_resume(self):
         for voice_channel_id in self.data.get("resume_voice", []):
             voice_channel = self.bot.get_channel(voice_channel_id)
-            voice_client = await voice_channel.connect()
+            try:
+                voice_client = await voice_channel.connect()
+            except AttributeError:
+                continue
             self.bot.loop.create_task(self.play_next_queued(voice_client))
         self.data["resume_voice"] = []
 
