@@ -29,21 +29,32 @@ class Restart(commands.Cog):
                 return
         await self.bot.database_handler.update()
         await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
-                                                                                      "Restarting to apply..."))
+                                                                                      "Restarting database..."))
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Update Complete!",
                                          "Updated and Restarted successfully!")
         await self.bot.database_handler.restart_db_server()
+        await self.wait_on_events(reply_message)
         self.bot.restart()
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
 
     @commands.command(pass_context=True)
     @restart_check()
     async def restart(self, ctx: commands.Context):
-        reply_message = await ctx.reply(embed=self.bot.create_processing_embed("Restarting", "Restarting..."))
+        reply_message = await ctx.reply(embed=self.bot.create_processing_embed("Restarting", "Beginning restart..."))
+        await self.wait_on_events(reply_message)
+
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Restart Complete!",
                                          "Restarted successfully!")
         self.bot.restart()
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
+
+    async def wait_on_events(self, message):
+        await message.edit(self.bot.create_processing_embed("Waiting on restart tasks...",
+                                                            "Waiting on restart tasks to finish up then restarting..."))
+        self.bot.restart_event.set()
+        await asyncio.sleep(0.5)
+        while self.bot.restart_waiters != 0:
+            await asyncio.sleep(0.05)
 
     @commands.command()
     @is_owner()
