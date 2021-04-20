@@ -20,7 +20,7 @@ class UtilsBot(commands.Bot):
         # Initialises the actual commands.Bot class
         intents = discord.Intents.all()
         intents.members = True
-        super().__init__(command_prefix=config.bot_prefix, description=config.description,
+        super().__init__(command_prefix=self.determine_prefix, description=config.description,
                          loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True,
                          help_command=PrettyHelp(color=discord.Colour.blue()))
         self.guild = None
@@ -28,6 +28,16 @@ class UtilsBot(commands.Bot):
         self.data = DataHelper()
         self.database_handler = None
         self.latest_joins = {}
+
+    async def determine_prefix(self, _, message):
+        music_cog: commands.Cog = self.get_cog("music")
+        if music_cog is not None:
+            for command in music_cog.get_commands():
+                possible_command = [command.name] + command.aliases
+                possible_command = ['!' + x for x in possible_command]
+                if message.content.split(" ")[0] in possible_command:
+                    return "u!"
+        return "!"
 
     async def get_latest_joins(self):
         for guild in self.guilds:
