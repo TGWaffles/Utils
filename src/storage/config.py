@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "2.7.0"
+version_number = "2.8.0"
 
 port = 8080
 restart_port = 8880
@@ -23,7 +23,7 @@ if os.environ.get("DATABASE_SERVER", None) is not None and not os.path.exists("s
     extensions = ["logger"]
 else:
     extensions = ["suggestions", "restart", "audit", "purge", "misc", "manage_command", "text_to_speech",
-                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client", "games", "hypixel"]
+                  "monkey_guild", "api", "og_checker", "blacklist", "db_api_client", "games", "hypixel", "music"]
 
 dev = False
 if dev:
