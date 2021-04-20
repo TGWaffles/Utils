@@ -218,6 +218,8 @@ class Music(commands.Cog):
         futures = []
         titles = []
         for url in guild_queued:
+            if type(url) == tuple or type(url) == list:
+                url, _ = url
             if url in self.url_to_title_cache:
                 titles.append(self.url_to_title_cache[url])
                 continue
