@@ -59,11 +59,12 @@ class HypixelAPI:
         uuid = uuid.replace("-", "")
         parameters = {"uuid": uuid}
         data = await self.safe_request("player", parameters)
-        if "lastLogout" in data:
-            data["lastLogout"] = datetime.datetime.fromtimestamp(data["lastLogout"] / 1000)
-        if "lastLogin" in data:
-            data["lastLogin"] = datetime.datetime.fromtimestamp(data["lastLogin"] / 1000)
-        return data.get("player", {})
+        player = data.get("player", {})
+        if "lastLogout" in player:
+            player["lastLogout"] = datetime.datetime.fromtimestamp(player["lastLogout"] / 1000)
+        if "lastLogin" in player:
+            player["lastLogin"] = datetime.datetime.fromtimestamp(player["lastLogin"] / 1000)
+        return player
 
     async def get_status(self, uuid):
         uuid = uuid.replace("-", "")
