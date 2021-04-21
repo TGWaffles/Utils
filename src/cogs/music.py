@@ -82,7 +82,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if search:
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
             data = await query.next()
-            return json.loads(data.get("result")[0]).get("link")
+            return data.get("result")[0].get("link")
         else:
             try:
                 attempts = 0
@@ -204,6 +204,8 @@ class Music(commands.Cog):
                 return None
             attempts += 1
             youtube_song = await YTDLSource.get_video_data(song, self.bot.loop, search=True)
+            if isinstance(youtube_song, str):
+                return youtube_song
             if youtube_song is not None and youtube_song.get("webpage_url") is not None:
                 return youtube_song.get("webpage_url")
             await asyncio.sleep(2)
