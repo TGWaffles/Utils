@@ -79,7 +79,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch:20:{url}"
+            url = f"ytsearch20:{url}"
         try:
             attempts = 0
             while True:
