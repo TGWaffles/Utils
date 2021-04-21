@@ -80,7 +80,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
+            query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.viewCount, limit=1)
             data = await query.next()
             return data.get("result")[0].get("link")
         else:
