@@ -39,7 +39,7 @@ class SpotifySearcher:
                 album = "from " + album
             else:
                 album = "by " + first_artist
-            playlist_as_names.append((url, f"{name} {album} Lyrics".replace(":", "").replace("\"", "")))
+            playlist_as_names.append((url, f"{name} {album} Studio".replace(":", "").replace("\"", "")))
         return playlist_as_names
 
     def get_track(self, track):
@@ -56,7 +56,7 @@ class SpotifySearcher:
         else:
             album = "by " + first_artist
         return (response.get('external_urls').get('spotify'),
-                f"{name} {album} Lyrics".replace(":", "").replace("\"", ""))
+                f"{name} {album} Studio".replace(":", "").replace("\"", ""))
 
     async def handle_spotify(self, media_identifier):
         while not self.ready:
