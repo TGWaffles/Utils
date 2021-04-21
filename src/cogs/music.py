@@ -79,7 +79,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch:{url}"
+            url = f"ytsearch20:{url}"
         try:
             attempts = 0
             while True:
@@ -97,7 +97,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
                     pass
         except youtube_dl.utils.DownloadError:
             return None
-        print(data)
         if 'entries' in data and len(data['entries']) > 0:
             print(url)
             print([(x["title"], x["view_count"]) for x in sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)])
