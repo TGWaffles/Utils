@@ -36,7 +36,7 @@ class SpotifySearcher:
             url = item.get("track").get("external_urls").get("spotify")
             album = item.get("track").get("album", {}).get("name", "")
             if album != "":
-                album = "from " + album
+                album = "from " + album.split(" ")[0]
             else:
                 album = "by " + first_artist
             playlist_as_names.append((url, f"{name} {album} High Quality".replace(":", "").replace("\"", "")))
