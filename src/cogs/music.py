@@ -79,16 +79,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch10:{url}"
+            url = f"ytsearch5:{url}"
         try:
             attempts = 0
             while True:
                 if attempts > 10:
                     return None
                 attempts += 1
-                future = loop.run_in_executor(None,
-                                              lambda: youtube_dl.YoutubeDL(
-                                                  ytdl_format_options).extract_info(url, download=False))
+                ydl = youtube_dl.YoutubeDL(ytdl_format_options)
+                ydl._ies = [ydl.get_info_extractor('Youtube')]
+                future = loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
                 try:
                     data = await asyncio.wait_for(future, 10)
                     if data is not None:
