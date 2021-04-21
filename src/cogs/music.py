@@ -7,6 +7,7 @@ import json.decoder
 import re
 import time
 import random
+import youtubesearchpython.__future__ as youtube_search
 
 from discord.ext import commands
 from pytube import Playlist
@@ -34,11 +35,11 @@ ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'noplaylist': False,
+    'noplaylist': True,
     'nocheckcertificate': True,
     'ignoreerrors': False,
-    'logtostderr': True,
-    'quiet': False,
+    'logtostderr': False,
+    'quiet': True,
     'no_warnings': True,
     'default_search': 'auto',
     'source_address': '0.0.0.0'  # bind to ipv4 since ipv6 addresses cause issues sometimes
@@ -79,30 +80,33 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch5:{url}"
-        try:
-            attempts = 0
-            while True:
-                if attempts > 10:
-                    return None
-                attempts += 1
-                ydl = youtube_dl.YoutubeDL(ytdl_format_options)
-                ydl._ies = [ydl.get_info_extractor('Youtube')]
-                future = loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
-                try:
-                    data = await asyncio.wait_for(future, 10)
-                    if data is not None:
-                        break
-                except asyncio.TimeoutError:
-                    pass
-        except youtube_dl.utils.DownloadError:
-            return None
-        if 'entries' in data and len(data['entries']) > 0:
-            print(url)
-            print([(x["title"], x["view_count"]) for x in sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)])
-            data = sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)[0]
-            # take first item from a playlist
-            # data = data['entries'][0]
+            query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
+            data = await query.next()
+            return data.get("result")[0].get("link")
+        else:
+            try:
+                attempts = 0
+                while True:
+                    if attempts > 10:
+                        return None
+                    attempts += 1
+                    ydl = youtube_dl.YoutubeDL(ytdl_format_options)
+                    ydl._ies = [ydl.get_info_extractor('Youtube')]
+                    future = loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
+                    try:
+                        data = await asyncio.wait_for(future, 10)
+                        if data is not None:
+                            break
+                    except asyncio.TimeoutError:
+                        pass
+            except youtube_dl.utils.DownloadError:
+                return None
+            if 'entries' in data and len(data['entries']) > 0:
+                print(url)
+                print([(x["title"], x["view_count"]) for x in sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)])
+                data = sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)[0]
+                # take first item from a playlist
+                # data = data['entries'][0]
         if data.get('url', None) is None:
             return None
         return data
