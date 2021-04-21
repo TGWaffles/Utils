@@ -98,6 +98,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         except youtube_dl.utils.DownloadError:
             return None
         if 'entries' in data and len(data['entries']) > 0:
+            print("url")
             print([(x["title"], x["view_count"]) for x in sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)])
             data = sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)[0]
             # take first item from a playlist
