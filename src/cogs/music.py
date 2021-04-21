@@ -82,9 +82,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         if search:
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
             data = await query.next()
-            print(data)
-            print(data.get("result"))
-            return data.get("result")[0].get("link")
+            return json.loads(data.get("result")[0]).get("link")
         else:
             try:
                 attempts = 0
