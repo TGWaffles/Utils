@@ -79,7 +79,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch20:{url}"
+            url = f"ytsearch5:{url}"
         try:
             attempts = 0
             while True:
@@ -436,6 +436,7 @@ class Music(commands.Cog):
         song = await self.skip_guild(ctx.guild)
         if song is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no song playing or queued!"))
+            return
         await ctx.reply(embed=self.bot.create_completed_embed("Song skipped.", f"Song{song} skipped successfully."))
 
     @commands.command()
