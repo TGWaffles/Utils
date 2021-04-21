@@ -34,7 +34,7 @@ ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
     'restrictfilenames': True,
-    'noplaylist': True,
+    'noplaylist': False,
     'nocheckcertificate': True,
     'ignoreerrors': False,
     'logtostderr': True,
@@ -79,7 +79,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch:5:{url}"
+            url = f"ytsearch:20:{url}"
         try:
             attempts = 0
             while True:
