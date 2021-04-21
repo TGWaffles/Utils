@@ -353,13 +353,13 @@ class Music(commands.Cog):
             # await voice_client.disconnect()
             return
         next_song_url = guild_queued.pop(0)
+        all_queued[str(voice_client.guild.id)] = guild_queued
+        self.data["song_queues"] = all_queued
         local_ffmpeg_options = ffmpeg_options.copy()
         resume_from = 0
         if type(next_song_url) == tuple or type(next_song_url) == list:
             next_song_url, resume_from = next_song_url
             local_ffmpeg_options['options'] = "-vn -ss {}".format(resume_from)
-        all_queued[str(voice_client.guild.id)] = guild_queued
-        self.data["song_queues"] = all_queued
         volume = self.data.get("song_volumes", {}).get(str(voice_client.guild.id), 0.5)
         if next_song_url is None:
             self.bot.loop.create_task(self.play_next_queued(voice_client))
