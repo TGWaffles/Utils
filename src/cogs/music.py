@@ -79,7 +79,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
         if search:
-            url = f"ytsearch5:{url}"
+            url = f"ytsearch:5:{url}"
         try:
             attempts = 0
             while True:
@@ -361,6 +361,9 @@ class Music(commands.Cog):
         all_queued[str(voice_client.guild.id)] = guild_queued
         self.data["song_queues"] = all_queued
         volume = self.data.get("song_volumes", {}).get(str(voice_client.guild.id), 0.5)
+        if next_song_url is None:
+            self.bot.loop.create_task(self.play_next_queued(voice_client))
+            return
         next_song_url = await self.transform_single_song(next_song_url)
         if next_song_url is None:
             self.bot.loop.create_task(self.play_next_queued(voice_client))
