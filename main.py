@@ -141,6 +141,7 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx, error):
+        raise error
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.DisabledCommand):
             return
         if isinstance(error, commands.CheckFailure):
