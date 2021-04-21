@@ -32,7 +32,7 @@ class SpotifySearcher:
         for item in items_response:
             name = item.get("track").get("name")
             first_artist = item.get("track").get("artists")[0].get("name")
-            all_artists = ', '.join([artist["name"] for artist in response.get("artists")])
+            all_artists = ', '.join([artist["name"] for artist in item.get("track").get("artists")])
             url = item.get("track").get("external_urls").get("spotify")
             album = item.get("track").get("album", {}).get("name", "")
             if album != "":

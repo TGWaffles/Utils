@@ -79,34 +79,34 @@ class YTDLSource(discord.PCMVolumeTransformer):
     @staticmethod
     async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
-        # if search:
-        #     query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
-        #     data = await query.next()
-        #     return data.get("result")[0].get("link")
-        # else:
-        try:
-            attempts = 0
-            while True:
-                if attempts > 10:
-                    return None
-                attempts += 1
-                ydl = youtube_dl.YoutubeDL(ytdl_format_options)
-                ydl._ies = [ydl.get_info_extractor('Youtube')]
-                future = loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
-                try:
-                    data = await asyncio.wait_for(future, 10)
-                    if data is not None:
-                        break
-                except asyncio.TimeoutError:
-                    pass
-        except youtube_dl.utils.DownloadError:
-            return None
-        if 'entries' in data and len(data['entries']) > 0:
-            print(url)
-            print([(x["title"], x["view_count"]) for x in sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)])
-            data = sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)[0]
-            # take first item from a playlist
-            # data = data['entries'][0]
+        if search:
+            query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
+            data = await query.next()
+            return data.get("result")[0].get("link")
+        else:
+            try:
+                attempts = 0
+                while True:
+                    if attempts > 10:
+                        return None
+                    attempts += 1
+                    ydl = youtube_dl.YoutubeDL(ytdl_format_options)
+                    ydl._ies = [ydl.get_info_extractor('Youtube')]
+                    future = loop.run_in_executor(None, lambda: ydl.extract_info(url, download=False))
+                    try:
+                        data = await asyncio.wait_for(future, 10)
+                        if data is not None:
+                            break
+                    except asyncio.TimeoutError:
+                        pass
+            except youtube_dl.utils.DownloadError:
+                return None
+            if 'entries' in data and len(data['entries']) > 0:
+                print(url)
+                print([(x["title"], x["view_count"]) for x in sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)])
+                data = sorted(data['entries'], key=lambda x: x.get("view_count", 0), reverse=True)[0]
+                # take first item from a playlist
+                # data = data['entries'][0]
         if data.get('url', None) is None:
             return None
         return data
