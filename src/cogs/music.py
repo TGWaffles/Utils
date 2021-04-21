@@ -76,8 +76,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(data["url"], **ffmpeg_options), data=data)
 
     @staticmethod
-    async def get_video_data(url, loop=None):
+    async def get_video_data(url, loop=None, search=False):
         loop = loop or asyncio.get_event_loop()
+        if search:
+            url = f"ytsearch:{url}"
         try:
             attempts = 0
             while True:
@@ -196,7 +198,7 @@ class Music(commands.Cog):
                 print(f"{song} failed after 3 attempts")
                 return None
             attempts += 1
-            youtube_song = await YTDLSource.get_video_data(song, self.bot.loop)
+            youtube_song = await YTDLSource.get_video_data(song, self.bot.loop, search=True)
             if youtube_song is not None and youtube_song.get("webpage_url") is not None:
                 return youtube_song.get("webpage_url")
             await asyncio.sleep(2)
