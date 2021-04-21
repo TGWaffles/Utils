@@ -67,8 +67,13 @@ class Hypixel(commands.Cog):
                 "fkdr": fkdr}
 
     async def get_user_stats(self, user_uuid):
-        player = await self.hypixel_api.get_player(user_uuid)
-        member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
+        while True:
+            try:
+                player = await self.hypixel_api.get_player(user_uuid)
+                member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
+                break
+            except TypeError as e:
+                print(e)
         experience = player.get("stats")["Bedwars"]["Experience"]
         try:
             fkdr = player.get("stats")['Bedwars']['final_kills_bedwars'] / player.get("stats")['Bedwars'][
