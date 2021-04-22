@@ -50,7 +50,8 @@ class SpotifySearcher:
             duration = item.get("track").get("duration_ms")
             album = item.get("track").get("album", {}).get("name", "")
             if album != "" and album != name:
-                album = "from " + album.split(" ")[0]
+                album = album.partition("(")[0]
+                album = "from " + album
             else:
                 album = "by " + first_artist
             playlist_as_names.append((url, f"{name} {album}".replace(":", "").replace("\"", ""), duration))
@@ -66,7 +67,8 @@ class SpotifySearcher:
         all_artists = ', '.join([artist["name"] for artist in response.get("artists")])
         album = response.get("album", {}).get("name", "")
         if album != "" and album != name:
-            album = "from " + album.split(" ")[0]
+            album = album.partition("(")[0]
+            album = "from " + album
         else:
             album = "by " + first_artist
         return (response.get('external_urls').get('spotify'),
