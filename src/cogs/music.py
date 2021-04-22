@@ -81,6 +81,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
         if search:
             if target_duration is not None:
+                title = url.split("\uFEFF")[0]
+                url = url.replace("\uFEFF", "")
                 query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.viewCount, limit=10)
                 original_results = await query.next()
                 original_results = original_results.get("result")
@@ -90,6 +92,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                                transform_duration_to_ms(x.get(
                                    "duration")) < target_duration + max_difference]
                     if len(results) > 0:
+                        results = find_closest(title, results)
                         return results[0].get("link")
                     print(f"no results within {max_difference // 1000}s of target duration {target_duration // 1000}s")
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)

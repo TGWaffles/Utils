@@ -2,11 +2,21 @@ import asyncio
 
 import requests
 import spotipy
+from difflib import SequenceMatcher
 from spotipy.oauth2 import SpotifyClientCredentials
 from functools import partial
 
 from main import UtilsBot
 from src.storage.token import *
+
+
+def find_closest(title, options):
+    sorted_options = []
+    for option in options:
+        ratio = SequenceMatcher(None, title, option.get("title")).ratio()
+        sorted_options.append((option, ratio))
+    sorted_options.sort(key=lambda x: x[1])
+    return [x[0] for x in sorted_options]
 
 
 def transform_duration_to_ms(duration_string):
@@ -51,9 +61,9 @@ class SpotifySearcher:
             album = item.get("track").get("album", {}).get("name", "")
             if album != "" and album != name:
                 album = album.partition("(")[0]
-                album = "from " + album
+                album = "\uFEFFfrom " + album
             else:
-                album = "by " + first_artist
+                album = "\uFEFFby " + first_artist
             playlist_as_names.append((url, f"{name} {album}".replace(":", "").replace("\"", ""), duration))
         return playlist_as_names
 
@@ -68,9 +78,9 @@ class SpotifySearcher:
         album = response.get("album", {}).get("name", "")
         if album != "" and album != name:
             album = album.partition("(")[0]
-            album = "from " + album
+            album = "\uFEFFfrom " + album
         else:
-            album = "by " + first_artist
+            album = "\uFEFFby " + first_artist
         return (response.get('external_urls').get('spotify'),
                 f"{name} {album}".replace(":", "").replace("\"", ""),
                 response.get("duration_ms"))
