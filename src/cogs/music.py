@@ -86,11 +86,12 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 original_results = original_results.get("result")
                 # Check within 1s, 20s, 60s, then any result.
                 for max_difference in [1000, 20000, 60000]:
-                    results = [x for x in original_results if target_duration - 1000 < transform_duration_to_ms(x.get(
-                        "duration")) < target_duration + 1000]
+                    results = [x for x in original_results if target_duration - max_difference <
+                               transform_duration_to_ms(x.get(
+                                   "duration")) < target_duration + max_difference]
                     if len(results) > 0:
                         return results[0].get("link")
-                    print(f"no results within {max_difference // 1000}s of target duration {target_duration // 1000} s")
+                    print(f"no results within {max_difference // 1000}s of target duration {target_duration // 1000}s")
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
             data = await query.next()
             return data.get("result")[0].get("link")
