@@ -12,7 +12,7 @@ from src.storage.token import *
 def transform_duration_to_ms(duration_string):
     total_ms = 0
     split_duration = duration_string.split(":")
-    for index, num in enumerate(split_duration):
+    for index, num in enumerate(split_duration[::-1]):
         if index == 0:
             total_ms += int(num) * 1000
         elif index == 1:
