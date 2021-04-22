@@ -11,6 +11,7 @@ import youtubesearchpython.__future__ as youtube_search
 
 from discord.ext import commands
 from pytube import Playlist
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
 from main import UtilsBot
@@ -92,7 +93,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
                                transform_duration_to_ms(x.get(
                                    "duration")) < target_duration + max_difference]
                     if len(results) > 0:
-                        results = find_closest(title, results)
+                        with ProcessPoolExecutor() as pool:
+                            results = await loop.run_in_executor(pool, partial(find_closest, title, results))
                         return results[0].get("link")
                     print(f"no results within {max_difference // 1000}s of target duration {target_duration // 1000}s")
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
