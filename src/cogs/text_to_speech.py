@@ -204,15 +204,15 @@ class TTS(commands.Cog):
             self.uid += 1
             self.guild_queues[member.guild.id].append(our_uid)
         while voice_client.is_playing():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
         while self.guild_queues[member.guild.id][0] != our_uid:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
         try:
             voice_client.play(discord.PCMAudio(output))
         except discord.errors.ClientException:
             pass
         while voice_client.is_playing():
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
         self.guild_queues[member.guild.id].pop(0)
         return True
 

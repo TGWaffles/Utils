@@ -383,8 +383,12 @@ class Music(commands.Cog):
         data = await YTDLSource.get_video_data(next_song_url, self.bot.loop)
         source = YTDLSource(discord.FFmpegPCMAudio(data["url"], **local_ffmpeg_options),
                             data=data, volume=volume, resume_from=resume_from)
-        while voice_client.is_playing():
+        while True:
+            while voice_client.is_playing():
+                await asyncio.sleep(0.1)
             await asyncio.sleep(0.5)
+            if not voice_client.is_playing():
+                break
         voice_client.play(source, after=lambda e: self.bot.loop.create_task(self.play_next_queued(voice_client)))
         title = await self.title_from_url(next_song_url)
         embed = self.bot.create_completed_embed("Playing next song!", "Playing **[{}]({})**".format(title,
