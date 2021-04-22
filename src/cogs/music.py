@@ -84,8 +84,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=10)
                 results = await query.next()
                 results = results.get("result")
-                results = [x for x in results if target_duration - 1500 < transform_duration_to_ms(x.get(
-                    "duration")) < target_duration + 1500]
+                results = [x for x in results if target_duration - 1000 < transform_duration_to_ms(x.get(
+                    "duration")) < target_duration + 1000]
                 if len(results) > 0:
                     return results[0].get("link")
                 print(f"no results close to target duration {target_duration} ms")
