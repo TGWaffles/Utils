@@ -34,12 +34,13 @@ class SpotifySearcher:
             first_artist = item.get("track").get("artists")[0].get("name")
             all_artists = ', '.join([artist["name"] for artist in item.get("track").get("artists")])
             url = item.get("track").get("external_urls").get("spotify")
+            duration = item.get("track").get("duration_ms")
             album = item.get("track").get("album", {}).get("name", "")
             if album != "":
                 album = "from " + album.split(" ")[0]
             else:
                 album = "by " + first_artist
-            playlist_as_names.append((url, f"{name} {album}".replace(":", "").replace("\"", "")))
+            playlist_as_names.append((url, f"{name} {album}".replace(":", "").replace("\"", ""), duration))
         return playlist_as_names
 
     def get_track(self, track):
@@ -56,7 +57,8 @@ class SpotifySearcher:
         else:
             album = "by " + first_artist
         return (response.get('external_urls').get('spotify'),
-                f"{name} {album}".replace(":", "").replace("\"", ""))
+                f"{name} {album}".replace(":", "").replace("\"", ""),
+                response.get("duration_ms"))
 
     async def handle_spotify(self, media_identifier):
         while not self.ready:

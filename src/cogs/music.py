@@ -77,9 +77,30 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(data["url"], **ffmpeg_options), data=data)
 
     @staticmethod
-    async def get_video_data(url, loop=None, search=False):
+    def transform_duration_to_ms(duration_string):
+        total_ms = 0
+        split_duration = duration_string.split(":")
+        for index, num in enumerate(split_duration):
+            if index == 0:
+                total_ms += int(num) * 1000
+            elif index == 1:
+                total_ms += int(num) * 60000
+            else:
+                total_ms += int(num) * 3600000
+        return total_ms
+
+    async def get_video_data(self, url, loop=None, search=False, target_duration=None):
         loop = loop or asyncio.get_event_loop()
         if search:
+            if target_duration is not None:
+                query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=10)
+                results = await query.next()
+                results = results.get("result")
+                results = [x for x in results if target_duration - 1500 < self.transform_duration_to_ms(x.get(
+                    "duration")) < target_duration + 1500]
+                if len(results) > 0:
+                    return results[0].get("link")
+                print(f"no results close to target duration {target_duration} ms")
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
             data = await query.next()
             return data.get("result")[0].get("link")
@@ -171,7 +192,7 @@ class Music(commands.Cog):
         if video_url in self.url_to_title_cache:
             return self.url_to_title_cache[video_url]
         if "open.spotify.com" in video_url:
-            _, title = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, video_url))
+            _, title, _ = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, video_url))
             self.url_to_title_cache[video_url] = title
             return title
         params = {"format": "json", "url": video_url}
@@ -193,14 +214,14 @@ class Music(commands.Cog):
         thumbnail = f"https://i.ytimg.com/vi/{s}/hqdefault.jpg"
         return thumbnail
 
-    async def song_from_yt(self, song):
+    async def song_from_yt(self, song, duration=None):
         attempts = 0
         while True:
             if attempts > 3:
                 print(f"{song} failed after 3 attempts")
                 return None
             attempts += 1
-            youtube_song = await YTDLSource.get_video_data(song, self.bot.loop, search=True)
+            youtube_song = await YTDLSource.get_video_data(song, self.bot.loop, search=True, target_duration=duration)
             if isinstance(youtube_song, str):
                 return youtube_song
             if youtube_song is not None and youtube_song.get("webpage_url") is not None:
@@ -218,10 +239,10 @@ class Music(commands.Cog):
     async def transform_single_song(self, song):
         if "open.spotify.com" not in song:
             return song
-        _, string_song = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, song))
+        _, string_song, duration = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, song))
         if string_song is None:
             return None
-        youtube_link = await self.song_from_yt(string_song)
+        youtube_link = await self.song_from_yt(string_song, duration=duration)
         return youtube_link
 
     async def send_queue(self, channel, reply_message=None):
