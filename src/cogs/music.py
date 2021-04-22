@@ -319,7 +319,7 @@ class Music(commands.Cog):
             callers = self.data.get("called_from", {})
             callers[str(ctx.guild.id)] = ctx.channel.id
             self.data["called_from"] = callers
-            if not ctx.voice_client.is_playing():
+            if not ctx.voice_client.is_playing() or not isinstance(ctx.voice_client.source, YTDLSource):
                 self.bot.loop.create_task(self.play_next_queued(ctx.voice_client))
             first_song_name = await self.title_from_url(first_song)
             embed = self.bot.create_completed_embed("Added song to queue!", f"Added [{first_song_name}]"
