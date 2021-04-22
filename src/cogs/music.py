@@ -434,7 +434,7 @@ class Music(commands.Cog):
             song_url = guild_queued.pop(0)
             all_queued[str(guild.id)] = guild_queued
             self.data["song_queues"] = all_queued
-            song = f" \"{self.title_from_url(song_url)}\""
+            song = f" \"{await self.title_from_url(song_url)}\""
         return song
 
     @commands.command()
