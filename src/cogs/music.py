@@ -15,7 +15,7 @@ from functools import partial
 
 from main import UtilsBot
 from src.helpers.storage_helper import DataHelper
-from src.helpers.spotify_helper import SpotifySearcher
+from src.helpers.spotify_helper import *
 from src.helpers.paginator import Paginator
 from src.checks.role_check import is_staff
 
@@ -77,27 +77,14 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return cls(discord.FFmpegPCMAudio(data["url"], **ffmpeg_options), data=data)
 
     @staticmethod
-    def transform_duration_to_ms(duration_string):
-        total_ms = 0
-        split_duration = duration_string.split(":")
-        for index, num in enumerate(split_duration):
-            if index == 0:
-                total_ms += int(num) * 1000
-            elif index == 1:
-                total_ms += int(num) * 60000
-            else:
-                total_ms += int(num) * 3600000
-        return total_ms
-
-    async def get_video_data(self, url, loop=None, search=False, target_duration=None):
+    async def get_video_data(url, loop=None, search=False, target_duration=None):
         loop = loop or asyncio.get_event_loop()
         if search:
             if target_duration is not None:
-                print(url)
                 query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=10)
                 results = await query.next()
                 results = results.get("result")
-                results = [x for x in results if target_duration - 1500 < self.transform_duration_to_ms(x.get(
+                results = [x for x in results if target_duration - 1500 < transform_duration_to_ms(x.get(
                     "duration")) < target_duration + 1500]
                 if len(results) > 0:
                     return results[0].get("link")

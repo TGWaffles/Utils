@@ -9,6 +9,19 @@ from main import UtilsBot
 from src.storage.token import *
 
 
+def transform_duration_to_ms(duration_string):
+    total_ms = 0
+    split_duration = duration_string.split(":")
+    for index, num in enumerate(split_duration):
+        if index == 0:
+            total_ms += int(num) * 1000
+        elif index == 1:
+            total_ms += int(num) * 60000
+        else:
+            total_ms += int(num) * 3600000
+    return total_ms
+
+
 class SpotifySearcher:
     def __init__(self, bot: UtilsBot):
         self.spotify = None
