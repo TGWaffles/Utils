@@ -93,6 +93,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
         if search:
             if target_duration is not None:
+                print(url)
                 query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=10)
                 results = await query.next()
                 results = results.get("result")
