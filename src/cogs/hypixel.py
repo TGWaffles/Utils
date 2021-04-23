@@ -70,9 +70,11 @@ class Hypixel(commands.Cog):
         while True:
             try:
                 player = await self.hypixel_api.get_player(user_uuid)
+                print(player)
                 member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
                 break
             except TypeError as e:
+                print(player)
                 print(e)
         experience = player.get("stats")["Bedwars"]["Experience"]
         try:
