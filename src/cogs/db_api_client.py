@@ -480,7 +480,7 @@ class DBApiClient(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.channel.guild is None:
+        if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None:
             return
         message_dict = message_to_json(message)
         params = {'token': api_token, 'message': message_dict}
