@@ -357,7 +357,6 @@ class Hypixel(commands.Cog):
                     request = await session.get("https://checkip.amazonaws.com/")
                     text = await request.text()
                     self.external_ip = text.strip()
-            print("getting channels & member uuids")
             all_channels = self.data.get("hypixel_channels", {}).copy()
             member_uuids = set()
             for _, members in all_channels.items():
@@ -368,12 +367,10 @@ class Hypixel(commands.Cog):
             member_futures = []
             if reset:
                 self.last_reset = datetime.datetime.now()
-            print("fetching members from hypixel")
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 for member_uuid in member_uuids:
                     member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool,
                                                                                              reset)))
-                print("waiting on api return...")
                 member_dicts = await asyncio.gather(*member_futures)
             offline_members = [member for member in member_dicts if not member["online"]]
             online_members = [member for member in member_dicts if member["online"]]

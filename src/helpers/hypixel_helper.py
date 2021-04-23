@@ -69,14 +69,11 @@ class HypixelAPI:
         completed_event.set()
 
     async def queue_loop(self):
-        print("starting queue loop...")
         while True:
             this_loop_tasks = []
             if self.ratelimit_remaining == 0:
-                print("no ratelimit remaining")
                 while datetime.datetime.now() < self.ratelimit_reset_time:
-                    await asyncio.sleep(1)
-                    print(f"sleeping until {self.ratelimit_reset_time.isoformat()}")
+                    await asyncio.sleep((self.ratelimit_reset_time - datetime.datetime.now()).total_seconds())
                 self.ratelimit_remaining = 120
             for i in range(self.ratelimit_remaining):
                 waited_event = await self.request_queue.get()
