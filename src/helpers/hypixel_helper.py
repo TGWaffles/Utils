@@ -96,8 +96,8 @@ class HypixelAPI:
     async def get_status(self, uuid):
         uuid = uuid.replace("-", "")
         parameters = {"uuid": uuid}
-        data = await self.safe_request("session", parameters)
-        return data.get("status", {})
+        data = await self.safe_request("status", parameters)
+        return data.get("session", {})
 
 
 def get_xp_for_level(level):
