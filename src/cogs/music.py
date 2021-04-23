@@ -84,7 +84,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
             if target_duration is not None:
                 title = url.split("\uFEFF")[0]
                 url = url.replace("\uFEFF", "")
-                print(url)
                 query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.viewCount, limit=10)
                 original_results = await query.next()
                 original_results = original_results.get("result")
