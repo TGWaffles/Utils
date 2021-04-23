@@ -185,7 +185,7 @@ def get_file_for_member(member):
     draw.text((name_x, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
     # Write last online or current game.
     if member["online"]:
-        if member["mode"] is None or (member["map"] is None and member["map"].lower() == "lobby"):
+        if member["mode"] is None or (member["map"] is None and member["mode"].lower() == "lobby"):
             game_text = "{}: \nLOBBY".format(member["game"])
         else:
             try:
