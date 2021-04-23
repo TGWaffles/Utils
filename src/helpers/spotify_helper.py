@@ -14,7 +14,7 @@ def find_closest(title, options):
     sorted_options = []
     for option in options:
         ratio = SequenceMatcher(None, title, option.get("title")).ratio()
-        sorted_options.append((option, ratio))
+        sorted_options.append((option, ratio * int(option.get("view_count"))))
     sorted_options.sort(key=lambda x: x[1], reverse=True)
     return [x[0] for x in sorted_options]
 
