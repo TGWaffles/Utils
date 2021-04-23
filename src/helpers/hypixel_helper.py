@@ -185,11 +185,11 @@ def get_file_for_member(member):
     draw.text((name_x, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
     # Write last online or current game.
     if member["online"]:
-        if member["mode"] is None:
+        if member["mode"] is None or (member["map"] is None and member["map"].lower() == "lobby"):
             game_text = "{}: \nLOBBY".format(member["game"])
         else:
             try:
-                game_text = "{}: \n{} ({})".format(member["game"], member["mode"], member["map"]["map"])
+                game_text = "{}: \n{} ({})".format(member["game"], member["mode"], member["map"])
             except KeyError:
                 game_text = "{}: \n{}".format(member["game"], member["mode"])
         last_played_heading = "Current Game"
