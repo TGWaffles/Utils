@@ -54,9 +54,6 @@ class Hypixel(commands.Cog):
 
     async def online_player(self, player, experience, user_uuid, threat_index, fkdr):
         status = await self.hypixel_api.get_status(user_uuid)
-        print(player.get("displayname"))
-        print(status)
-        print(status.get("online"))
         if not status.get("online"):
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
         return {"name": player.get("displayname"),
@@ -94,6 +91,7 @@ class Hypixel(commands.Cog):
 
     async def get_expanded_player(self, user_uuid, pool, reset=False):
         player = await self.get_user_stats(user_uuid)
+        print(player)
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
