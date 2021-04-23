@@ -90,7 +90,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.viewCount, limit=10)
                 original_results = await query.next()
                 plain_results = await plain_query.next()
-                original_results = list(set(original_results.get("result") + plain_results.get("result")))
+                original_results = original_results.get("result") + plain_results.get("result")
                 print([(x.get("title"), transform_duration_to_ms(x.get("duration")) // 1000) for x in original_results])
                 # Check within 10s, 20s, 60s, then any result.
                 for max_difference in [10000, 20000, 60000]:
