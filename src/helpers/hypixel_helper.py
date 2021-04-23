@@ -52,6 +52,7 @@ class HypixelAPI:
                 return
             if response.status == 429:
                 sleep_time = int(response.headers.getone("retry-after"))
+                await self.request_queue.put(waited_event)
                 async with self.ratelimit_lock:
                     self.ratelimit_remaining = 0
                     self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=sleep_time)
