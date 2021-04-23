@@ -7,6 +7,7 @@ import aiohttp
 import asyncio
 import datetime
 from io import BytesIO
+from main import UtilsBot
 
 EASY_LEVELS = 4
 EASY_LEVELS_XP = 7000
@@ -17,10 +18,14 @@ API_URL = "https://api.hypixel.net/"
 
 
 class HypixelAPI:
-    def __init__(self, key):
+    def __init__(self, bot: UtilsBot, key):
+        self.bot = bot
         self.key = key
         self.request_queue = asyncio.Queue()
         self.process_lock = asyncio.Lock()
+        self.ratelimit_remaining = 120
+        self.ratelimit_reset_time = datetime.datetime.now()
+        self.ratelimit_lock = asyncio.Lock()
 
     async def safe_request(self, endpoint, parameters=None):
         returned_json = {}
@@ -30,30 +35,49 @@ class HypixelAPI:
         await completed_event.wait()
         return returned_json
 
-    async def queue_loop(self):
-        while True:
-            waited_event = await self.request_queue.get()
+    async def make_request(self, waited_event):
+        async with aiohttp.ClientSession() as session:
             endpoint, parameters, completed_event, returned_json = waited_event
             if parameters is None:
                 parameters = {}
             parameters["key"] = self.key
-            async with aiohttp.ClientSession() as session:
-                while True:
-                    response: aiohttp.ClientResponse = await session.get(f"{API_URL}{endpoint}", params=parameters)
-                    try:
-                        returned_json.update(await response.json())
-                    except aiohttp.ContentTypeError:
-                        await asyncio.sleep(5)
-                        continue
-                    if response.status == 429:
-                        sleep_time = int(response.headers.getone("retry-after"))
-                        await asyncio.sleep(sleep_time)
-                        continue
-                    if returned_json.get("cause", "") == "Invalid API key":
-                        print("INVALID HYPIXEL API KEY")
-                        continue
-                    break
-            completed_event.set()
+            response: aiohttp.ClientResponse = await session.get(f"{API_URL}{endpoint}", params=parameters)
+            try:
+                returned_json.update(await response.json())
+            except aiohttp.ContentTypeError:
+                await self.request_queue.put(waited_event)
+                async with self.ratelimit_lock:
+                    self.ratelimit_remaining = 0
+                    self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
+                return
+            if response.status == 429:
+                sleep_time = int(response.headers.getone("retry-after"))
+                async with self.ratelimit_lock:
+                    self.ratelimit_remaining = 0
+                    self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=sleep_time)
+                return
+            if returned_json.get("cause", "") == "Invalid API key":
+                print("INVALID HYPIXEL API KEY")
+                self.ratelimit_remaining = 0
+                self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=600)
+                return
+            async with self.ratelimit_lock:
+                self.ratelimit_remaining = int(response.headers.getone("ratelimit-remaining"))
+                reset_delta = int(response.headers.getone("ratelimit-reset"))
+                self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=reset_delta)
+        completed_event.set()
+
+    async def queue_loop(self):
+        while True:
+            this_loop_tasks = []
+            if self.ratelimit_remaining == 0:
+                while datetime.datetime.now() < self.ratelimit_reset_time:
+                    await asyncio.sleep(1)
+                self.ratelimit_remaining = 120
+            for i in range(self.ratelimit_remaining):
+                waited_event = await self.request_queue.get()
+                this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
+            await asyncio.gather(*this_loop_tasks)
 
     async def get_player(self, uuid):
         uuid = uuid.replace("-", "")

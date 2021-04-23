@@ -54,6 +54,8 @@ class Hypixel(commands.Cog):
 
     async def online_player(self, player, experience, user_uuid, threat_index, fkdr):
         status = await self.hypixel_api.get_status(user_uuid)
+        print(player.get("displayname"))
+        print(status.get("online"))
         if not status.get("online"):
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
         return {"name": player.get("displayname"),
@@ -71,8 +73,6 @@ class Hypixel(commands.Cog):
             try:
                 player = await self.hypixel_api.get_player(user_uuid)
                 member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
-                print(player.get("playername"))
-                print(member_online)
                 break
             except TypeError as e:
                 print(player.get("lastLogout"))
