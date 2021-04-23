@@ -13,7 +13,6 @@ from src.storage.token import *
 def find_closest(title, fulltext, options):
     sorted_options = []
     for option in options:
-        print(option.get("viewCount"))
         # Format is: "10,232,035 views", so split to before space and replace commas to get "10232035"
         view_text = option.get("viewCount").get("text").split(" ")[0].replace(",", "")
         if view_text == "No":
@@ -24,6 +23,7 @@ def find_closest(title, fulltext, options):
         ratio *= SequenceMatcher(None, fulltext, option.get("title")).ratio()
         sorted_options.append((option, ratio * view_count))
     sorted_options.sort(key=lambda x: x[1], reverse=True)
+    print([(x[0].get("title"), x[1]) for x in sorted_options])
     return [x[0] for x in sorted_options]
 
 
