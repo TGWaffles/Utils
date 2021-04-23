@@ -10,7 +10,7 @@ from main import UtilsBot
 from src.storage.token import *
 
 
-def find_closest(title, options):
+def find_closest(title, fulltext, options):
     sorted_options = []
     for option in options:
         print(option.get("viewCount"))
@@ -21,6 +21,7 @@ def find_closest(title, options):
         else:
             view_count = int(view_text)
         ratio = SequenceMatcher(None, title, option.get("title")).ratio()
+        ratio *= SequenceMatcher(None, fulltext, option.get("title")).ratio()
         sorted_options.append((option, ratio * view_count))
     sorted_options.sort(key=lambda x: x[1], reverse=True)
     return [x[0] for x in sorted_options]

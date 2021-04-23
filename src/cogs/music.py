@@ -99,7 +99,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
                                    "duration")) < target_duration + max_difference]
                     if len(results) > 0:
                         with ProcessPoolExecutor() as pool:
-                            results = await loop.run_in_executor(pool, partial(find_closest, title, results))
+                            results = await loop.run_in_executor(pool, partial(find_closest, title, url, results))
                         return results[0].get("link")
                     print(f"no results within {max_difference // 1000}s of target duration {target_duration // 1000}s")
             query = youtube_search.CustomSearch(url, youtube_search.VideoSortOrder.relevance, limit=1)
