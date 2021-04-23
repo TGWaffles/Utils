@@ -71,7 +71,7 @@ class Hypixel(commands.Cog):
             try:
                 player = await self.hypixel_api.get_player(user_uuid)
                 member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
-                print(player.get("name"))
+                print(player.get("playername"))
                 print(member_online)
                 break
             except TypeError as e:
