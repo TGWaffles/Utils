@@ -89,8 +89,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
                 original_results = await query.next()
                 original_results = original_results.get("result")
                 print([(x.get("title"), transform_duration_to_ms(x.get("duration")) // 1000) for x in original_results])
-                # Check within 1s, 20s, 60s, then any result.
-                for max_difference in [500, 20000, 60000]:
+                # Check within 10s, 20s, 60s, then any result.
+                for max_difference in [10000, 20000, 60000]:
                     results = [x for x in original_results if target_duration - max_difference <
                                transform_duration_to_ms(x.get(
                                    "duration")) < target_duration + max_difference]
