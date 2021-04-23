@@ -22,7 +22,7 @@ class Hypixel(commands.Cog):
         self.data = DataHelper()
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
-        self.hypixel_api = HypixelAPI(key="4822a8d3-2138-4e4e-a558-3c4f7cc08510")
+        self.hypixel_api = HypixelAPI(self.bot, key="4822a8d3-2138-4e4e-a558-3c4f7cc08510")
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.start()
