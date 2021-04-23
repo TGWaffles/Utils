@@ -94,7 +94,6 @@ class HypixelAPI:
         uuid = uuid.replace("-", "")
         parameters = {"uuid": uuid}
         data = await self.safe_request("session", parameters)
-        print(data)
         return data.get("status", {})
 
 
