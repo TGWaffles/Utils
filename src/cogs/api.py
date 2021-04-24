@@ -54,8 +54,8 @@ class API(commands.Cog):
         tts_cog = self.bot.get_cog("TTS")
         if autocorrect:
             content = ' '.join([self.find_autocorrect(word) for word in content.split(" ")])
-        await tts_cog.speak_id_content(int(member_id), content)
-        return web.Response(status=200)
+        self.bot.loop.create_task(tts_cog.speak_id_content(int(member_id), content))
+        return web.Response(status=202)
 
     @commands.command()
     async def api_key(self, ctx):
