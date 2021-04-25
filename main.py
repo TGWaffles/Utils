@@ -142,14 +142,12 @@ def get_bot():
     @bot.event
     async def on_command_error(ctx: commands.Context, error):
         if isinstance(error, commands.CommandInvokeError):
-            print(error.original)
+            if isinstance(error.original, discord.errors.Forbidden):
+                await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
+                                                                   "have permission to send "
+                                                                   "messages in that channel!".format(ctx.command)))
+                return
             print(type(error.original))
-            return
-        if isinstance(error, discord.errors.Forbidden):
-            await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
-                                                               "have permission to send "
-                                                               "messages in that channel!".format(ctx.command)))
-            return
         if isinstance(error, commands.BotMissingPermissions):
             missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in error.missing_perms]
 
