@@ -143,6 +143,8 @@ def get_bot():
     async def on_command_error(ctx: commands.Context, error):
         if isinstance(error, commands.CommandInvokeError):
             print(error.original)
+            print(type(error.original))
+            return
         if isinstance(error, discord.errors.Forbidden):
             await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
                                                                "have permission to send "
