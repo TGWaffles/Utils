@@ -141,7 +141,10 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx: commands.Context, error):
-        raise error
+        if isinstance(error, discord.errors.Forbidden):
+            await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
+                                                               "have permission to send "
+                                                               "messages in that channel!".format(ctx.command)))
         if isinstance(error, commands.BotMissingPermissions):
             missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in error.missing_perms]
 
@@ -162,9 +165,7 @@ def get_bot():
             except discord.errors.Forbidden:
                 await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
                                                                    "have permission to send "
-                                                                   "messages in that channel!".format(
-                    ctx.command
-                )))
+                                                                   "messages in that channel!".format(ctx.command)))
         try:
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
