@@ -340,7 +340,7 @@ class Hypixel(commands.Cog):
             self.user_to_files[member["name"].lower()] = (file, datetime.datetime.now())
             token = secrets.token_urlsafe(16).replace("-", "")
             embed = await self.get_user_embed(member)
-            embed.set_image(url="http://{}:2052/{}-{}.png".format(self.external_ip, member["name"], token))
+            embed.set_image(url="https://hypixel.thom.club/{}-{}.png".format(member["name"], token))
             if new_messages:
                 await channel.send(embed=embed)
             else:
@@ -352,11 +352,6 @@ class Hypixel(commands.Cog):
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
         try:
-            if self.external_ip is None:
-                async with aiohttp.ClientSession() as session:
-                    request = await session.get("https://checkip.amazonaws.com/")
-                    text = await request.text()
-                    self.external_ip = text.strip()
             all_channels = self.data.get("hypixel_channels", {}).copy()
             member_uuids = set()
             for _, members in all_channels.items():
