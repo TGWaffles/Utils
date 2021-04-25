@@ -141,6 +141,7 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx: commands.Context, error):
+        raise error
         if isinstance(error, commands.BotMissingPermissions):
             missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in error.missing_perms]
 
@@ -149,6 +150,7 @@ def get_bot():
             else:
                 perms_formatted = ' and '.join(missing)
             await ctx.reply(f"In order to run these commands, I need the following permission(s): {perms_formatted}")
+            return
 
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.DisabledCommand):
             return
@@ -166,7 +168,7 @@ def get_bot():
         try:
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
-            embed.add_field(name="Command passed error", value=error)
+            embed.add_field(name="Command passed error", value=str(error))
             embed.add_field(name="Context", value=ctx.message.content)
             print_tb(error.__traceback__)
             guild_error_channel_id = data.get("guild_error_channels", {}).get(str(ctx.guild.id), 795057163768037376)
