@@ -20,9 +20,14 @@ class UtilsBot(commands.Bot):
         # Initialises the actual commands.Bot class
         intents = discord.Intents.all()
         intents.members = True
-        super().__init__(command_prefix=self.determine_prefix, description=config.description,
-                         loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True,
-                         help_command=PrettyHelp(color=discord.Colour.blue()))
+        if os.environ.get("DATABASE_SERVER", None) is not None and not os.path.exists("second"):
+            super().__init__(command_prefix=self.determine_prefix, description=config.description,
+                             loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True,
+                             help_command=None)
+        else:
+            super().__init__(command_prefix=self.determine_prefix, description=config.description,
+                             loop=asyncio.new_event_loop(), intents=intents, case_insensitive=True,
+                             help_command=PrettyHelp(color=discord.Colour.blue()))
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
