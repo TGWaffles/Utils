@@ -141,7 +141,8 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx: commands.Context, error):
-        print(type(error))
+        if isinstance(error, commands.CommandInvokeError):
+            print(error.original)
         if isinstance(error, discord.errors.Forbidden):
             await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
                                                                "have permission to send "
@@ -168,6 +169,7 @@ def get_bot():
                 await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
                                                                    "have permission to send "
                                                                    "messages in that channel!".format(ctx.command)))
+                return
         try:
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
