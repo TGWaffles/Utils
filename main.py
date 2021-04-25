@@ -160,7 +160,12 @@ def get_bot():
                 perms_formatted = '{}, and {}'.format(", ".join(missing[:-1]), missing[-1])
             else:
                 perms_formatted = ' and '.join(missing)
-            await ctx.reply(f"In order to run these commands, I need the following permission(s): {perms_formatted}")
+            try:
+                await ctx.reply(f"In order to run these commands, I need the following permission(s): {perms_formatted}")
+            except discord.errors.Forbidden:
+                await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
+                                                                   "have permission to send "
+                                                                   "messages in that channel!".format(ctx.command)))
             return
 
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.DisabledCommand):
