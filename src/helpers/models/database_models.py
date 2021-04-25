@@ -28,7 +28,8 @@ class Guild(Base):
         with session.no_autoflush, guild_lock:
             try:
                 guild_object = session.query(Guild).filter_by(id=guild.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_discord(session, guild)
             if guild_object is None:
@@ -44,7 +45,8 @@ class Guild(Base):
         with session.no_autoflush, guild_lock:
             try:
                 guild_object = session.query(Guild).filter_by(id=guild.get("id")).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_dict(session, guild)
             if guild_object is None:
@@ -73,7 +75,8 @@ class Guild(Base):
         with session.no_autoflush, guild_lock:
             try:
                 guild_object = session.query(Guild).filter_by(id=guild.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.delete(session, guild)
             if guild_object is None:
@@ -99,7 +102,8 @@ class Role(Base):
         with session.no_autoflush, role_lock:
             try:
                 role_object = session.query(Role).filter_by(id=role.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 cls.from_discord_and_guild(session, role, guild_object)
             if role_object is None:
@@ -123,7 +127,8 @@ class Role(Base):
         with session.no_autoflush, role_lock:
             try:
                 role_object = session.query(Role).filter_by(id=role.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.delete(session, role)
             if role_object is None:
@@ -150,7 +155,8 @@ class Member(Base):
             try:
                 member_to_guild = session.query(Member).filter_by(user_id=discord_member.id,
                                                                   guild_id=discord_member.guild.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.update_member(session, discord_member)
             if member_to_guild is None:
@@ -182,7 +188,8 @@ class Member(Base):
             try:
                 member_to_guild = session.query(Member).filter_by(user_id=user_id,
                                                                   guild_id=guild_id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.delete_member(session, user_id, guild_id)
             if member_to_guild is None:
@@ -208,7 +215,8 @@ class MemberToRole(Base):
             try:
                 role_to_member = session.query(MemberToRole).filter_by(role_id=role.id, user_id=member.user_id,
                                                                        guild_id=member.guild_id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_member_and_role(session, member, role)
             if role_to_member is None:
@@ -230,7 +238,8 @@ class User(Base):
         with session.no_autoflush, user_lock:
             try:
                 user_object = session.query(User).get(user.id)
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_discord(session, user)
             if user_object is None:
@@ -246,7 +255,8 @@ class User(Base):
         with session.no_autoflush, user_lock:
             try:
                 user_object = session.query(User).get(user.get("id"))
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_dict(session, user)
             if user_object is None:
@@ -271,7 +281,8 @@ class Channel(Base):
         with session.no_autoflush, channel_lock:
             try:
                 text_channel_object = session.query(Channel).filter_by(id=text_channel.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_discord_and_guild(session, text_channel, guild)
             if text_channel_object is None:
@@ -293,7 +304,8 @@ class Channel(Base):
         with session.no_autoflush, channel_lock:
             try:
                 text_channel_object = session.query(Channel).filter_by(id=text_channel.get("id")).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_dict_and_guild(session, text_channel, guild)
             if text_channel_object is None:
@@ -315,7 +327,8 @@ class Channel(Base):
         with session.no_autoflush, channel_lock:
             try:
                 text_channel_object = session.query(Channel).filter_by(id=channel.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.delete_channel(session, channel)
             if text_channel_object is None:
@@ -344,7 +357,8 @@ class Message(Base):
         with session.no_autoflush, message_lock:
             try:
                 message_object = session.query(Message).filter_by(id=message.id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_discord(session, message)
             if message_object is None:
@@ -369,7 +383,8 @@ class Message(Base):
         with session.no_autoflush, message_lock:
             try:
                 message_object = session.query(Message).filter_by(id=message.get("id")).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_dict(session, message)
             if message_object is None:
@@ -390,7 +405,8 @@ class Message(Base):
     def mark_deleted_id(cls, session, message_id):
         try:
             message_object = session.query(Message).filter_by(id=message_id).first()
-        except:
+        except Exception as e:
+            print(e)
             session.rollback()
             return cls.mark_deleted_id(session, message_id)
         if message_object is None:
@@ -417,7 +433,8 @@ class MessageEdit(Base):
             try:
                 edit_object = session.query(MessageEdit).filter_by(message_id=message.id).order_by(
                     MessageEdit.timestamp.desc()).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_discord(session, message)
             if edit_object is None or edit_object.timestamp != message.edited_at.replace(tzinfo=None, microsecond=0):
@@ -440,7 +457,8 @@ class MessageEdit(Base):
         with session.no_autoflush, edit_lock:
             try:
                 message_object = session.query(Message).filter_by(id=message_id).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_raw(session, message_id, edited_at, content, embeds)
             if message_object is None:
@@ -448,7 +466,8 @@ class MessageEdit(Base):
             try:
                 edit_object = session.query(MessageEdit).filter_by(message_id=message_id).order_by(
                     MessageEdit.timestamp.desc()).first()
-            except:
+            except Exception as e:
+                print(e)
                 session.rollback()
                 return cls.from_raw(session, message_id, edited_at, content, embeds)
             if edit_object is None or edit_object.timestamp != edited_at:
