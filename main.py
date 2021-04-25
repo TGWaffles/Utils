@@ -140,13 +140,29 @@ def get_bot():
             print("Error sending to discord was {}".format(e))
 
     @bot.event
-    async def on_command_error(ctx, error):
+    async def on_command_error(ctx: commands.Context, error):
+        if isinstance(error, commands.BotMissingPermissions):
+            missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in error.missing_perms]
+
+            if len(missing) > 2:
+                perms_formatted = '{}, and {}'.format(", ".join(missing[:-1]), missing[-1])
+            else:
+                perms_formatted = ' and '.join(missing)
+            await ctx.reply(f"In order to run these commands, I need the following permission(s): {perms_formatted}")
+
         if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.DisabledCommand):
             return
         if isinstance(error, commands.CheckFailure):
-            await ctx.send(embed=bot.create_error_embed("You don't have permission to do that, {}.".
-                                                        format(ctx.message.author.mention)))
-            return
+            try:
+                await ctx.send(embed=bot.create_error_embed("You don't have permission to do that, {}.".
+                                                            format(ctx.message.author.mention)))
+                return
+            except discord.errors.Forbidden:
+                await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
+                                                                   "have permission to send "
+                                                                   "messages in that channel!".format(
+                    ctx.command
+                )))
         try:
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
