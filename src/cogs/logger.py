@@ -38,7 +38,6 @@ class SQLAlchemyTest(commands.Cog):
                         web.get("/global_phrase_count", self.count), web.get("/leaderboard", self.leaderboard),
                         web.get("/percentage", self.percentage), web.get("/leaderboard_pie", self.get_leaderboard_pie),
                         web.post("/many_messages", self.add_messages), web.get("/edits", self.edits),
-                        web.post("/format_leaderboard", self.format_leaderboard),
                         web.post("/on_message", self.on_api_message), web.post("/on_edit", self.on_api_raw_edit),
                         web.post("/on_member_remove", self.on_member_remove_api),
                         web.post("/exclude_channel", self.on_api_exclusion),
