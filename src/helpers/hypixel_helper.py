@@ -181,7 +181,7 @@ def get_file_for_member(member):
     name_font.size = size // 16
     # Write Name
     name_x = width // 2
-    name_y = height // 8
+    name_y = height // 7
     name_length = draw.textsize(member["name"], font=name_font)[0]
     left_of_name = name_x - name_length // 2 - width // 64
     head_image_width = head_image.size[0]
