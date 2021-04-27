@@ -29,6 +29,7 @@ class Hypixel(commands.Cog):
         self.user_to_files = {}
         self.token_last_used = {}
         self.latest_tokens = []
+        self.head_images = {}
         self.external_ip = None
         app = web.Application()
         app.add_routes([web.get('/{user}-{uid}.png', self.request_image), web.get('/{user}.png', self.request_image),
@@ -92,9 +93,15 @@ class Hypixel(commands.Cog):
 
     async def get_expanded_player(self, user_uuid, pool, reset=False):
         player = await self.get_user_stats(user_uuid)
-        async with aiohttp.ClientSession() as session:
-            async with session.get("http://cravatar.eu/helmavatar/{}/64.png".format(player["uuid"])) as response:
-                player["head_image"] = await response.read()
+        if player["uuid"] in self.head_images and (datetime.datetime.now() -
+                                                   self.head_images[player["uuid"]][1]).total_seconds() < 300:
+            player["head_image"] = self.head_images[player["uuid"]][0]
+        else:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("http://cravatar.eu/helmavatar/{}/64.png".format(player["uuid"])) as response:
+                    head_image = await response.read()
+                    self.head_images[player["uuid"]] = (head_image, datetime.datetime.now())
+                    player["head_image"] = head_image
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
