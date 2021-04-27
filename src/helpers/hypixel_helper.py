@@ -164,6 +164,8 @@ def are_equal(file1, file2):
 
 
 def get_file_for_member(member):
+    head_file = BytesIO(member["head_image"])
+    head_image = PIL.Image.open(head_file)
     final_file = BytesIO()
     size = 1024
     width = size
@@ -180,7 +182,11 @@ def get_file_for_member(member):
     # Write Name
     name_x = width // 2
     name_y = height // 8
-    draw.text((name_x, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
+    name_size = draw.textsize(member["name"], font=name_font)
+    left_of_name = name_x - name_size // 2
+    head_image_width = head_image.size[0]
+    image.paste(head_image, (left_of_name - head_image_width // 2, name_y - head_image_width // 2))
+    draw.text((name_x + head_image_width // 2, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
     # Write last online or current game.
     if member["online"]:
         if member["mode"] is None or (member["map"] is None and member["mode"].lower() == "lobby"):
