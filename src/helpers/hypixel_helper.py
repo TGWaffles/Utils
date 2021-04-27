@@ -182,8 +182,8 @@ def get_file_for_member(member):
     # Write Name
     name_x = width // 2
     name_y = height // 8
-    name_size = draw.textsize(member["name"], font=name_font)
-    left_of_name = name_x - name_size // 2
+    name_length = draw.textsize(member["name"], font=name_font)[0]
+    left_of_name = name_x - name_length // 2
     head_image_width = head_image.size[0]
     image.paste(head_image, (left_of_name - head_image_width // 2, name_y - head_image_width // 2))
     draw.text((name_x + head_image_width // 2, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
