@@ -93,7 +93,7 @@ class Hypixel(commands.Cog):
     async def get_expanded_player(self, user_uuid, pool, reset=False):
         player = await self.get_user_stats(user_uuid)
         async with aiohttp.ClientSession() as session:
-            async with session.get("http://cravatar.eu/helmavatar/{}/128.png".format(player["uuid"])) as response:
+            async with session.get("http://cravatar.eu/helmavatar/{}/64.png".format(player["uuid"])) as response:
                 player["head_image"] = await response.read()
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
