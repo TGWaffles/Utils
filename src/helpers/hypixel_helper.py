@@ -183,9 +183,9 @@ def get_file_for_member(member):
     name_x = width // 2
     name_y = height // 8
     name_length = draw.textsize(member["name"], font=name_font)[0]
-    left_of_name = name_x - name_length // 2 - width // 16
+    left_of_name = name_x - name_length // 2 - width // 64
     head_image_width = head_image.size[0]
-    name_x = name_x + head_image_width // 2 + width // 16
+    name_x = name_x + head_image_width // 2 + width // 64
     image.paste(head_image, (left_of_name - head_image_width // 2, name_y - head_image_width // 2))
     draw.text((name_x, name_y), member["name"], font=name_font, anchor="mm", fill=name_colour)
     # Write last online or current game.
