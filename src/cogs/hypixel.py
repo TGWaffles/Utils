@@ -219,13 +219,11 @@ class Hypixel(commands.Cog):
 
     @staticmethod
     async def uuid_from_identifier(identifier):
-
-        failed = False
         uuid = ""
         try:
             if mcuuid.tools.is_valid_mojang_uuid(identifier):
                 uuid = identifier
-            elif mcuuid.tools.is_valid_minecraft_username(identifier):
+            else:
                 async with aiohttp.ClientSession() as session:
                     request = await session.get("https://playerdb.co/api/player/minecraft/" + identifier)
                     if request.status != 200:
@@ -234,11 +232,7 @@ class Hypixel(commands.Cog):
                     if not json_response.get("success", False):
                         return None
                     uuid = json_response.get("data", {}).get("player", {}).get("id", None)
-            else:
-                failed = True
         except AttributeError:
-            failed = True
-        if failed:
             return None
         return uuid
 
