@@ -161,10 +161,12 @@ class Hypixel(commands.Cog):
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 player = await self.get_expanded_player(uuid, pool, True)
             data = player["file"]
-            self.user_to_files[username.lower()] = (data, datetime.datetime.now())
+            last_timestamp = datetime.datetime.now()
+            self.user_to_files[username.lower()] = (data, last_timestamp)
         response = web.StreamResponse()
         response.content_type = "image/png"
         response.content_length = len(data)
+        response.headers["Cache-Control"] = "max-age=15"
         await response.prepare(request)
         await response.write(data)
         return response
