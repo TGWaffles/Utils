@@ -248,7 +248,7 @@ def get_file_for_member(member):
     credits_height = height - top_line_height
     credits_x = width // 2
     credits_font = PIL.ImageFont.truetype("arial.ttf", size // 40)
-    credit_text = "Get the Utils bot!\nhttps://thom.club"
+    credit_text = "Get the Utils bot!\nhttps://thom.club/"
     for line in credit_text.split("\n")[::-1]:
         draw.text((credits_x, credits_height), line, font=credits_font, anchor="mm",
                   fill=regular_text_fill, align="center")
