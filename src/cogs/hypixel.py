@@ -311,9 +311,7 @@ class Hypixel(commands.Cog):
         :param uuid: A player's UUID. If not, it will return None if valid form or "Unknown Player" if not.
         :return: The player's username.
         """
-        stripped_uuid = uuid.strip("-")
-        print(len(stripped_uuid))
-        print(stripped_uuid)
+        stripped_uuid = uuid.replace("-", "")
         if not mcuuid.tools.is_valid_mojang_uuid(stripped_uuid):
             return "Unknown Player"
         async with aiohttp.ClientSession() as session:
@@ -397,14 +395,15 @@ class Hypixel(commands.Cog):
             all_channels = self.data.get("hypixel_channels", {})
             found = False
             for channel in ctx.guild.channels:
-                if uuid in all_channels.get(str(channel.id), []):
-                    all_channels[str(channel.id)].remove(uuid)
-                    self.data["hypixel_channels"] = all_channels
-                    await ctx.reply(embed=self.bot.create_completed_embed("User Removed!",
-                                                                          "User {} has been removed from {}.".format(
-                                                                              await self.username_from_uuid(uuid),
-                                                                              channel.mention)))
-                    found = True
+                for other_uuid in all_channels.get(str(channel.id), []):
+                    if uuid.replace("-", "") == other_uuid.replace("-", ""):
+                        all_channels[str(channel.id)].remove(other_uuid)
+                        self.data["hypixel_channels"] = all_channels
+                        await ctx.reply(embed=self.bot.create_completed_embed(
+                            "User Removed!", "User {} has been removed from {}.".format(
+                              await self.username_from_uuid(other_uuid),
+                              channel.mention)))
+                        found = True
             if not found:
                 await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
 
