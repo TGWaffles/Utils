@@ -247,9 +247,12 @@ def get_file_for_member(member):
               fill=regular_text_fill, align="center")
     credits_height = height - top_line_height
     credits_x = width // 2
-    credits_font = PIL.ImageFont.truetype("arial.ttf", size // 48)
-    draw.text((credits_x, credits_height), "Image courtesy of Utils - https://thom.club", font=credits_font, anchor="mm",
-              fill=regular_text_fill, align="center")
+    credits_font = PIL.ImageFont.truetype("arial.ttf", size // 40)
+    credit_text = "Get the Utils bot!\nhttps://thom.club"
+    for line in credit_text[::-1]:
+        draw.text((credits_x, credits_height), line, font=credits_font, anchor="mm",
+                  fill=regular_text_fill, align="center")
+        credits_height -= draw.textsize(line, font=credits_font)[1]
     image.save(fp=final_file, format="png")
     final_file.seek(0)
     return final_file
