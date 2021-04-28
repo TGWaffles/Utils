@@ -1,24 +1,21 @@
-import asyncio
-
-import discord
-import youtube_dl
-import aiohttp
+import audioop
 import json.decoder
+import random
 import re
 import time
-import random
-import youtubesearchpython.__future__ as youtube_search
+from concurrent.futures import ProcessPoolExecutor
 
+import aiohttp
+import discord
+import youtube_dl
+import youtubesearchpython.__future__ as youtube_search
 from discord.ext import commands
 from pytube import Playlist
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
 
-from main import UtilsBot
-from src.helpers.storage_helper import DataHelper
-from src.helpers.spotify_helper import *
-from src.helpers.paginator import Paginator
 from src.checks.role_check import is_staff
+from src.helpers.paginator import Paginator
+from src.helpers.spotify_helper import *
+from src.helpers.storage_helper import DataHelper
 
 # TODO:
 """1. Add a true pagination system to the bot as a whole to allow !queue DONE
@@ -68,7 +65,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
     def read(self):
         if not self.start_time:
             self.start_time = time.time() - self.resume_from
-        return super().read()
+        ret = self.original.read()
+        return audioop.mul(ret, 2, self._volume)
 
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):
