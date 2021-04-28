@@ -9,9 +9,9 @@ import mcuuid.tools
 from aiohttp import web
 from discord.ext import commands, tasks
 
-from main import UtilsBot
 from src.checks.message_check import check_reply
 from src.checks.role_check import is_staff
+from src.storage.token import hypixel_token
 from src.helpers.hypixel_helper import *
 from src.helpers.storage_helper import DataHelper
 
@@ -22,7 +22,7 @@ class Hypixel(commands.Cog):
         self.data = DataHelper()
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
-        self.hypixel_api = HypixelAPI(self.bot, key="4822a8d3-2138-4e4e-a558-3c4f7cc08510")
+        self.hypixel_api = HypixelAPI(self.bot, key=hypixel_token)
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.start()
