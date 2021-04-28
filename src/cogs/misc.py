@@ -188,6 +188,10 @@ class Misc(commands.Cog):
                     if og_role is not None:
                         await member.add_roles(og_role)
                         print("Added role!")
+                else:
+                    print("failed to get og role...")
+            else:
+                print("not og")
         except AssertionError:
             pass
 
