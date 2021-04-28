@@ -1,13 +1,12 @@
-import asyncio
+from typing import Optional
 
 import discord
-
 from discord.ext import commands
+
 from main import UtilsBot
+from src.checks.message_check import check_pinned
 from src.checks.role_check import is_staff
 from src.storage import config, messages
-from src.checks.message_check import check_reply, check_pinned
-from typing import Optional
 
 
 class Purge(commands.Cog):
@@ -32,13 +31,11 @@ class Purge(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed(messages.no_purge_amount))
             return
         if amount == -1:
-            sent = await ctx.reply(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
-                                                                                     "clear the whole channel...?"))
-            try:
-                await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
-                await ctx.message.channel.purge(limit=None, bulk=bulk, check=check)
-            except asyncio.TimeoutError:
-                await sent.edit(embed=self.bot.create_error_embed("This is a good thing. Crisis averted."))
+            response = await self.bot.ask_boolean(ctx, ctx.author, question=self.bot.create_processing_embed(
+                "Confirm", "Are you sure you want to clear the whole channel...?"))
+            if not response:
+                return
+            await ctx.message.channel.purge(limit=None, bulk=bulk, check=check)
         else:
             if amount > config.confirm_amount:
                 true_amount = len([message for message in await ctx.message.channel.history(limit=amount).flatten()
@@ -47,23 +44,24 @@ class Purge(commands.Cog):
                     to_send = "{} of {}".format(true_amount, amount)
                 else:
                     to_send = amount
-                sent = await ctx.reply(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to "
-                                                                                         "clear **{}** messages?\n"
-                                                                                         "(type \"yes\" to confirm)".
-                                                                              format(to_send)))
-                try:
-                    await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
+                response = await self.bot.ask_boolean(ctx, ctx.author, question=self.bot.create_processing_embed(
+                    "Confirm", "Are you sure you want to clear **{}** messages?\n(type \"yes\" to confirm)".format(
+                        to_send)))
+                if not response:
+                    return
+                while True:
                     try:
                         await ctx.message.channel.purge(limit=amount + 3, bulk=bulk, check=check)
+                        break
                     except discord.NotFound:
                         pass
-                except asyncio.TimeoutError:
-                    await sent.edit(embed=self.bot.create_error_embed("Purge wasn't confirmed by the user."))
             else:
-                try:
-                    await ctx.message.channel.purge(limit=amount + 1, bulk=bulk, check=check)
-                except discord.NotFound:
-                    pass
+                while True:
+                    try:
+                        await ctx.message.channel.purge(limit=amount + 1, bulk=bulk, check=check)
+                        break
+                    except discord.NotFound:
+                        pass
 
 
 def setup(bot):

@@ -1,6 +1,14 @@
+from discord.ext.commands.core import _convert_to_bool, BadBoolArgument
+
+
 def check_reply(author):
     def check_author(message):
-        return message.author.id == author.id and message.content.lower() == "yes"
+        try:
+            if message.author.id == author.id:
+                _convert_to_bool(message.content)
+                return True
+        except BadBoolArgument:
+            return False
     return check_author
 
 

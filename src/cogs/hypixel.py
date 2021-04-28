@@ -8,6 +8,7 @@ import mcuuid.api
 import mcuuid.tools
 from aiohttp import web
 from discord.ext import commands, tasks
+from typing import Optional
 
 from src.checks.message_check import check_reply
 from src.checks.role_check import is_staff
@@ -242,7 +243,7 @@ class Hypixel(commands.Cog):
 
     @commands.command(pass_context=True)
     @is_staff()
-    async def hypixel_channel(self, ctx, channel: discord.TextChannel):
+    async def hypixel_channel(self, ctx, channel: Optional[discord.TextChannel]):
         """Allows a user to set up a "Hypixel Channel", for automatic tracking of players.
 
         These update once every (roughly) 45 seconds, API allowing.
@@ -250,30 +251,37 @@ class Hypixel(commands.Cog):
 
         If this bot gets into too many servers,
         this will almost certainly become a premium feature to limit hypixel api load."""
-        sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm",
-                                                                     "Are you sure you want to make {} "
-                                                                     "the text channel for hypixel "
-                                                                     "updates? \n "
-                                                                     "(THIS DELETES ALL CONTENTS) \n"
-                                                                     "Type \"yes\" if you're sure.".format(
-                                                                         channel.mention)))
-        # If there is no confirmation in 15 seconds, give up.
-        try:
-            await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
-            await sent.delete()
-            processing = await ctx.send(embed=self.bot.create_processing_embed(
+        overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False),
+                      ctx.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
+        if channel is None:
+            sent = await self.bot.ask_boolean(ctx, ctx.author, self.bot.create_processing_embed(
+                "Confirm", "Are you sure you want to make a NEW hypixel channel?"))
+            if not sent:
+                return
+            channel = await ctx.guild.create_text_channel("hypixel-tracking", overwrites=overwrites)
+        else:
+            sent = await self.bot.ask_boolean(ctx, ctx.author, self.bot.create_processing_embed(
+                "Confirm", "Are you sure you want to make {}  the text channel for hypixel updates? "
+                           "\n(THIS DELETES ALL CONTENTS) \nType \"yes\" if you're sure.".format(channel.mention)))
+            # If there is no confirmation in 15 seconds, give up.
+            if not sent:
+                return
+            await sent.edit(embed=self.bot.create_processing_embed(
                 "Converting {}".format(channel.name), "Deleting all prior messages."))
             async for message in channel.history(limit=None):
                 await message.delete()
-            await processing.edit(embed=self.bot.create_processing_embed(
-                "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
-            all_channels = self.data.get("hypixel_channels", {})
-            all_channels[str(channel.id)] = []
-            self.data["hypixel_channels"] = all_channels
-            await processing.edit(embed=self.bot.create_completed_embed("Added Channel!",
-                                                                        "Channel added for hypixel info."))
-        except asyncio.TimeoutError:
-            return
+            await channel.edit(overwrites=overwrites)
+        await sent.edit(embed=self.bot.create_processing_embed(
+            "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
+        all_channels = self.data.get("hypixel_channels", {})
+        guild_channel_ids = [x.id for x in ctx.guild.text_channels]
+        for channel in all_channels.keys():
+            if int(channel) in guild_channel_ids:
+                del all_channels[channel]
+        all_channels[str(channel.id)] = []
+        self.data["hypixel_channels"] = all_channels
+        await sent.edit(embed=self.bot.create_completed_embed("Added Channel!",
+                                                              "Channel added for hypixel info."))
 
     @staticmethod
     async def uuid_from_identifier(identifier):

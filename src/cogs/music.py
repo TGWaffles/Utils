@@ -163,13 +163,13 @@ class Music(commands.Cog):
             except RuntimeError:
                 pass
 
-    def enqueue(self, guild, song_url, time=None, start=False):
+    def enqueue(self, guild, song_url, resume_time=None, start=False):
         all_queues = self.data.get("song_queues", {})
         guild_queue: list = all_queues.get(str(guild.id), [])
-        if time is None:
+        if resume_time is None:
             to_queue = song_url
         else:
-            to_queue = [song_url, time]
+            to_queue = [song_url, resume_time]
         if start:
             guild_queue.insert(0, to_queue)
         else:

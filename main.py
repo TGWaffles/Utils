@@ -7,9 +7,12 @@ import datetime
 import time
 import subprocess
 
+from typing import Union
 from pretty_help import PrettyHelp
 from discord.ext import commands
 from src.storage import config
+from src.checks.message_check import check_reply
+from discord.ext.commands.core import BadBoolArgument, _convert_to_bool
 from src.helpers.storage_helper import DataHelper
 from traceback import format_exc, print_tb
 from src.storage.token import token  # token.py is just one variable - token = "token"
@@ -75,6 +78,34 @@ class UtilsBot(commands.Bot):
         members = [user for user in members if user.joined_at is not None]
         members.sort(key=lambda x: x.joined_at)
         return members
+
+    async def ask_boolean(self, to_reply_to: Union[discord.Message, discord.abc.Messageable], user: discord.User,
+                          question: Union[str, discord.Embed]):
+        if isinstance(to_reply_to, discord.Message):
+            if isinstance(question, str):
+                sent_message = await to_reply_to.reply(question)
+            else:
+                sent_message = await to_reply_to.reply(embed=question)
+        else:
+            if isinstance(question, str):
+                sent_message = await to_reply_to.send(question)
+            else:
+                sent_message = await to_reply_to.send(embed=question)
+        try:
+            replied_message = await self.wait_for("message", check=check_reply(user), timeout=15.0)
+            if not _convert_to_bool(replied_message.content):
+                return False
+            return sent_message
+        except asyncio.TimeoutError:
+            if isinstance(question, str):
+                await sent_message.edit(content="No valid response detected in time, or explicit 'no' detected. "
+                                                "Request cancelled.")
+            else:
+                await sent_message.edit(embed=self.create_error_embed("No valid response detected in time, or explicit "
+                                                                      "'no' detected. "
+                                                                      "Request cancelled."))
+            return False
+
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod
