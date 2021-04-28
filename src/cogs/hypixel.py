@@ -17,6 +17,10 @@ from src.helpers.hypixel_helper import *
 from src.helpers.storage_helper import DataHelper
 
 
+def equate_uuids(uuid, other_uuid):
+    return uuid.replace("-", "") == other_uuid.replace("-", "")
+
+
 class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
@@ -365,7 +369,7 @@ class Hypixel(commands.Cog):
                     self.data["hypixel_channels"] = all_channels
                     continue
                 if channel.guild == ctx.guild:
-                    if uuid in all_channels[str(channel_id)]:
+                    if any([equate_uuids(uuid, x) for x in all_channels[str(channel_id)]]):
                         await ctx.reply(embed=self.bot.create_error_embed("Player already in channel!"))
                         return
                     all_channels[str(channel_id)].append(uuid)
@@ -396,7 +400,7 @@ class Hypixel(commands.Cog):
             found = False
             for channel in ctx.guild.channels:
                 for other_uuid in all_channels.get(str(channel.id), []):
-                    if uuid.replace("-", "") == other_uuid.replace("-", ""):
+                    if equate_uuids(uuid, other_uuid):
                         all_channels[str(channel.id)].remove(other_uuid)
                         self.data["hypixel_channels"] = all_channels
                         await ctx.reply(embed=self.bot.create_completed_embed(
