@@ -311,7 +311,10 @@ class Hypixel(commands.Cog):
         :param uuid: A player's UUID. If not, it will return None if valid form or "Unknown Player" if not.
         :return: The player's username.
         """
-        if not mcuuid.tools.is_valid_mojang_uuid(uuid.strip("-")):
+        stripped_uuid = uuid.strip("-")
+        print(len(stripped_uuid))
+        print(stripped_uuid)
+        if not mcuuid.tools.is_valid_mojang_uuid(stripped_uuid):
             return "Unknown Player"
         async with aiohttp.ClientSession() as session:
             request = await session.get("https://playerdb.co/api/player/minecraft/" + uuid)
