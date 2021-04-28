@@ -275,9 +275,9 @@ class Hypixel(commands.Cog):
             "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
         all_channels = self.data.get("hypixel_channels", {})
         guild_channel_ids = [x.id for x in ctx.guild.text_channels]
-        for channel in all_channels.keys():
-            if int(channel) in guild_channel_ids:
-                del all_channels[channel]
+        for old_channel in all_channels.keys():
+            if int(old_channel) in guild_channel_ids:
+                del all_channels[old_channel]
         all_channels[str(channel.id)] = []
         self.data["hypixel_channels"] = all_channels
         await sent.edit(embed=self.bot.create_completed_embed("Added Channel!",
