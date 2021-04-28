@@ -437,7 +437,7 @@ class Hypixel(commands.Cog):
             new_messages = False
         for member, file in zip(our_members, member_files):
             self.user_to_files[member["name"].lower()] = (file, datetime.datetime.now())
-            token = secrets.token_urlsafe(16).replace("-", "")
+            token = secrets.token_urlsafe(6).replace("-", "")
             embed = await self.get_user_embed(member)
             embed.set_image(url="https://hypixel.thom.club/{}-{}.png".format(member["name"], token))
             if new_messages:
