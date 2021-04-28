@@ -38,14 +38,20 @@ class Hypixel(commands.Cog):
         self.bot.loop.create_task(self.hypixel_api.queue_loop())
 
     async def setup_website(self, app):
+        """Sets up the website in the bot's loop.
+        It would be simpler to do web.run(app), but that creates a new event loop and asyncio hates that
+        """
         runner = web.AppRunner(app)
         await runner.setup()
+        # Internally it is port 2052, but my reverse proxy proxies this to hypixel.thom.club port 80
         site = web.TCPSite(runner, "0.0.0.0", 2052)
         self.bot.loop.create_task(site.start())
-        return
+        return  # literally useless return but has previously been useful
 
     @staticmethod
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
+        """Turns the file into a neater dictionary with known variables,
+        so it can be pickled and accessed by the file creation process. """
         return {"name": player.get("displayname"),
                 "last_logout": datetime.datetime.fromtimestamp(player.get("lastLogout").timestamp(),
                                                                datetime.timezone.utc),
@@ -55,7 +61,9 @@ class Hypixel(commands.Cog):
                 "threat_index": threat_index, "fkdr": fkdr}
 
     async def online_player(self, player, experience, user_uuid, threat_index, fkdr):
+        """Same as offline_player, but also returns their game, mode and map."""
         status = await self.hypixel_api.get_status(user_uuid)
+        # Double checks they're actually online, in case their lastLogout/Login glitched
         if not status.get("online"):
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
         return {"name": player.get("displayname"),
@@ -69,22 +77,27 @@ class Hypixel(commands.Cog):
                 "fkdr": fkdr}
 
     async def get_user_stats(self, user_uuid):
-        while True:
-            try:
-                player = await self.hypixel_api.get_player(user_uuid)
-                member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
-                break
-            except TypeError as e:
-                print(player.get("lastLogout"))
-                print(player.get("lastLogin"))
-                print(e)
+        """Gets the actual information from hypixel, determines whether the member is online or not, and also fetches
+        the member's game-mode and map if they are online.
+        :param user_uuid: The uuid of the user.
+        :return: A dictionary with known keys which contains information about the player's statistics.
+        """
+        # Gets raw information from the API via my rate limit abiding queue in hypixel_helper
+        player = await self.hypixel_api.get_player(user_uuid)
+        # They are online if they last logged in after they last logged out
+        member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
         experience = player.get("stats")["Bedwars"]["Experience"]
         try:
+            # fkdr = bedwars final kills over bedwars final deaths
             fkdr = player.get("stats")['Bedwars']['final_kills_bedwars'] / player.get("stats")['Bedwars'][
                 'final_deaths_bedwars']
+        # KeyError = they have no final kills or no final deaths
         except KeyError:
+            # set it to 0 so i dont get another error in threat index calculation
             fkdr = 0
+        # hypixel_helper.py, turns experience into decimal level
         bedwars_level = get_level_from_xp(experience)
+        # fkdr = level * fkdr squared, all divided by 10 (thanks statsify)
         threat_index = (bedwars_level * (fkdr ** 2)) / 10
         if member_online:
             return await self.online_player(player, experience, user_uuid, threat_index, fkdr)
@@ -92,19 +105,30 @@ class Hypixel(commands.Cog):
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
 
     async def get_expanded_player(self, user_uuid, pool, reset=False):
+        """
+
+        :param user_uuid: The minecraft uuid of the player in question.
+        :param pool: Instance of concurrent.futures.ProcessPoolExecutor
+        :param reset: Whether to still update the embeds (later) even if the image hasn't changed
+        :return: player dictionary with player["file"] being the generated image.
+        """
         player = await self.get_user_stats(user_uuid)
+        # If the head image has been cached less than 5 mins ago, used the cached version
         if player["uuid"] in self.head_images and (datetime.datetime.now() -
                                                    self.head_images[player["uuid"]][1]).total_seconds() < 300:
             player["head_image"] = self.head_images[player["uuid"]][0]
         else:
+            # Else fetch it from cravatar, cache it and use that version
             async with aiohttp.ClientSession() as session:
                 async with session.get("http://cravatar.eu/helmavatar/{}/64.png".format(player["uuid"])) as response:
                     head_image = await response.read()
                     self.head_images[player["uuid"]] = (head_image, datetime.datetime.now())
                     player["head_image"] = head_image
+        # Run the get_file_for_member function in another process and await its completion
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
         if not reset:
+            # Check whether the image has changed.
             if player["name"].lower() in self.user_to_files:
                 last_file = BytesIO(self.user_to_files[player["name"].lower()][0])
             if last_file is None:
@@ -117,64 +141,86 @@ class Hypixel(commands.Cog):
                 else:
                     last_file.close()
         else:
+            # If we're resetting, mark the image to be changed in the embed.
             same_file = False
         player["file"] = member_file.read()
         player["unchanged"] = same_file
+        # Remember to close the file since we're only storing the raw bytes.
         member_file.close()
         return player
 
     @staticmethod
     async def get_user_embed(member):
+        """
+        Formats an embed for a user. Notably doesn't include the image - just the embed itself without any references
+        to the member's image.
+        :param member: member dictionary.
+        :return: formatted embed with online colour, username, and timestamp of either last update or last online time.
+        """
         member_embed = discord.Embed(title=member["name"], color=((discord.Colour.red(),
                                                                    discord.Colour.green())[int(member["online"])]),
                                      timestamp=datetime.datetime.utcnow())
-        if member["online"]:
-            pass
-            # if member["mode"] is None:
-            #     game_text = "{}: LOBBY".format(member["game"])
-            # else:
-            #     try:
-            #         game_text = "{}: {} ({})".format(member["game"], member["mode"], member["map"]["map"])
-            #     except KeyError:
-            #         game_text = "{}: {}".format(member["game"], member["mode"])
-            # member_embed.add_field(name="Current Game", value=game_text)
-        else:
-            # member_embed.add_field(name="Last Online", value=member["last_logout"].strftime("%Y/%m/%d %H:%M"))
+        if not member["online"]:
             member_embed.timestamp = member["last_logout"]
-
-        # member_embed.add_field(name="Hypixel Level", value=member["level"])
-        # member_embed.add_field(name="| Bedwars Level", value="| {}".format(member["bedwars_level"]))
-        # member_embed.add_field(name="| Bedwars Winstreak", value="| {}".format(member["bedwars_winstreak"]))
         return member_embed
 
     async def request_image(self, request: web.Request):
+        """
+        Called function when hypixel.thom.club/* is called. The routes are defined in the __init__ method of this
+        class. This returns (either from cache or by generation) the hypixel image of the user.
+        :param request: web request from browser (aiohttp)
+        :return: web response to send to the browser
+        """
+        # The username as specified in the routes.
         username = request.match_info['user']
+        # The current time.
         now = datetime.datetime.now()
+        # Checks cache for member, if not in cache data is None and last_timestamp is 0.
         data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
+        # If the user is not cached or the cached version is more than 5 minutes old...
         if data is None or (now - last_timestamp).total_seconds() > 300:
+            # Convert username into minecraft uuid
             uuid = await self.uuid_from_identifier(username)
+            # Returns 404 (not found) if the minecraft user doesn't exist.
             if uuid is None:
                 return web.Response(status=404)
+            # Returns 404 if the user has missing or no bedwars stats.
             valid = await self.check_valid_player(uuid)
             if not valid:
                 return web.Response(status=404)
+            # Calls get_expanded_player to get the player dictionary, with a new ProcessPoolExecutor to put the process
+            # in, separate from the embeds so it can execute independently.
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 player = await self.get_expanded_player(uuid, pool, True)
             data = player["file"]
             last_timestamp = datetime.datetime.now()
+            # Caches the image and timestamp
             self.user_to_files[username.lower()] = (data, last_timestamp)
         response = web.StreamResponse()
+        # Specifies it's a png.
         response.content_type = "image/png"
         response.content_length = len(data)
+        # Tells browsers to delete from cache after 15 seconds (45 / 3)
         response.headers["Cache-Control"] = "max-age=15"
+        # Sends browser headers.
         await response.prepare(request)
+        # Sends image.
         await response.write(data)
+        # Closes connection.
         return response
 
     @commands.command(aliases=["hinfo"])
     async def info(self, ctx, username: str):
+        """Runs the hinfo command.
+
+        Essentially, just sends the bedwars image as a file independent of the webhost."""
         now = datetime.datetime.now()
         async with ctx.typing():
+            """Checks cache for file. Can probably be extrapolated into a method, but this replies to the calling
+            command with information about why it failed if it does, rather than web status codes.
+            
+            Read request_image() for more detailed comments. This is essentially that function but as a 
+            discord command rather than a webpage."""
             data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
             if data is None or (now - last_timestamp).total_seconds() > 300:
                 uuid = await self.uuid_from_identifier(username)
@@ -189,19 +235,29 @@ class Hypixel(commands.Cog):
                     player = await self.get_expanded_player(uuid, pool, True)
                 data = player["file"]
                 self.user_to_files[username.lower()] = (data, datetime.datetime.now())
+            # Wraps the data (bytes) in file-like object so discord.py can take it as a file.
             file = BytesIO(data)
-            discord_file = discord.File(fp=file, filename=f"{username}.png`")
+            discord_file = discord.File(fp=file, filename=f"{username}.png")
             await ctx.reply(file=discord_file)
 
     @commands.command(pass_context=True)
     @is_staff()
     async def hypixel_channel(self, ctx, channel: discord.TextChannel):
-        sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm", "Are you sure you want to make {} "
-                                                                                "the text channel for hypixel "
-                                                                                "updates? \n "
-                                                                                "(THIS DELETES ALL CONTENTS) \n"
-                                                                                "Type \"yes\" if you're sure.".format(
-            channel.mention)))
+        """Allows a user to set up a "Hypixel Channel", for automatic tracking of players.
+
+        These update once every (roughly) 45 seconds, API allowing.
+        As more players are tracked, expect that interval to decrease.
+
+        If this bot gets into too many servers,
+        this will almost certainly become a premium feature to limit hypixel api load."""
+        sent = await ctx.send(embed=self.bot.create_processing_embed("Confirm",
+                                                                     "Are you sure you want to make {} "
+                                                                     "the text channel for hypixel "
+                                                                     "updates? \n "
+                                                                     "(THIS DELETES ALL CONTENTS) \n"
+                                                                     "Type \"yes\" if you're sure.".format(
+                                                                         channel.mention)))
+        # If there is no confirmation in 15 seconds, give up.
         try:
             await self.bot.wait_for("message", check=check_reply(ctx.message.author), timeout=15.0)
             await sent.delete()
@@ -221,10 +277,13 @@ class Hypixel(commands.Cog):
 
     @staticmethod
     async def uuid_from_identifier(identifier):
-        uuid = ""
+        """Makes a request to playerdb.co (higher ratelimit than mojang) to get the UUID from a username.
+        :param identifier: Either a username or uuid of a player. Could be neither then will return None.
+        :return: The player's UUID or None, if it is not a valid UUID.
+        """
         try:
             if mcuuid.tools.is_valid_mojang_uuid(identifier):
-                uuid = identifier
+                return identifier
             else:
                 async with aiohttp.ClientSession() as session:
                     request = await session.get("https://playerdb.co/api/player/minecraft/" + identifier)
@@ -233,12 +292,16 @@ class Hypixel(commands.Cog):
                     json_response = await request.json()
                     if not json_response.get("success", False):
                         return None
-                    uuid = json_response.get("data", {}).get("player", {}).get("id", None)
+                    return json_response.get("data", {}).get("player", {}).get("id", None)
         except AttributeError:
             return None
-        return uuid
 
-    async def username_from_uuid(self, uuid):
+    @staticmethod
+    async def username_from_uuid(uuid):
+        """Returns a username from a UUID.
+        :param uuid: A player's UUID. If not, it will return None if valid form or "Unknown Player" if not.
+        :return: The player's username.
+        """
         if not mcuuid.tools.is_valid_mojang_uuid(uuid):
             return "Unknown Player"
         async with aiohttp.ClientSession() as session:
@@ -252,6 +315,11 @@ class Hypixel(commands.Cog):
         return username
 
     async def check_valid_player(self, uuid):
+        """Checks whether the player is a valid hypixel player by seeing if all keys needed to generate a player
+        file are present in their stats. This will return False for people with API hidden.
+        :param uuid: The player to check.
+        :return: True if they are a valid BedWars player, False if not or undetermined.
+        """
         try:
             # noinspection PyUnboundLocalVariable
             await self.get_user_stats(uuid)
@@ -263,6 +331,10 @@ class Hypixel(commands.Cog):
                       aliases=["hadd", "hypixel_add", "hypixeladd"])
     @is_staff()
     async def add(self, ctx, username: str):
+        """Adds a user to the server's hypixel info channel to be updated regularly.
+
+        This is currently a JSON file, but I'll move it to a DB when I get a database solution working
+        that doesn't freeze the whole python process even when it's in a different thread."""
         async with ctx.typing():
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
@@ -298,6 +370,11 @@ class Hypixel(commands.Cog):
                       aliases=["hremove", "hypixel_remove", "hypixelremove"])
     @is_staff()
     async def remove(self, ctx, username: str):
+        """Removes a user from the server's hypixel info channel so they won't be updated regularly, at least not
+        in that channel anymore.
+
+        This is currently a JSON file, but I'll move it to a DB when I get a database solution working
+        that doesn't freeze the whole python process even when it's in a different thread."""
         async with ctx.typing():
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
@@ -319,12 +396,12 @@ class Hypixel(commands.Cog):
             if not found:
                 await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
 
-    async def send_embeds(self, channel_id, channel_members, all_members):
-        our_members = []
+    async def send_embeds(self, channel_id, our_members):
+        """Sends all embeds to a channel that the channel is requesting.
+        :param channel_id: The channel id in question
+        :param our_members: The member dictionaries that the channel is requesting
+        """
         i = 0
-        for member in all_members:
-            if member["uuid"] in channel_members:
-                our_members.append(member)
         try:
             channel = await self.bot.fetch_channel(channel_id)
         except discord.errors.NotFound:
@@ -358,14 +435,19 @@ class Hypixel(commands.Cog):
 
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
+        """Constant task loop that updates all the hypixel channels with the new member info."""
         try:
+            # Creates a set of unique player uuids, so a player in two channels isn't fetched twice.
             all_channels = self.data.get("hypixel_channels", {}).copy()
             member_uuids = set()
             for _, members in all_channels.items():
                 for member_uuid in members:
                     member_uuids.add(member_uuid)
             now = datetime.datetime.now()
+            # Completely refresh the embeds every 3 minutes. Just so last update time isn't more than 3 mins ago.
             reset = (now - self.last_reset).total_seconds() > 180
+            # Fetches hypixel data in the main thread, then
+            # runs a pool of processes (machine core count simultaneously) to generate the player images.
             member_futures = []
             if reset:
                 self.last_reset = datetime.datetime.now()
@@ -374,22 +456,36 @@ class Hypixel(commands.Cog):
                     member_futures.append(self.bot.loop.create_task(self.get_expanded_player(member_uuid, pool,
                                                                                              reset)))
                 member_dicts = await asyncio.gather(*member_futures)
+            # Sort offline members before online members, regardless of threat index.
             offline_members = [member for member in member_dicts if not member["online"]]
             online_members = [member for member in member_dicts if member["online"]]
             offline_members.sort(key=lambda x: float(x["threat_index"]))
             online_members.sort(key=lambda x: float(x["threat_index"]))
             member_dicts = offline_members + online_members
+            # Runs send_embeds task for all known hypixel channels.
             pending_tasks = []
             for channel in all_channels.keys():
+                channel_uuids = set(all_channels[channel])
+                channel_members = []
+                for member in member_dicts:
+                    if member["uuid"] in channel_uuids:
+                        channel_members.append(member)
                 pending_tasks.append(self.bot.loop.create_task(
-                    self.send_embeds(channel, set(all_channels[channel]), member_dicts)))
+                    self.send_embeds(channel, channel_members)))
+            # Runs them simultaneously so we can send/edit (5 * channel_count) messages at once rather than just 5 at
+            # a time (very slow)
             await asyncio.gather(*pending_tasks)
+        # Bad practice, but catches ALL errors here since we don't want this to stop for all channels,
+        # even in case of error.
         except Exception as e:
             print("hypixel error")
+            print(e)
             print(traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        """Keeps the hypixel channels clear of all messages except the bot's, otherwise it
+        would have to clear the channel every time someone sent a message (it still does if it's bad timing)."""
         if message.author == self.bot.user:
             return
         all_channels = self.data.get("hypixel_channels", {}).keys()
