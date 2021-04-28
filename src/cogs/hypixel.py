@@ -281,7 +281,8 @@ class Hypixel(commands.Cog):
         all_channels[str(channel.id)] = []
         self.data["hypixel_channels"] = all_channels
         await sent.edit(embed=self.bot.create_completed_embed("Added Channel!",
-                                                              "Channel added for hypixel info."))
+                                                              "Channel {} added for hypixel info.".format(
+                                                                  channel.mention)))
 
     @staticmethod
     async def uuid_from_identifier(identifier):
