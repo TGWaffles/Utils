@@ -245,14 +245,12 @@ def get_file_for_member(member):
     threat_index_text = "Threat Index\n{}".format(round(member["threat_index"], 1))
     draw.text((threat_index_x, threat_index_y), threat_index_text, font=last_played_font, anchor="mm",
               fill=regular_text_fill, align="center")
-    credits_height = height - top_line_height
-    credits_x = width // 2
+    credits_height = height // 2
+    credits_x = (3 * width) // 4
     credits_font = PIL.ImageFont.truetype("arial.ttf", size // 40)
     credit_text = "Get the Utils bot!\nhttps://thom.club/"
-    for line in credit_text.split("\n")[::-1]:
-        draw.text((credits_x, credits_height), line, font=credits_font, anchor="mm",
-                  fill=regular_text_fill, align="center")
-        credits_height -= draw.textsize(line, font=credits_font)[1]
+    draw.text((credits_x, credits_height), credit_text, font=credits_font, anchor="mm",
+              fill=regular_text_fill, align="center")
     image.save(fp=final_file, format="png")
     final_file.seek(0)
     return final_file
