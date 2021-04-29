@@ -246,7 +246,7 @@ def get_file_for_member(member):
     draw.text((threat_index_x, threat_index_y), threat_index_text, font=last_played_font, anchor="mm",
               fill=regular_text_fill, align="center")
     credits_height = height // 2
-    credits_x = width
+    credits_x = width - width // 64
     credits_font = PIL.ImageFont.truetype("arial.ttf", size // 40)
     credit_text = "Get the Utils bot!\nhttps://thom.club/"
     draw.text((credits_x, credits_height), credit_text, font=credits_font, anchor="rm",
