@@ -496,6 +496,11 @@ class DBApiClient(commands.Cog):
         await self.send_request("on_message", parameters=params, request_type="post", timeout=120)
 
     @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        await self.bot.mongo.discord_db.messages.update_one({"_id": payload.message_id},
+                                                            {'$set': {"deleted": True}})
+
+    @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
         payload_data = payload.data
         params = {'token': api_token, 'payload_data': payload_data}

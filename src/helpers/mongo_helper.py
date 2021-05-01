@@ -79,11 +79,16 @@ class MongoDB:
 async def main():
     db = MongoDB()
     client = db.client
-    hypixel = client.hypixel
-    channels = hypixel.channels
-
-    # print(await db.find_by_id(channels, 798292125027926036))
-    print(await channels.find_one({"_id": "nothing"}))
+    discord_db = client.discord
+    messages = discord_db.messages
+    async for message in messages.find():
+        print(message)
+        await messages.update_one({"_id": message.get("_id")}, {'$set': {"deleted": False}})
+    # hypixel = client.hypixel
+    # channels = hypixel.channels
+    #
+    # # print(await db.find_by_id(channels, 798292125027926036))
+    # print(await channels.find_one({"_id": "nothing"}))
     # print([await db.username_from_uuid(uuid) for uuid in await channels.distinct("players")])
 
 
