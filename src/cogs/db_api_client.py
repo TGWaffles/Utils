@@ -417,6 +417,13 @@ class DBApiClient(commands.Cog):
         embed.description += "```"
         await sent.edit(embed=embed)
 
+    async def get_first_message(self, guild_id, user_id):
+        params = {'token': api_token, 'guild_id': guild_id, "user_id": user_id}
+        response_json = await self.send_request("first_message", parameters=params)
+        if response_json.get("failure", False):
+            return None
+        return response_json.get("message")
+
     @commands.command()
     @is_high_staff()
     async def exclude_channel(self, ctx, channel: Optional[discord.TextChannel]):

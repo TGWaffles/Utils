@@ -12,9 +12,10 @@ from pretty_help import PrettyHelp
 from discord.ext import commands
 from src.storage import config
 from src.checks.message_check import check_reply
-from discord.ext.commands.core import BadBoolArgument, _convert_to_bool
+from discord.ext.commands.core import _convert_to_bool
 from src.helpers.storage_helper import DataHelper
 from traceback import format_exc, print_tb
+from src.helpers.mongo_helper import MongoDB
 from src.storage.token import token  # token.py is just one variable - token = "token"
 
 
@@ -37,6 +38,7 @@ class UtilsBot(commands.Bot):
         self.database_handler = None
         self.latest_joins = {}
         self.restart_event = asyncio.Event()
+        self.mongo = MongoDB()
         self.restart_waiter_lock = asyncio.Lock()
         self.restart_waiters = 0
 

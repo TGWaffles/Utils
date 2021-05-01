@@ -13,7 +13,6 @@ from src.storage.token import hypixel_token
 
 from src.checks.role_check import is_staff
 from src.helpers.hypixel_helper import *
-from src.helpers.mongo_helper import MongoDB
 
 
 def equate_uuids(uuid, other_uuid):
@@ -23,8 +22,7 @@ def equate_uuids(uuid, other_uuid):
 class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
-        self.db = MongoDB()
-        self.hypixel_db = self.db.client.hypixel
+        self.hypixel_db = self.bot.mongo.client.hypixel
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
         self.hypixel_api = HypixelAPI(self.bot, key=hypixel_token)
@@ -282,7 +280,7 @@ class Hypixel(commands.Cog):
         channel_collection = self.hypixel_db.channels
         await channel_collection.delete_many({"guild_id": ctx.guild.id})
         channel_document = {"_id": channel.id, "guild_id": ctx.guild.id, "players": []}
-        await self.db.force_insert(channel_collection, channel_document)
+        await self.bot.mongo.force_insert(channel_collection, channel_document)
         await sent.edit(embed=self.bot.create_completed_embed("Added Channel!",
                                                               "Channel {} added for hypixel info.".format(
                                                                   channel.mention)))
