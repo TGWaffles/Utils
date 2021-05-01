@@ -2,20 +2,18 @@ import concurrent.futures
 import secrets
 import traceback
 from functools import partial
+from typing import Optional
 
 import discord
 import mcuuid.api
 import mcuuid.tools
 from aiohttp import web
 from discord.ext import commands, tasks
-from typing import Optional
-
-from src.checks.message_check import check_reply
-from src.checks.role_check import is_staff
 from src.storage.token import hypixel_token
+
+from src.checks.role_check import is_staff
 from src.helpers.hypixel_helper import *
 from src.helpers.mongo_helper import MongoDB
-from src.helpers.storage_helper import DataHelper
 
 
 def equate_uuids(uuid, other_uuid):
@@ -26,7 +24,6 @@ class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.db = MongoDB()
-        self.data = DataHelper()
         self.hypixel_db = self.db.client.hypixel
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
@@ -55,19 +52,6 @@ class Hypixel(commands.Cog):
         site = web.TCPSite(runner, "0.0.0.0", 2052)
         self.bot.loop.create_task(site.start())
         return  # literally useless return but has previously been useful
-
-    @commands.command()
-    async def migrate(self, ctx):
-        all_channels = self.data.get("hypixel_channels", {})
-        channel_collection = self.hypixel_db.channels
-        for channel_id, members in all_channels.items():
-            discord_channel = await self.bot.fetch_channel(channel_id)
-            print(discord_channel)
-            guild_id = discord_channel.guild.id
-            members = [x.replace("-", "") for x in members]
-            channel_document = {"_id": int(channel_id), "guild_id": guild_id, "players": members}
-            await self.db.force_insert(channel_collection, channel_document)
-        await ctx.reply("done")
 
     @staticmethod
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
@@ -439,9 +423,7 @@ class Hypixel(commands.Cog):
         except discord.errors.NotFound:
             channel = None
         if channel is None:
-            all_channels = self.data.get("hypixel_channels", {})
-            all_channels.pop(str(channel_id))
-            self.data["hypixel_channels"] = all_channels
+            await self.hypixel_db.channels.delete_many({"_id": channel_id})
             return
         history = await channel.history(limit=None, oldest_first=True).flatten()
         editable_messages = [message for message in history if message.author == self.bot.user]
@@ -470,11 +452,7 @@ class Hypixel(commands.Cog):
         """Constant task loop that updates all the hypixel channels with the new member info."""
         try:
             # Creates a set of unique player uuids, so a player in two channels isn't fetched twice.
-            all_channels = self.data.get("hypixel_channels", {}).copy()
-            member_uuids = set()
-            for _, members in all_channels.items():
-                for member_uuid in members:
-                    member_uuids.add(member_uuid)
+            member_uuids = await self.hypixel_db.channels.distinct("players")
             now = datetime.datetime.now()
             # Completely refresh the embeds every 3 minutes. Just so last update time isn't more than 3 mins ago.
             reset = (now - self.last_reset).total_seconds() > 180
@@ -496,14 +474,14 @@ class Hypixel(commands.Cog):
             member_dicts = offline_members + online_members
             # Runs send_embeds task for all known hypixel channels.
             pending_tasks = []
-            for channel in all_channels.keys():
-                channel_uuids = set(all_channels[channel])
+            async for channel in self.hypixel_db.channels.find():
+                channel_uuids = set(channel.get("players"))
                 channel_members = []
                 for member in member_dicts:
                     if member["uuid"] in channel_uuids:
                         channel_members.append(member)
                 pending_tasks.append(self.bot.loop.create_task(
-                    self.send_embeds(channel, channel_members)))
+                    self.send_embeds(channel.get("_id"), channel_members)))
             # Runs them simultaneously so we can send/edit (5 * channel_count) messages at once rather than just 5 at
             # a time (very slow)
             await asyncio.gather(*pending_tasks)
@@ -520,8 +498,7 @@ class Hypixel(commands.Cog):
         would have to clear the channel every time someone sent a message (it still does if it's bad timing)."""
         if message.author == self.bot.user:
             return
-        all_channels = self.data.get("hypixel_channels", {}).keys()
-        if str(message.channel.id) in all_channels:
+        if message.channel.id in await self.hypixel_db.channels.distinct("_id"):
             await message.delete()
 
 

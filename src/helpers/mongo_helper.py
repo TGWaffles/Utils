@@ -37,7 +37,9 @@ async def main():
     hypixel = client.hypixel
     channels = hypixel.channels
 
-    print(await db.find_by_id(channels, 798292125027926036))
+    # print(await db.find_by_id(channels, 798292125027926036))
+    print(await channels.distinct("_id"))
+    # print([await db.username_from_uuid(uuid) for uuid in await channels.distinct("players")])
 
 
 if __name__ == '__main__':
