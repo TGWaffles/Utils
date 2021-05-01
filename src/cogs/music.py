@@ -382,7 +382,7 @@ class Music(commands.Cog):
         if type(next_song_url) == tuple or type(next_song_url) == list:
             next_song_url, resume_from = next_song_url
             local_ffmpeg_options['options'] = "-vn -ss {}".format(resume_from)
-        volume_document = self.bot.mongo.find_by_id(self.music_db.volumes, voice_client.guild.id)
+        volume_document = await self.bot.mongo.find_by_id(self.music_db.volumes, voice_client.guild.id)
         volume = volume_document.get("volume", 0.5)
         if next_song_url is None:
             self.bot.loop.create_task(self.play_next_queued(voice_client))
