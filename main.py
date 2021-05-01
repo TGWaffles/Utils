@@ -38,7 +38,7 @@ class UtilsBot(commands.Bot):
         self.database_handler = None
         self.latest_joins = {}
         self.restart_event = asyncio.Event()
-        self.mongo = MongoDB()
+        self.mongo = None
         self.restart_waiter_lock = asyncio.Lock()
         self.restart_waiters = 0
 
@@ -145,6 +145,7 @@ def get_bot():
     @bot.event
     async def on_ready():
         print("Ready!")
+        bot.mongo = MongoDB()
         bot.guild = bot.get_guild(config.monkey_guild_id)
         bot.error_channel = bot.get_channel(config.error_channel_id)
         for extension_name in config.extensions:
