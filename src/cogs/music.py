@@ -132,7 +132,7 @@ class Music(commands.Cog):
         self.bot = bot
         # self.data = DataHelper()
         self.tts_cog = bot.get_cog("TTS")
-        self.music_db = self.bot.mongo.music
+        self.music_db = self.bot.mongo.client.music
         # self.data["song_queues"] = {}
         self.spotify = SpotifySearcher(self.bot)
         self.url_to_title_cache = {}
