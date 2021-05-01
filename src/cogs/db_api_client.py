@@ -168,16 +168,26 @@ class DBApiClient(commands.Cog):
     @commands.command()
     async def snipe(self, ctx, amount=1):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
-        params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
-        response_json = await self.send_request("snipe", parameters=params)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!\n"
-                                                              f"Status: {response_json.get('status')}"))
+        # params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
+        # response_json = await self.send_request("snipe", parameters=params)
+        # if response_json.get("failure", False):
+        #     await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!\n"
+        #                                                       f"Status: {response_json.get('status')}"))
+        #     return
+        cursor = self.bot.mongo.discord_db.messages.find({"deleted": True})
+        cursor.sort("created_at", -1).limit(1).skip(amount-1)
+        messages_found = await cursor.to_list(length=1)
+        if len(messages_found) == 0:
+            await sent.edit(embed=self.bot.create_error_embed("There was nothing to snipe in this channel."))
             return
-        user_id = response_json.get("user_id")
-        content = response_json.get("content")
-        embed_json = response_json.get("embed_json")
-        timestamp = datetime.datetime.fromisoformat(response_json.get("timestamp"))
+        message_found = messages_found[0]
+        user_id = message_found.get("user_id")
+        content = message_found.get("content")
+        try:
+            embed_json = message_found.get("embeds", [])[0]
+        except IndexError:
+            embed_json = None
+        timestamp = message_found.get("created_at")
         user = self.bot.get_user(user_id)
         if user is None:
             user = await self.bot.fetch_user(user_id)
