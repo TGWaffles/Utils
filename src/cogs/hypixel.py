@@ -391,7 +391,7 @@ class Hypixel(commands.Cog):
                 await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
                                                                       "User {} has been added to {}.".format(
                                                                           await self.username_from_uuid(uuid),
-                                                                          channel.mention)))
+                                                                          f"<#{channel.get('_id')}>")))
                 return
             await ctx.reply(embed=self.bot.create_error_embed("You don't have a hypixel info channel in this guild.\n"
                                                               "Please create one before adding players."))
@@ -421,7 +421,7 @@ class Hypixel(commands.Cog):
                 await ctx.reply(embed=self.bot.create_completed_embed(
                     "User Removed!", "User {} has been removed from {}.".format(
                         await self.username_from_uuid(uuid),
-                        channel.mention)))
+                        f"<#{channel.get('_id')}>")))
                 return
             await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
 

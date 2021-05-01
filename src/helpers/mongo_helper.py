@@ -1,6 +1,6 @@
 import asyncio
 import motor.motor_asyncio
-import pymongo
+import aiohttp
 
 
 class MongoDB:
@@ -35,14 +35,9 @@ async def main():
     db = MongoDB()
     client = db.client
     hypixel = client.hypixel
-    players = hypixel.players
+    channels = hypixel.channels
 
-    await players.insert_one({"name": "test!", "extra": [1, 2, 3]})
-    await players.insert_one({"name": "test 2!", "extra": [5, 6, 7]})
-
-    print(await db.fetch_all(players))
-    async for document in players.find({"extra": 3}):
-        print(document)
+    print(await db.find_by_id(channels, 798292125027926036))
 
 
 if __name__ == '__main__':
