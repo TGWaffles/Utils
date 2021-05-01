@@ -160,7 +160,7 @@ class Music(commands.Cog):
             except RuntimeError:
                 pass
 
-    def enqueue(self, guild, song_url, resume_time=None, start=False):
+    async def enqueue(self, guild, song_url, resume_time=None, start=False):
         guild_document = await self.guild_document_from_guild(guild)
         guild_queue = guild_document.get("queue", [])
         if resume_time is None:
@@ -319,7 +319,7 @@ class Music(commands.Cog):
                     playlist_info = [video_info["webpage_url"]]
             first_song = playlist_info.pop(0)
             first_song = await self.transform_single_song(first_song)
-            self.enqueue(ctx.guild, first_song)
+            await self.enqueue(ctx.guild, first_song)
             await self.music_db.songs.update_one({"_id": ctx.guild.id}, {'$set': {"text_channel_id": ctx.channel.id}},
                                                  upsert=True)
             if not ctx.voice_client.is_playing() or not isinstance(ctx.voice_client.source, YTDLSource):
@@ -340,7 +340,7 @@ class Music(commands.Cog):
             titles = await asyncio.gather(*futures)
             successfully_added = ""
             for index, title in enumerate(titles):
-                self.enqueue(ctx.guild, playlist_info[index])
+                await self.enqueue(ctx.guild, playlist_info[index])
                 successfully_added += f"{index + 1}. **{title}**\n"
         if successfully_added != "":
             await self.send_queue(ctx.channel, ctx)
@@ -440,7 +440,7 @@ class Music(commands.Cog):
         if voice_client.source is not None:
             currently_playing_url = voice_client.source.webpage_url
             current_time = int(time.time() - voice_client.source.start_time)
-            self.enqueue(voice_client.guild, currently_playing_url, int(current_time), start=True)
+            await self.enqueue(voice_client.guild, currently_playing_url, int(current_time), start=True)
         voice_client.stop()
         await voice_client.disconnect()
 
