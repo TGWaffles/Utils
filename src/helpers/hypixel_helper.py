@@ -5,6 +5,7 @@ import PIL.ImageFont
 import PIL.ImageChops
 import aiohttp
 import asyncio
+import collections
 import datetime
 from io import BytesIO
 from main import UtilsBot
@@ -17,20 +18,40 @@ HIGHEST_PRESTIGE = 10
 API_URL = "https://api.hypixel.net/"
 
 
+class CustomAsyncDeque(asyncio.Queue):
+    def _init(self, maxsize):
+        self._queue = collections.deque()
+
+    def _put(self, item):
+        try:
+            if item[4]:
+                self._queue.appendleft(item)
+                return
+        except IndexError:
+            pass
+        self._queue.append(item)
+
+    def peek(self):
+        if self.empty():
+            return None
+        item = self._queue.popleft()
+        self._queue.appendleft(item)
+        return item
+
+
 class HypixelAPI:
     def __init__(self, bot: UtilsBot, key):
         self.bot = bot
         self.key = key
-        self.request_queue = asyncio.Queue()
-        self.process_lock = asyncio.Lock()
+        self.request_queue = CustomAsyncDeque()
         self.ratelimit_remaining = 120
         self.ratelimit_reset_time = datetime.datetime.now()
         self.ratelimit_lock = asyncio.Lock()
 
-    async def safe_request(self, endpoint, parameters=None):
+    async def safe_request(self, endpoint, parameters=None, prioritize=False):
         returned_json = {}
         completed_event = asyncio.Event()
-        stored_task = (endpoint, parameters, completed_event, returned_json)
+        stored_task = (endpoint, parameters, completed_event, returned_json, prioritize)
         await self.request_queue.put(stored_task)
         await completed_event.wait()
         return returned_json
@@ -71,8 +92,12 @@ class HypixelAPI:
     async def queue_loop(self):
         while True:
             this_loop_tasks = []
-            if self.ratelimit_remaining == 0:
+            if self.ratelimit_remaining < 10:
                 while datetime.datetime.now() < self.ratelimit_reset_time:
+                    peek_item = self.request_queue.peek()
+                    if peek_item is not None and peek_item[4] and self.ratelimit_remaining != 0:
+                        waited_event = await self.request_queue.get()
+                        this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
                     await asyncio.sleep((self.ratelimit_reset_time - datetime.datetime.now()).total_seconds())
                 self.ratelimit_remaining = 120
             for i in range(self.ratelimit_remaining):
@@ -80,10 +105,10 @@ class HypixelAPI:
                 this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
             await asyncio.gather(*this_loop_tasks)
 
-    async def get_player(self, uuid):
+    async def get_player(self, uuid, prioritize=False):
         uuid = uuid.replace("-", "")
         parameters = {"uuid": uuid}
-        data = await self.safe_request("player", parameters)
+        data = await self.safe_request("player", parameters, prioritize)
         player = data.get("player", {})
         if "lastLogout" in player:
             player["lastLogout"] = datetime.datetime.fromtimestamp(player["lastLogout"] / 1000)

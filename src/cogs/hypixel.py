@@ -97,14 +97,15 @@ class Hypixel(commands.Cog):
                 "mode": status.get("mode"), "map": status.get("map"), "uuid": user_uuid, "threat_index": threat_index,
                 "fkdr": fkdr}
 
-    async def get_user_stats(self, user_uuid):
+    async def get_user_stats(self, user_uuid, prioritize=False):
         """Gets the actual information from hypixel, determines whether the member is online or not, and also fetches
         the member's game-mode and map if they are online.
+        :param prioritize: If the request should be prioritized
         :param user_uuid: The uuid of the user.
         :return: A dictionary with known keys which contains information about the player's statistics.
         """
         # Gets raw information from the API via my rate limit abiding queue in hypixel_helper
-        player = await self.hypixel_api.get_player(user_uuid)
+        player = await self.hypixel_api.get_player(user_uuid, prioritize)
         # They are online if they last logged in after they last logged out
         member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
         experience = player.get("stats")["Bedwars"]["Experience"]
@@ -125,7 +126,7 @@ class Hypixel(commands.Cog):
         else:
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
 
-    async def get_expanded_player(self, user_uuid, pool, reset=False):
+    async def get_expanded_player(self, user_uuid, pool, reset=False, prioritize=False):
         """
 
         :param user_uuid: The minecraft uuid of the player in question.
@@ -133,7 +134,7 @@ class Hypixel(commands.Cog):
         :param reset: Whether to still update the embeds (later) even if the image hasn't changed
         :return: player dictionary with player["file"] being the generated image.
         """
-        player = await self.get_user_stats(user_uuid)
+        player = await self.get_user_stats(user_uuid, prioritize)
         # If the head image has been cached less than 5 mins ago, used the cached version
         if player["uuid"] in self.head_images and (datetime.datetime.now() -
                                                    self.head_images[player["uuid"]][1]).total_seconds() < 300:
@@ -344,15 +345,16 @@ class Hypixel(commands.Cog):
             username = json_response.get("data", {}).get("player", {}).get("username", "Unknown Player")
         return username
 
-    async def check_valid_player(self, uuid):
+    async def check_valid_player(self, uuid, prioritize=False):
         """Checks whether the player is a valid hypixel player by seeing if all keys needed to generate a player
         file are present in their stats. This will return False for people with API hidden.
+        :param prioritize: If the lookup should be prioritized
         :param uuid: The player to check.
         :return: True if they are a valid BedWars player, False if not or undetermined.
         """
         try:
             # noinspection PyUnboundLocalVariable
-            await self.get_user_stats(uuid)
+            await self.get_user_stats(uuid, prioritize)
         except (TypeError, KeyError):
             return False
         return True
@@ -372,7 +374,7 @@ class Hypixel(commands.Cog):
                                 delete_after=10)
                 await ctx.message.delete()
                 return
-            valid = await self.check_valid_player(uuid)
+            valid = await self.check_valid_player(uuid, prioritize=True)
             if not valid:
                 await ctx.reply(embed=self.bot.create_error_embed("That user is not a valid hypixel bedwars player. "
                                                                   "Get them to play some games first!"))
