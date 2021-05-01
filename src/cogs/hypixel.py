@@ -14,6 +14,7 @@ from src.checks.message_check import check_reply
 from src.checks.role_check import is_staff
 from src.storage.token import hypixel_token
 from src.helpers.hypixel_helper import *
+from src.helpers.mongo_helper import MongoDB
 from src.helpers.storage_helper import DataHelper
 
 
@@ -24,7 +25,9 @@ def equate_uuids(uuid, other_uuid):
 class Hypixel(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
+        self.db = MongoDB()
         self.data = DataHelper()
+        self.hypixel_db = self.db.client.hypixel
         self.last_reset = datetime.datetime.now()
         # noinspection PyUnresolvedReferences
         self.hypixel_api = HypixelAPI(self.bot, key=hypixel_token)
@@ -52,6 +55,19 @@ class Hypixel(commands.Cog):
         site = web.TCPSite(runner, "0.0.0.0", 2052)
         self.bot.loop.create_task(site.start())
         return  # literally useless return but has previously been useful
+
+    @commands.command()
+    async def migrate(self, ctx):
+        all_channels = self.data.get("hypixel_channels", {})
+        channel_collection = self.hypixel_db.channels
+        for channel_id, members in all_channels.items():
+            discord_channel = await self.bot.fetch_channel(channel_id)
+            print(discord_channel)
+            guild_id = discord_channel.guild.id
+            members = [x.replace("-", "") for x in members]
+            channel_document = {"_id": int(channel_id), "guild_id": guild_id, "players": members}
+            await self.db.force_insert(channel_collection, channel_document)
+        await ctx.reply("done")
 
     @staticmethod
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
@@ -277,13 +293,10 @@ class Hypixel(commands.Cog):
             await channel.edit(overwrites=overwrites)
         await sent.edit(embed=self.bot.create_processing_embed(
             "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
-        all_channels = self.data.get("hypixel_channels", {})
-        guild_channel_ids = [x.id for x in ctx.guild.text_channels]
-        for old_channel in all_channels.keys():
-            if int(old_channel) in guild_channel_ids:
-                del all_channels[old_channel]
-        all_channels[str(channel.id)] = []
-        self.data["hypixel_channels"] = all_channels
+        channel_collection = self.hypixel_db.channels
+        await channel_collection.delete_many({"guild_id": ctx.guild.id})
+        channel_document = {"_id": channel.id, "guild_id": ctx.guild.id, "players": []}
+        await self.db.force_insert(channel_collection, channel_document)
         await sent.edit(embed=self.bot.create_completed_embed("Added Channel!",
                                                               "Channel {} added for hypixel info.".format(
                                                                   channel.mention)))
@@ -296,7 +309,7 @@ class Hypixel(commands.Cog):
         """
         try:
             if mcuuid.tools.is_valid_mojang_uuid(identifier):
-                return identifier
+                return identifier.replace("-", "")
             else:
                 async with aiohttp.ClientSession() as session:
                     request = await session.get("https://playerdb.co/api/player/minecraft/" + identifier)
@@ -305,7 +318,10 @@ class Hypixel(commands.Cog):
                     json_response = await request.json()
                     if not json_response.get("success", False):
                         return None
-                    return json_response.get("data", {}).get("player", {}).get("id", None)
+                    prospective_uuid = json_response.get("data", {}).get("player", {}).get("id", None)
+                    if prospective_uuid is not None:
+                        return prospective_uuid.replace("-", "")
+                    return prospective_uuid
         except AttributeError:
             return None
 
@@ -361,23 +377,24 @@ class Hypixel(commands.Cog):
                 await ctx.reply(embed=self.bot.create_error_embed("That user is not a valid hypixel bedwars player. "
                                                                   "Get them to play some games first!"))
                 return
-            all_channels = self.data.get("hypixel_channels", {})
-            for channel_id in list(all_channels.keys()).copy():
-                channel = self.bot.get_channel(int(channel_id))
-                if channel is None:
-                    all_channels.pop(str(channel_id))
-                    self.data["hypixel_channels"] = all_channels
-                    continue
-                if channel.guild == ctx.guild:
-                    if any([equate_uuids(uuid, x) for x in all_channels[str(channel_id)]]):
-                        await ctx.reply(embed=self.bot.create_error_embed("Player already in channel!"))
-                        return
-                    all_channels[str(channel_id)].append(uuid)
-                    self.data["hypixel_channels"] = all_channels
-                    await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
-                                                                          "User {} has been added to {}.".format(
-                                                                              await self.username_from_uuid(uuid),
-                                                                              channel.mention)))
+            channel_collection = self.hypixel_db.channels
+            async for channel in channel_collection.find({"guild_id": ctx.guild.id}):
+                if uuid in channel.get("players"):
+                    await ctx.reply(embed=self.bot.create_error_embed("Player already in channel! \n"
+                                                                      "It can take a while for the channel to update "
+                                                                      "after adding a player, so please wait a little "
+                                                                      "longer :)"))
+                    return
+                new_players = channel.get("players")
+                new_players.append(uuid)
+                await channel_collection.update_one({"_id": channel.get("_id")}, {'$set': {"players": new_players}})
+                await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
+                                                                      "User {} has been added to {}.".format(
+                                                                          await self.username_from_uuid(uuid),
+                                                                          channel.mention)))
+                return
+            await ctx.reply(embed=self.bot.create_error_embed("You don't have a hypixel info channel in this guild.\n"
+                                                              "Please create one before adding players."))
 
     @commands.command(pass_context=True, name="remove", description="Removes a player from your server's "
                                                                     "hypixel channel!",
@@ -396,20 +413,17 @@ class Hypixel(commands.Cog):
                                 delete_after=10)
                 await ctx.message.delete()
                 return
-            all_channels = self.data.get("hypixel_channels", {})
-            found = False
-            for channel in ctx.guild.channels:
-                for other_uuid in all_channels.get(str(channel.id), []):
-                    if equate_uuids(uuid, other_uuid):
-                        all_channels[str(channel.id)].remove(other_uuid)
-                        self.data["hypixel_channels"] = all_channels
-                        await ctx.reply(embed=self.bot.create_completed_embed(
-                            "User Removed!", "User {} has been removed from {}.".format(
-                              await self.username_from_uuid(other_uuid),
-                              channel.mention)))
-                        found = True
-            if not found:
-                await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
+            channel_collection = self.hypixel_db.channels
+            async for channel in channel_collection.find({"players": uuid}):
+                new_players = channel.get("players")
+                new_players.remove(uuid)
+                await channel_collection.update_one({"_id": channel.get("_id")}, {'$set': {"players": new_players}})
+                await ctx.reply(embed=self.bot.create_completed_embed(
+                    "User Removed!", "User {} has been removed from {}.".format(
+                        await self.username_from_uuid(uuid),
+                        channel.mention)))
+                return
+            await ctx.reply(embed=self.bot.create_error_embed("That user was not found in your hypixel channel!"))
 
     async def send_embeds(self, channel_id, our_members):
         """Sends all embeds to a channel that the channel is requesting.
