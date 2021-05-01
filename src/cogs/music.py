@@ -4,6 +4,7 @@ import random
 import re
 import time
 from concurrent.futures import ProcessPoolExecutor
+from typing import List
 
 import aiohttp
 import discord
@@ -15,7 +16,6 @@ from pytube import Playlist
 from src.checks.role_check import is_staff
 from src.helpers.paginator import Paginator
 from src.helpers.spotify_helper import *
-from src.helpers.storage_helper import DataHelper
 
 # TODO:
 """1. Add a true pagination system to the bot as a whole to allow !queue DONE
@@ -171,6 +171,13 @@ class Music(commands.Cog):
             guild_queue.insert(0, to_queue)
         else:
             guild_queue.append(to_queue)
+        await self.music_db.songs.update_one({"_id": guild.id}, {'$set': {"queue": guild_queue}}, upsert=True)
+        return True
+
+    async def bulk_enqueue(self, guild, song_urls):
+        guild_document = await self.guild_document_from_guild(guild)
+        guild_queue = guild_document.get("queue", [])
+        guild_queue += song_urls
         await self.music_db.songs.update_one({"_id": guild.id}, {'$set': {"queue": guild_queue}}, upsert=True)
         return True
 
@@ -338,11 +345,7 @@ class Music(commands.Cog):
                 futures.append(self.bot.loop.create_task(self.title_from_url(url), name=url))
             await asyncio.sleep(2)
             titles = await asyncio.gather(*futures)
-            successfully_added = ""
-            for index, title in enumerate(titles):
-                await self.enqueue(ctx.guild, playlist_info[index])
-                successfully_added += f"{index + 1}. **{title}**\n"
-        if successfully_added != "":
+            await self.bulk_enqueue(ctx.guild, titles)
             await self.send_queue(ctx.channel, ctx)
 
     @commands.command(aliases=["shuff", "mix"])
