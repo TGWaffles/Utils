@@ -59,7 +59,7 @@ class MongoDB:
         member_result = await self.discord_db.members.find_one({"_id": message.author.id})
         if member_result is None:
             await self.insert_member(message.author)
-        message_document = {"_id": message.id, "channel_id": message.channel_id, "user_id": message.author.id,
+        message_document = {"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
                             "content": message.content, "created_at": message.created_at,
                             "embeds": [embed.to_dict() for embed in message.embeds]}
         await self.force_insert(self.discord_db.messages, message_document)
