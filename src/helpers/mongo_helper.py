@@ -1,5 +1,6 @@
 import asyncio
 import discord
+import datetime
 import motor.motor_asyncio
 import aiohttp
 
@@ -61,8 +62,13 @@ class MongoDB:
             await self.insert_member(message.author)
         message_document = {"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
                             "content": message.content, "created_at": message.created_at,
-                            "embeds": [embed.to_dict() for embed in message.embeds], "deleted": False}
+                            "embeds": [embed.to_dict() for embed in message.embeds], "deleted": False, "edits": []}
         await self.force_insert(self.discord_db.messages, message_document)
+
+    def check_identical_edit(self, message_id, edit_timestamp: datetime.datetime):
+        before_timestamp = edit_timestamp - datetime.timedelta(seconds=0.5)
+        after_timestamp = edit_timestamp + datetime.timedelta(seconds=0.5)
+        results = self.discord_db.messages.find({"_id": message_id})
 
     @staticmethod
     async def find_by_column(collection, column, value):
@@ -83,7 +89,7 @@ async def main():
     messages = discord_db.messages
     async for message in messages.find():
         print(message)
-        await messages.update_one({"_id": message.get("_id")}, {'$set': {"deleted": False}})
+        await messages.update_one({"_id": message.get("_id")}, {'$set': {"edits": []}})
     # hypixel = client.hypixel
     # channels = hypixel.channels
     #
