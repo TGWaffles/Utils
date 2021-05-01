@@ -4,7 +4,6 @@ import random
 import re
 import time
 from concurrent.futures import ProcessPoolExecutor
-from typing import List
 
 import aiohttp
 import discord
@@ -69,7 +68,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         return audioop.mul(ret, 2, self._volume)
 
     @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
+    async def from_url(cls, url, *, loop=None):
         data = await cls.get_video_data(url, loop)
         if data is None:
             return None
