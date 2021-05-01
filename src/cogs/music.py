@@ -408,7 +408,6 @@ class Music(commands.Cog):
                                                                                                     next_song_url))
         embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
         text_channel_id = guild_document.get("text_channel_id", None)
-        print(text_channel_id)
         if text_channel_id is None:
             return
         # noinspection PyTypeChecker
