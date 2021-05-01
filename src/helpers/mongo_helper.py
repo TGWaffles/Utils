@@ -1,13 +1,11 @@
 import asyncio
-import discord
 import datetime
-import json
+
+import discord
 import motor.motor_asyncio
-from src.helpers.models.database_models import *
-from src.helpers.sqlalchemy_helper import DatabaseHelper
-from traceback import format_exc, print_tb
-import ast
-import aiohttp
+from discord.ext import commands
+
+from src.storage.token import token
 
 
 class MongoDB:
@@ -104,46 +102,16 @@ class MongoDB:
 
 
 async def main():
-    database = DatabaseHelper()
-    session = database.session_creator()
+    bot = commands.Bot(command_prefix="Nonelol", intents=discord.Intents.all())
+    await bot.login(token)
+    asyncio.get_event_loop().create_task(bot.connect())
+    await bot.wait_until_ready()
     db = MongoDB()
-    client = db.client
-    discord_db = client.discord
-    messages = discord_db.messages
-    to_insert = []
-    query = session.query(Message)
-    print("query ready...")
-    for row in query:
-        message: Message = row
-        embeds = []
-        try:
-            if message.embed_json is not None:
-                embeds = [json.loads(message.embed_json)]
-        except json.decoder.JSONDecodeError:
-            embeds = ast.literal_eval(message.embed_json)
-        message_document = {"_id": message.id, "channel_id": message.channel_id, "user_id": message.user_id,
-                            "content": message.content, "created_at": message.timestamp,
-                            "embeds": embeds,
-                            "deleted": message.deleted, "edits": []}
-        # except json.decoder.JSONDecodeError:
-        #     print(message.embed_json)
-        #     message_document = {"_id": message.id, "channel_id": message.channel_id, "user_id": message.user_id,
-        #                         "content": message.content, "created_at": message.timestamp,
-        #                         "embeds": [],
-        #                         "deleted": message.deleted, "edits": []}
-        to_insert.append(message_document)
-    print("inserting into mongo now")
-    result = await messages.insert_many(to_insert, ordered=False)
-    print(len(result.inserted_ids))
-    # async for message in messages.find():
-    #     print(message)
-    #     await messages.update_one({"_id": message.get("_id")}, {'$set': {"edits": []}})
-    # hypixel = client.hypixel
-    # channels = hypixel.channels
-    #
-    # # print(await db.find_by_id(channels, 798292125027926036))
-    # print(await channels.find_one({"_id": "nothing"}))
-    # print([await db.username_from_uuid(uuid) for uuid in await channels.distinct("players")])
+    for guild in bot.guilds:
+        async for member in guild.fetch_members(limit=None):
+            print(member)
+            await db.insert_member(member)
+    print("done")
 
 
 if __name__ == '__main__':
