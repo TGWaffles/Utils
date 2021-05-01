@@ -489,6 +489,7 @@ class DBApiClient(commands.Cog):
     async def on_message(self, message):
         if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None:
             return
+        await self.bot.mongo.insert_message(message)
         message_dict = message_to_json(message)
         params = {'token': api_token, 'message': message_dict}
         await self.send_request("on_message", parameters=params, request_type="post", timeout=120)

@@ -38,7 +38,7 @@ class UtilsBot(commands.Bot):
         self.database_handler = None
         self.latest_joins = {}
         self.restart_event = asyncio.Event()
-        self.mongo = None
+        self.mongo: Union[MongoDB, None] = None
         self.restart_waiter_lock = asyncio.Lock()
         self.restart_waiters = 0
 
