@@ -77,9 +77,8 @@ class MongoDB:
         old_edits = sorted(message_document.get("edits", []), key=lambda x: x.get("timestamp"))
         if len(old_edits) > 10 and is_bot:
             return
-        print(old_edits[-1].get("timestamp").tzinfo)
-        print(timestamp.tzinfo)
-        if len(old_edits) > 0 and old_edits[-1].get("timestamp") > timestamp - datetime.timedelta(seconds=0.5):
+        if len(old_edits) > 0 and old_edits[-1].get("timestamp").replace(tzinfo=datetime.timezone.utc) \
+                > timestamp - datetime.timedelta(seconds=0.5):
             return
         edit_document = {"timestamp": timestamp, "content": payload.data.get("content", None),
                          "embeds": payload.data.get("embeds", [])}
