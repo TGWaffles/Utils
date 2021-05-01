@@ -61,7 +61,7 @@ class MongoDB:
             await self.insert_member(message.author)
         message_document = {"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
                             "content": message.content, "created_at": message.created_at,
-                            "embeds": [embed.to_dict() for embed in message.embeds]}
+                            "embeds": [embed.to_dict() for embed in message.embeds], "deleted": False}
         await self.force_insert(self.discord_db.messages, message_document)
 
     @staticmethod
