@@ -129,6 +129,7 @@ class Hypixel(commands.Cog):
     async def get_expanded_player(self, user_uuid, pool, reset=False, prioritize=False):
         """
 
+        :param prioritize: Whether to prioritize this request (normally, if it is a user command).
         :param user_uuid: The minecraft uuid of the player in question.
         :param pool: Instance of concurrent.futures.ProcessPoolExecutor
         :param reset: Whether to still update the embeds (later) even if the image hasn't changed

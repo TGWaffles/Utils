@@ -58,7 +58,7 @@ class HypixelAPI:
 
     async def make_request(self, waited_event):
         async with aiohttp.ClientSession() as session:
-            endpoint, parameters, completed_event, returned_json = waited_event
+            endpoint, parameters, completed_event, returned_json, _ = waited_event
             if parameters is None:
                 parameters = {}
             parameters["key"] = self.key
