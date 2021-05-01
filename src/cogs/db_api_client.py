@@ -526,6 +526,24 @@ class DBApiClient(commands.Cog):
         await self.bot.mongo.discord_db.messages.update_one({"_id": {'$in': [message.id for message in messages]}},
                                                             {'$set': {"deleted": True}})
 
+    @commands.Cog.listener()
+    async def on_guild_channel_update(self, _, after):
+        if isinstance(after, discord.TextChannel):
+            await self.bot.mongo.insert_channel(after)
+
+    @commands.Cog.listener()
+    async def on_guild_channel_create(self, channel):
+        if isinstance(channel, discord.TextChannel):
+            await self.bot.mongo.insert_channel(channel)
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        await self.bot.mongo.insert_guild(guild)
+
+    @commands.Cog.listener()
+    async def on_guild_update(self, _, guild):
+        await self.bot.mongo.insert_guild(guild)
+
 
 def setup(bot: UtilsBot):
     cog = DBApiClient(bot)
