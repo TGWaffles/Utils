@@ -5,7 +5,9 @@ import aiohttp
 
 class MongoDB:
     def __init__(self):
-        self.client = motor.motor_asyncio.AsyncIOMotorClient('192.168.1.100', 27017)
+        self.client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://192.168.1.100:27017,'
+                                                             '192.168.1.20:27017,'
+                                                             '192.168.1.135:27017/?replicaSet=thomasRep0')
 
     @staticmethod
     async def force_insert(collection, document):
