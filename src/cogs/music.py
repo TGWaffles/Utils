@@ -130,11 +130,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Music(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
-        self.data = DataHelper()
+        # self.data = DataHelper()
         self.tts_cog = bot.get_cog("TTS")
+        self.music_db = self.bot.mongo.music
         # self.data["song_queues"] = {}
-        if self.data.get("called_from", None) is None:
-            self.data["called_from"] = {}
         self.spotify = SpotifySearcher(self.bot)
         self.url_to_title_cache = {}
         self.bot.loop.create_task(self.restart_watcher())
@@ -154,9 +153,7 @@ class Music(commands.Cog):
                     if not isinstance(voice_client.source, YTDLSource):
                         continue
                     await self.pause_voice_client(voice_client)
-                    resume_from = self.data.get("resume_voice", [])
-                    resume_from.append(voice_client.channel.id)
-                    self.data["resume_voice"] = resume_from
+                    self.bot.mongo.force_insert(self.music_db.restart_resume, {"_id": voice_client.channel.id})
                 async with self.bot.restart_waiter_lock:
                     self.bot.restart_waiters -= 1
                 return
@@ -164,8 +161,8 @@ class Music(commands.Cog):
                 pass
 
     def enqueue(self, guild, song_url, resume_time=None, start=False):
-        all_queues = self.data.get("song_queues", {})
-        guild_queue: list = all_queues.get(str(guild.id), [])
+        guild_document = await self.guild_document_from_guild(guild)
+        guild_queue = guild_document.get("queue", [])
         if resume_time is None:
             to_queue = song_url
         else:
@@ -174,8 +171,7 @@ class Music(commands.Cog):
             guild_queue.insert(0, to_queue)
         else:
             guild_queue.append(to_queue)
-        all_queues[str(guild.id)] = guild_queue
-        self.data["song_queues"] = all_queues
+        await self.music_db.songs.update_one({"_id": guild.id}, {'$set': {"queue": guild_queue}}, upsert=True)
         return True
 
     @staticmethod
@@ -244,8 +240,8 @@ class Music(commands.Cog):
         return youtube_link
 
     async def send_queue(self, channel, reply_message=None):
-        all_queued = self.data.get("song_queues", {})
-        guild_queued = all_queued.get(str(channel.guild.id), [])
+        guild_document = await self.guild_document_from_guild(channel.guild)
+        guild_queued = guild_document.get("queue", [])
         if len(guild_queued) == 0:
             return False
         futures = []
@@ -279,26 +275,24 @@ class Music(commands.Cog):
     @commands.command(aliases=["clearqueue"])
     @is_staff()
     async def clear_queue(self, ctx):
-        all_queued = self.data.get("song_queues", {})
-        guild_queued = all_queued.get(str(ctx.guild.id), [])
+        guild_document = await self.guild_document_from_guild(ctx.guild)
+        guild_queued = guild_document.get("queue", [])
         if len(guild_queued) == 0:
             await ctx.reply(embed=self.bot.create_error_embed("There are no songs queued."))
             return
-        all_queued[str(ctx.guild.id)] = []
-        self.data["song_queues"] = all_queued
+        await self.music_db.songs.update_one({"_id": ctx.guild.id}, {'$set': {"queue": []}}, upsert=True)
         await ctx.reply(embed=self.bot.create_completed_embed("Cleared Queue!", "Queue cleared!"))
 
     @commands.command(aliases=["unqueue"])
     async def dequeue(self, ctx, index: int):
-        all_queued = self.data.get("song_queues", {})
-        guild_queued = all_queued.get(str(ctx.guild.id), [])
+        guild_document = await self.guild_document_from_guild(ctx.guild)
+        guild_queued = guild_document.get("queue", [])
         if not 0 < index < len(guild_queued) + 1:
             await ctx.reply(embed=self.bot.create_error_embed("That is not a valid queue position!"))
             return
         index -= 1
         song = guild_queued.pop(index)
-        all_queued[str(ctx.guild.id)] = guild_queued
-        self.data["song_queues"] = all_queued
+        await self.music_db.songs.update_one({"_id": ctx.guild.id}, {'$set': {"queue": guild_queued}}, upsert=True)
         title = await self.title_from_url(song)
         await ctx.reply(embed=self.bot.create_completed_embed("Successfully removed song from queue!",
                                                               f"Successfully removed [{title}]({song})"
@@ -326,9 +320,8 @@ class Music(commands.Cog):
             first_song = playlist_info.pop(0)
             first_song = await self.transform_single_song(first_song)
             self.enqueue(ctx.guild, first_song)
-            callers = self.data.get("called_from", {})
-            callers[str(ctx.guild.id)] = ctx.channel.id
-            self.data["called_from"] = callers
+            await self.music_db.songs.update_one({"_id": ctx.guild.id}, {'$set': {"text_channel_id": ctx.channel.id}},
+                                                 upsert=True)
             if not ctx.voice_client.is_playing() or not isinstance(ctx.voice_client.source, YTDLSource):
                 self.bot.loop.create_task(self.play_next_queued(ctx.voice_client))
             first_song_name = await self.title_from_url(first_song)
@@ -354,35 +347,43 @@ class Music(commands.Cog):
 
     @commands.command(aliases=["shuff", "mix"])
     async def shuffle(self, ctx):
-        all_queued = self.data.get("song_queues", {})
-        guild_queued = all_queued.get(str(ctx.guild.id), [])
+        guild_document = await self.guild_document_from_guild(ctx.guild)
+        guild_queued = guild_document.get("queue", [])
         if len(guild_queued) == 0:
             await ctx.reply(embed=self.bot.create_error_embed("There is no queue in your guild!"))
             return
         random.shuffle(guild_queued)
-        all_queued[str(ctx.guild.id)] = guild_queued
-        self.data["song_queues"] = all_queued
+        await self.music_db.songs.update_one({"_id": ctx.guild.id}, {'$set': {"queue": guild_queued}}, upsert=True)
         await ctx.reply(embed=self.bot.create_completed_embed("Shuffled!", "Shuffled song queue! "
                                                                            "(skip to go to next shuffled song)"))
+
+    async def guild_document_from_guild(self, guild):
+        song_collection = self.music_db.songs
+        guild_document = await self.bot.mongo.find_by_id(song_collection, guild.id)
+        if guild_document is None:
+            guild_document = {"_id": guild.id, "queue": [], "text_channel_id": None}
+            await self.bot.mongo.force_insert(song_collection, guild_document)
+        return guild_document
 
     async def play_next_queued(self, voice_client: discord.VoiceClient):
         if voice_client is None or not voice_client.is_connected():
             return
         await asyncio.sleep(0.5)
-        all_queued = self.data.get("song_queues", {})
-        guild_queued = all_queued.get(str(voice_client.guild.id), [])
+        guild_document = await self.guild_document_from_guild(voice_client.guild)
+        guild_queued = guild_document.get("queue", [])
         if len(guild_queued) == 0:
             # await voice_client.disconnect()
             return
         next_song_url = guild_queued.pop(0)
-        all_queued[str(voice_client.guild.id)] = guild_queued
-        self.data["song_queues"] = all_queued
+        await self.music_db.songs.update_one({"_id": voice_client.guild.id}, {'$set': {"queue": guild_queued}},
+                                             upsert=True)
         local_ffmpeg_options = ffmpeg_options.copy()
         resume_from = 0
         if type(next_song_url) == tuple or type(next_song_url) == list:
             next_song_url, resume_from = next_song_url
             local_ffmpeg_options['options'] = "-vn -ss {}".format(resume_from)
-        volume = self.data.get("song_volumes", {}).get(str(voice_client.guild.id), 0.5)
+        volume_document = self.bot.mongo.find_by_id(self.music_db.volumes, voice_client.guild.id)
+        volume = volume_document.get("volume", 0.5)
         if next_song_url is None:
             self.bot.loop.create_task(self.play_next_queued(voice_client))
             return
@@ -403,7 +404,12 @@ class Music(commands.Cog):
         embed = self.bot.create_completed_embed("Playing next song!", "Playing **[{}]({})**".format(title,
                                                                                                     next_song_url))
         embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
-        called_channel = self.bot.get_channel(self.data["called_from"][str(voice_client.guild.id)])
+        text_channel_id = guild_document.get("text_channel_id", None)
+        print(text_channel_id)
+        if text_channel_id is None:
+            return
+        # noinspection PyTypeChecker
+        called_channel = self.bot.get_channel(text_channel_id)
         history = await called_channel.history(limit=1).flatten()
         if len(history) > 0 and history[0].author.id == self.bot.user.id:
             old_message = history[0]
@@ -419,14 +425,16 @@ class Music(commands.Cog):
         await ctx.reply(embed=self.bot.create_completed_embed("Resumed!", "Resumed playing."))
 
     async def post_restart_resume(self):
-        for voice_channel_id in self.data.get("resume_voice", []):
+        resume_collection = self.music_db.restart_resume
+        resume_channels = await resume_collection.distinct("_id")
+        for voice_channel_id in resume_channels:
             voice_channel = self.bot.get_channel(voice_channel_id)
             try:
                 voice_client = await voice_channel.connect()
             except AttributeError:
                 continue
             self.bot.loop.create_task(self.play_next_queued(voice_client))
-        self.data["resume_voice"] = []
+        await resume_collection.delete_many({})
 
     async def pause_voice_client(self, voice_client):
         if voice_client.source is not None:
@@ -449,13 +457,13 @@ class Music(commands.Cog):
                 song = ""
             guild.voice_client.stop()
         else:
-            all_queued = self.data.get("song_queues", {})
-            guild_queued = all_queued.get(str(guild.id), [])
+
+            guild_document = await self.guild_document_from_guild(guild)
+            guild_queued = guild_document.get("queue", [])
             if len(guild_queued) == 0:
                 return None
             song_url = guild_queued.pop(0)
-            all_queued[str(guild.id)] = guild_queued
-            self.data["song_queues"] = all_queued
+            await self.music_db.songs.update_one({"_id": guild.id}, {'$set': {"queue": guild_queued}}, upsert=True)
             song = f" \"{await self.title_from_url(song_url)}\""
         return song
 
@@ -472,9 +480,8 @@ class Music(commands.Cog):
         volume = volume / 100
         if volume < 0:
             volume = 0
-        all_guilds = self.data.get("song_volumes", {})
-        all_guilds[str(ctx.guild.id)] = volume
-        self.data["song_volumes"] = all_guilds
+        document = {"_id": ctx.guild.id, "volume": volume}
+        await self.bot.mongo.force_insert(self.music_db.volumes, document)
         try:
             ctx.voice_client.source.volume = volume
         except AttributeError:

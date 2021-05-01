@@ -17,6 +17,8 @@ class MongoDB:
     @staticmethod
     async def find_by_id(collection, search_id):
         result = await collection.find_one({"_id": search_id})
+        if result is None:
+            return {}
         return result
 
     @staticmethod
@@ -38,7 +40,7 @@ async def main():
     channels = hypixel.channels
 
     # print(await db.find_by_id(channels, 798292125027926036))
-    print(await channels.distinct("_id"))
+    print(await channels.find_one({"_id": "nothing"}))
     # print([await db.username_from_uuid(uuid) for uuid in await channels.distinct("players")])
 
 
