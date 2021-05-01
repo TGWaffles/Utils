@@ -65,7 +65,7 @@ class MongoDB:
                             "embeds": [embed.to_dict() for embed in message.embeds], "deleted": False, "edits": []}
         await self.force_insert(self.discord_db.messages, message_document)
 
-    def message_edit(self, payload: discord.RawMessageUpdateEvent):
+    async def message_edit(self, payload: discord.RawMessageUpdateEvent):
         is_bot = payload.data.get("author", {}).get("bot", False)
         last_edited = payload.data.get('edited_timestamp')
         if last_edited is None:
