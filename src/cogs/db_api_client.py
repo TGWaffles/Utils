@@ -502,6 +502,7 @@ class DBApiClient(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
+        await self.bot.mongo.message_edit(payload)
         payload_data = payload.data
         params = {'token': api_token, 'payload_data': payload_data}
         await self.send_request("on_edit", parameters=params, request_type="post", timeout=120)

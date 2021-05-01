@@ -65,10 +65,24 @@ class MongoDB:
                             "embeds": [embed.to_dict() for embed in message.embeds], "deleted": False, "edits": []}
         await self.force_insert(self.discord_db.messages, message_document)
 
-    def check_identical_edit(self, message_id, edit_timestamp: datetime.datetime):
-        before_timestamp = edit_timestamp - datetime.timedelta(seconds=0.5)
-        after_timestamp = edit_timestamp + datetime.timedelta(seconds=0.5)
-        results = self.discord_db.messages.find({"_id": message_id})
+    def message_edit(self, payload: discord.RawMessageUpdateEvent):
+        is_bot = payload.data.get("author", {}).get("bot", False)
+        last_edited = payload.data.get('edited_timestamp')
+        if last_edited is None:
+            return None
+        timestamp = datetime.datetime.fromisoformat(last_edited)
+        message_document = await self.discord_db.messages.find_one({"_id": payload.message_id})
+        if message_document is None:
+            return
+        old_edits = sorted(message_document.get("edits", []), key=lambda x: x.get("timestamp"))
+        if len(old_edits) > 10 and is_bot:
+            return
+        if len(old_edits) > 0 and old_edits[-1].get("timestamp") > timestamp - datetime.timedelta(seconds=0.5):
+            return
+        edit_document = {"timestamp": timestamp, "content": payload.data.get("content", None),
+                         "embeds": payload.data.get("embeds", [])}
+        old_edits.append(edit_document)
+        await self.discord_db.messages.update_one({"_id": payload.message_id}, {'$set': {"edits": old_edits}})
 
     @staticmethod
     async def find_by_column(collection, column, value):
