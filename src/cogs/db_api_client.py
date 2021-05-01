@@ -487,7 +487,8 @@ class DBApiClient(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None:
+        if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None or \
+                not isinstance(message.author, discord.Member):
             return
         await self.bot.mongo.insert_message(message)
         message_dict = message_to_json(message)

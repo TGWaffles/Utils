@@ -26,7 +26,7 @@ class MongoDB:
         return result
 
     async def insert_guild(self, guild: discord.Guild):
-        guild_document = {"_id": guild.id, "name": guild.name}
+        guild_document = {"_id": guild.id, "name": guild.name, "removed": False}
         await self.force_insert(self.discord_db.guilds, guild_document)
 
     async def insert_channel(self, channel: discord.TextChannel):
