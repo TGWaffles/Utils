@@ -174,7 +174,7 @@ class DBApiClient(commands.Cog):
         #     await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!\n"
         #                                                       f"Status: {response_json.get('status')}"))
         #     return
-        cursor = self.bot.mongo.discord_db.messages.find({"deleted": True})
+        cursor = self.bot.mongo.discord_db.messages.find({"deleted": True, "channel_id": ctx.channel.id})
         cursor.sort("created_at", -1).limit(1).skip(amount-1)
         messages_found = await cursor.to_list(length=1)
         if len(messages_found) == 0:
