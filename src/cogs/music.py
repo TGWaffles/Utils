@@ -153,7 +153,7 @@ class Music(commands.Cog):
                     if not isinstance(voice_client.source, YTDLSource):
                         continue
                     await self.pause_voice_client(voice_client)
-                    self.bot.mongo.force_insert(self.music_db.restart_resume, {"_id": voice_client.channel.id})
+                    await self.bot.mongo.force_insert(self.music_db.restart_resume, {"_id": voice_client.channel.id})
                 async with self.bot.restart_waiter_lock:
                     self.bot.restart_waiters -= 1
                 return
