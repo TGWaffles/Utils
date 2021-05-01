@@ -517,7 +517,14 @@ class DBApiClient(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        pass
+        if not isinstance(member, discord.Member):
+            return
+        await self.bot.mongo.insert_member(member)
+
+    @commands.Cog.listener()
+    async def on_bulk_message_delete(self, messages):
+        await self.bot.mongo.discord_db.messages.update_one({"_id": {'$in': [message.id for message in messages]}},
+                                                            {'$set': {"deleted": True}})
 
 
 def setup(bot: UtilsBot):
