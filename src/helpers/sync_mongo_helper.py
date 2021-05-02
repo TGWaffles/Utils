@@ -37,10 +37,10 @@ def get_guild_score(guild_id):
         }
     ]
     aggregation = discord_db.members.aggregate(guild_members_pipeline)
-    member_list = set(x.get("_id").get("user_id") for x in await aggregation.to_list(length=None))
+    member_list = set(x.get("_id").get("user_id") for x in aggregation)
     query = discord_db.messages.find({"created_at": {"$gt": last_week}, "guild_id": guild_id})
     query.sort("created_at", pymongo.ASCENDING)
-    async for message in query:
+    for message in query:
         user_id = message.get("user_id")
         timestamp = message.get("created_at")
         if user_id not in member_list:
