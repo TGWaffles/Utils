@@ -111,12 +111,21 @@ async def main():
     discord_db = client.discord
     messages = discord_db.messages
     before = perf_counter()
-    known_channel_guild_ids = {}
-    cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
-    message = await cursor.to_list(length=1)
-    print(message)
-    i = 0
-    print(perf_counter() - before)
+    pipeline = [
+        {
+            "$match": {"guild_id": 725886999646437407}
+        },
+        {
+            "$group": {"_id": "$created_at"}
+        }
+    ]
+    aggregation = messages.aggregate(pipeline)
+    print(await aggregation.next())
+    # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
+    # message = await cursor.to_list(length=1)
+    # print(message)
+    # i = 0
+    # print(perf_counter() - before)
 
 
 if __name__ == '__main__':

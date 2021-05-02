@@ -16,7 +16,7 @@ from main import UtilsBot
 from src.checks.custom_check import restart_check
 from src.checks.user_check import is_owner
 from src.checks.role_check import is_high_staff, is_staff
-from src.helpers.graph_helper import pie_chart_from_amount_and_labels
+from src.helpers.graph_helper import pie_chart_from_amount_and_labels, file_from_timestamps
 from src.helpers.storage_helper import DataHelper
 from src.helpers.api_helper import *
 from src.storage import config
@@ -157,13 +157,6 @@ class DBApiClient(commands.Cog):
                     await asyncio.sleep(0.1)
             finally:
                 self.restarting = False
-
-    async def get_someone_id(self, guild_id):
-        params = {'token': api_token, "guild_id": guild_id}
-        response_json = await self.send_request("someone", parameters=params)
-        if response_json is None:
-            return None
-        return response_json.get("member_id")
 
     @commands.command()
     async def snipe(self, ctx, amount=1):
@@ -466,17 +459,22 @@ class DBApiClient(commands.Cog):
             return
         english_group = {'d': "Day", 'w': "Week", 'm': "Month", 'y': "Year"}
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages",
-                                                                      "Compiling graph for all "
-                                                                      "the server's messages..."))
-        params = {'token': api_token, 'guild_id': ctx.guild.id, "group": group}
-        response_json = await self.send_request("guild_graph", parameters=params, timeout=120)
-        if response_json.get("failure", False) or response_json.get("data") is None:
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't process stats!\n"
-                                                              f"Status: {response_json.get('status')}"))
-            return
-        b64_data = response_json.get("data")
-        data = base64.b64decode(b64_data)
-        file = BytesIO(data)
+                                                                      "Fetching all server messages..."))
+        pipeline = [
+            {
+                "$match": {"guild_id": ctx.guild.id}
+            },
+            {
+                "$group": {"_id": "$created_at"}
+            }
+        ]
+        aggregation = self.bot.mongo.discord_db.messages.aggregate(pipeline)
+        message_list = [x.get("_id") for x in await aggregation.to_list(length=None)]
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages",
+                                                                      "Creating graph of all server messages..."))
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            raw_data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, message_list, group))
+        file = BytesIO(raw_data)
         file.seek(0)
         discord_file = discord.File(fp=file, filename="image.png")
         embed = discord.Embed(title=f"{ctx.guild.name}'s stats, grouped by {english_group[group]}:")
