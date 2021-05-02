@@ -99,6 +99,7 @@ class MongoDB:
         async for message in query:
             user_id = message.get("user_id")
             timestamp = message.get("created_at")
+            print(timestamp)
             if user_id not in member_list:
                 continue
             if user_id not in last_valid:
@@ -107,11 +108,9 @@ class MongoDB:
             elif (timestamp - last_valid[user_id]).total_seconds() >= 60:
                 last_valid[user_id] = timestamp
                 scores[user_id] += 1
+            await asyncio.sleep(0)
         list_of_tuples = [(user_id, score) for user_id, score in scores.items()]
-        before = perf_counter()
         list_of_tuples.sort(key=lambda x: x[1], reverse=True)
-        after = perf_counter()
-        print(after - before)
         return list_of_tuples
 
     async def insert_message(self, message: discord.Message):
