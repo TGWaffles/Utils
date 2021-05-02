@@ -3,6 +3,7 @@ import datetime
 
 import discord
 import motor.motor_asyncio
+import pymongo
 from time import perf_counter, time
 import ast
 from discord.ext import commands
@@ -69,16 +70,45 @@ class MongoDB:
         guild_members_pipeline = [
             {
                 "$match": {
-                    "guild_id": guild_id,
+                    "_id.guild_id": guild_id,
                     "deleted": False
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "_id.user_id",
+                    "foreignField": "_id",
+                    "as": "user"
+                }
+            },
+            {
+                "$match": {
+                    "user.bot": False
                 }
             },
             {
                 "$project": {"_id": "$_id"}
             }
         ]
-        guild_members_query = self.discord_db
-        query = self.discord_db.messages.find({""})
+        aggregation = self.discord_db.members.aggregate(guild_members_pipeline)
+        member_list = set(x.get("_id").get("user_id") for x in await aggregation.to_list(length=None))
+        query = self.discord_db.messages.find({"created_at": {"$gt": last_week}, "guild_id": guild_id})
+        query.sort("created_at", pymongo.ASCENDING)
+        async for message in query:
+            user_id = message.get("user_id")
+            timestamp = message.get("created_at")
+            if user_id not in member_list:
+                continue
+            if user_id not in last_valid:
+                last_valid[user_id] = timestamp
+                scores[user_id] = 1
+            elif (timestamp - last_valid[user_id]).total_seconds() >= 60:
+                last_valid[user_id] = timestamp
+                scores[user_id] += 1
+        list_of_tuples = [(user_id, score) for user_id, score in scores.items()]
+        list_of_tuples.sort(key=lambda x: x[1], reverse=True)
+        return list_of_tuples
 
     async def insert_message(self, message: discord.Message):
         channel_result = await self.discord_db.channels.find_one({"_id": message.channel.id})
@@ -126,16 +156,15 @@ class MongoDB:
 
 
 async def main():
-    bot = commands.Bot(command_prefix="NoPrefix", intents=discord.Intents.all())
-    await bot.login(token)
-    asyncio.get_event_loop().create_task(bot.connect())
-    await bot.wait_until_ready()
+    # bot = commands.Bot(command_prefix="NoPrefix", intents=discord.Intents.all())
+    # await bot.login(token)
+    # asyncio.get_event_loop().create_task(bot.connect())
+    # await bot.wait_until_ready()
     db = MongoDB()
     client = db.client
     discord_db = client.discord
-    for guild in bot.guilds:
-        async for member in guild.fetch_members(limit=None):
-            await db.insert_member(member)
+    print(await db.get_guild_score(725886999646437407))
+    # print(await aggregation.to_list(length=None))
     print("done")
     # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
     # message = await cursor.to_list(length=1)

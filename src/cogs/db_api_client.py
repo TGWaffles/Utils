@@ -400,13 +400,7 @@ class DBApiClient(commands.Cog):
     async def leaderboard(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
-        params = {'token': api_token, 'guild_id': ctx.guild.id}
-        response_json = await self.send_request("leaderboard", parameters=params)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard!"
-                                                              f"Status: {response_json.get('status')}"))
-            return
-        results = response_json.get("results")
+        results = await self.bot.mongo.get_guild_score(ctx.guild.id)
         embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
         embed.description = "```"
         embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
