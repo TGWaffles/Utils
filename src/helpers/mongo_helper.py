@@ -99,7 +99,6 @@ class MongoDB:
         async for message in query:
             user_id = message.get("user_id")
             timestamp = message.get("created_at")
-            print(timestamp)
             if user_id not in member_list:
                 continue
             if user_id not in last_valid:
