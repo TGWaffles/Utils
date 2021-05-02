@@ -118,16 +118,6 @@ class SQLAlchemyTest(commands.Cog):
                 return
 
     @commands.command()
-    async def score(self, ctx, member: Optional[discord.Member]):
-        if member is None:
-            member = ctx.author
-        score = await self.bot.loop.run_in_executor(None, partial(self.database.get_last_week_score, member))
-        embed = self.bot.create_completed_embed(f"Score for {member.nick or member.name} - past 7 days",
-                                                str(score))
-        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
-        await ctx.reply(embed=embed)
-
-    @commands.command()
     @is_owner()
     async def channel_backwards(self, ctx):
         channel = ctx.channel

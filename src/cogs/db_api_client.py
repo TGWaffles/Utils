@@ -18,7 +18,7 @@ from src.checks.user_check import is_owner
 from src.checks.role_check import is_high_staff, is_staff
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels, file_from_timestamps
 from src.helpers.storage_helper import DataHelper
-from src.helpers.sync_mongo_helper import get_guild_score
+from src.helpers.sync_mongo_helper import get_guild_score, get_user_score
 from src.helpers.api_helper import *
 from src.storage import config
 from src.storage.token import api_token
@@ -281,6 +281,17 @@ class DBApiClient(commands.Cog):
         discord_file = discord.File(fp=file, filename="image.png")
         await ctx.reply(file=discord_file)
         await sent.delete()
+
+    @commands.command()
+    async def score(self, ctx, member: Optional[discord.Member]):
+        if member is None:
+            member = ctx.author
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            score = await self.bot.loop.run_in_executor(pool, partial(get_user_score, member.id, member.guild.id))
+        embed = self.bot.create_completed_embed(f"Score for {member.nick or member.name} - past 7 days",
+                                                str(score))
+        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        await ctx.reply(embed=embed)
 
     @commands.command(description="Count how many times a phrase has been said!")
     async def count(self, ctx, *, phrase):
