@@ -439,7 +439,7 @@ class DBApiClient(commands.Cog):
 
     async def get_first_message(self, guild_id, user_id):
         query = self.bot.mongo.discord_db.messages.find({"user_id": user_id, "guild_id": guild_id})
-        query.sort("created_at", -1).limit(1)
+        query.sort("created_at", 1).limit(1)
         first_message = await query.to_list(length=1)
         try:
             return first_message[0]
