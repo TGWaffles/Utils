@@ -523,6 +523,8 @@ class DBApiClient(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
+        await self.bot.mongo.discord_db.messages.update_one({"_id": member.id, "guild_id": member.guild.id},
+                                                            {'$set': {"deleted": True}})
         await self.request_member_remove(member.id, member.guild.id)
 
     @commands.Cog.listener()
@@ -544,6 +546,12 @@ class DBApiClient(commands.Cog):
     async def on_guild_channel_update(self, _, after):
         if isinstance(after, discord.TextChannel):
             await self.bot.mongo.insert_channel(after)
+
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel):
+        if isinstance(channel, discord.TextChannel):
+            await self.bot.mongo.discord_db.messages.update_one({"_id": channel.id},
+                                                                {'$set': {"deleted": True}})
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):

@@ -118,80 +118,8 @@ async def main():
     discord_db = client.discord
     messages = discord_db.messages
     before = perf_counter()
-    # pipeline = [{
-    #     "$group": {"_id": "$_id"}
-    # }]
-    # print("getting ids...")
-    # aggregated = discord_db.guilds.aggregate(pipeline)
-    # unique_list = await aggregated.to_list(length=None)
-    # all_guild_ids = set(x.get("_id") for x in unique_list)
-    # print("got ids...")
-    # to_insert = []
-    # query = session.query(Guild)
-    # print("query ready...")
-    # for guild in query:
-    #     print(guild.id)
-    #     if guild.id in all_guild_ids:
-    #         continue
-    #     print(guild)
-        # guild_document = {"_id": guild.id, "name": guild.name, "removed": guild.removed}
-        # channel_document = {"_id": channel.id, "name": channel.name, "guild_id": channel.guild.id}
-        # to_insert.append(guild_document)
-        # except json.decoder.JSONDecodeError:
-        #     print(message.embed_json)
-        #     message_document = {"_id": message.id, "channel_id": message.channel_id, "user_id": message.user_id,
-        #                         "content": message.content, "created_at": message.timestamp,
-        #                         "embeds": [],
-        #                         "deleted": message.deleted, "edits": []}
-    # print("inserting into mongo now")
-    # result = await discord_db.guilds.insert_many(to_insert, ordered=False)
-    # print(len(result.inserted_ids))
     known_channel_guild_ids = {}
     i = 0
-    await discord_db.update_many({}, {'$set': {"deleted": False}})
-    # async for message in messages.find({"guild_id": None}):
-    #     channel_id = message.get("channel_id")
-    #     if channel_id in known_channel_guild_ids:
-    #         guild_id = known_channel_guild_ids[channel_id]
-    #     else:
-    #         channel_in_db = await db.discord_db.channels.find_one({"_id": channel_id})
-    #         if channel_in_db is None:
-    #             try:
-    #                 discord_channel = await bot.fetch_channel(channel_id)
-    #             except discord.errors.NotFound:
-    #                 continue
-    #             guild_id = discord_channel.guild.id
-    #         else:
-    #             guild_id = channel_in_db.get("guild_id")
-    #         #     known_channel_guild_ids[channel_id] = guild_id
-    #     await messages.update_one({"_id": message.get("_id")}, {'$set': {"guild_id": guild_id}})
-    #     i += 1
-    #     if i % 50 == 0:
-    #         print(i)
-    # async for channel in channels.find():
-    #     print(channel)
-    #     channel_id = channel.get("_id")
-    #     guild_id = channel.get("guild_id")
-    #     await messages.update_many({"channel_id": channel_id}, {'$set': {"guild_id": guild_id}})
-    # async for message in messages.find():
-    #     channel_id = message.get("channel_id")
-    #     if channel_id in known_channel_guild_ids:
-    #         guild_id = known_channel_guild_ids[channel_id]
-    #     else:
-    #         channel_in_db = await db.discord_db.channels.find_one({"_id": channel_id})
-    #         if channel_in_db is None:
-    #             try:
-    #                 discord_channel = await bot.fetch_channel(channel_id)
-    #             except discord.errors.NotFound:
-    #                 continue
-    #             guild_id = discord_channel.guild.id
-    #         else:
-    #             guild_id = channel_in_db.get("guild_id")
-    #     known_channel_guild_ids[channel_id] = guild_id
-    #     await messages.update_one({"_id": message.get("_id")}, {'$set': {"guild_id": guild_id}})
-    #     i += 1
-    #     if i % 50 == 0:
-    #         print(i)
     print(perf_counter() - before)
 
 
