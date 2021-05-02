@@ -1,12 +1,16 @@
 import asyncio
 import re
+import concurrent.futures
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
+from io import BytesIO
+from typing import Optional, Union
+from functools import partial
 
 from main import UtilsBot
-from src.checks.guild_check import monkey_check
 from src.checks.user_check import is_owner
+from src.helpers.tiktok_helper import get_video, get_user
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
 
@@ -17,119 +21,77 @@ class Monkey(commands.Cog):
         # self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
         self.previous_counting_number = None
         self.data = DataHelper()
+        self.tiktok_db = self.bot.mongo.client.tiktok
+        self.send_tiktok_message.start()
+
+    @tasks.loop(seconds=30, count=None)
+    async def send_tiktok_message(self):
+        tiktok_channels = self.tiktok_db.notifications
+        for channel in tiktok_channels:
+            username = channel.get("username")
+            channel_id = channel.get("channel_id")
+            updates_channel = self.bot.get_channel(channel_id)
+            if updates_channel is None:
+                continue
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                last_video, image = await asyncio.get_event_loop().run_in_executor(pool, partial(get_video, username))
+            embed = discord.Embed()
+            image = BytesIO(image.read())
+            file = discord.File(fp=image, filename="image.png")
+            embed.set_image(url="attachment://image.png")
+            link = f"https://www.tiktok.com/@itslexismith/video/{last_video.get('video', {}).get('id')}"
+            embed.title = last_video.get('desc', '<no description>')
+            embed.description = "Lexi Smith just uploaded a new video!"
+            embed.url = link
+            embed.set_author(name=f"@{last_video.get('author', {}).get('uniqueId', '')}",
+                             icon_url=last_video.get('author', {}).get('avatarLarger', ''))
+            await updates_channel.send(embed=embed, file=file)
+
+    @tasks.loop(seconds=600, count=None)
+    async def update_followers(self):
+        follower_channels = self.tiktok_db.followers
+        for channel in follower_channels:
+            username = channel.get("username")
+            update_channel_id = channel.get("channel_id")
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                user = await asyncio.get_event_loop().run_in_executor(pool, partial(get_user, username))
+            followers = user.get("userInfo").get("stats").get("followerCount", "Unknown")
+            discord_channel = self.bot.get_channel(update_channel_id)
+            await discord_channel.edit(name=f"Followers: {followers:,}")
 
     @commands.command()
-    @monkey_check()
     @is_owner()
-    async def fix_muted_stuff(self, ctx):
-        muted_override = discord.PermissionOverwrite(send_messages=False, speak=False)
-        muted_role = ctx.guild.get_role(728074050684977193)
-        print(muted_role)
-        message = await ctx.reply(embed=self.bot.create_processing_embed("Processing", "Doing it..."))
-        for channel in ctx.guild.channels:
-            await channel.set_permissions(muted_role, overwrite=muted_override)
-        await message.edit(embed=self.bot.create_completed_embed("Done.", "Fixed (I think)"))
+    async def set_notifications(self, ctx, username: str, channel: Optional[discord.TextChannel]):
+        overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False),
+                      ctx.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
+        if channel is None:
+            channel = await ctx.guild.create_text_channel("tiktok-notifications", overwrites=overwrites)
+        channel_document = {"channel_id": channel.id, "username": username}
+        await self.bot.mongo.force_insert(self.tiktok_db.notifications, channel_document)
+        await ctx.reply("Set notifications channel as {}".format(channel.mention))
 
+    @commands.command()
+    @is_owner()
+    async def set_followers(self, ctx, username: str, channel: Optional[discord.VoiceChannel]):
+        overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(view_channel=True, connect=False),
+                      ctx.guild.me: discord.PermissionOverwrite(view_channel=True, connect=True)}
+        if channel is None:
+            channel = await ctx.guild.create_voice_channel("Followers: Pending", overwrites=overwrites)
+        channel_document = {"channel_id": channel.id, "username": username}
+        await self.bot.mongo.force_insert(self.tiktok_db.followers, channel_document)
+        await ctx.reply("Set followers channel as {}".format(channel.mention))
 
-    # def is_og(self, member: discord.Member):
-    #     first_join_date = member.joined_at
-    #     # noinspection SpellCheckingInspection
-    #     first_join_date = first_join_date.replace(tzinfo=datetime.timezone.utc)
-    #     return first_join_date < self.july
-    #
-    # @commands.command(pass_context=True)
-    # @monkey_check()
-    # async def check_og(self, ctx, member: discord.Member = None):
-    #     if member is None:
-    #         member = ctx.message.author
-    #     is_og = self.is_og(member)
-    #     message_time = None
-    #     data = DataHelper()
-    #     if str(member.id) in data.get("og_messages", {}).keys():
-    #         is_og = True
-    #         message_time = datetime.datetime.utcfromtimestamp(data.get("og_messages", {}).get(str(member.id), 0))
-    #     embed = discord.Embed(title="OG Check")
-    #     embed.set_author(name=member.name, icon_url=member.avatar_url)
-    #     embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
-    #     embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
-    #     embed.timestamp = member.joined_at
-    #     if message_time is not None:
-    #         embed.timestamp = message_time
-    #         embed.add_field(name="First Message", value=message_time.strftime("%Y-%m-%d %H:%M"))
-    #     if self.bot.latest_joins == {}:
-    #         await self.bot.get_latest_joins()
-    #     members = self.bot.latest_joins[ctx.guild.id]
-    #     members = [user.id for user in members]
-    #     embed.add_field(name="Position", value="#{}".format(str(members.index(member.id) + 1)))
-    #     await ctx.reply(embed=embed)
-    #
-    # @commands.command(pass_context=True)
-    # @is_owner()
-    # @monkey_check()
-    # async def all_ogs(self, ctx):
-    #     message_member_ids = {}
-    #     start_embed = discord.Embed(title="Doing all OGs.", description="I will now start to process all messages "
-    #                                                                     "until the 1st of July.",
-    #                                 colour=discord.Colour.orange())
-    #     processing_message = await ctx.reply(embed=start_embed)
-    #     last_edit = datetime.datetime.now()
-    #     for channel in ctx.guild.text_channels:
-    #         async for message in channel.history(limit=None, before=self.july.replace(tzinfo=None), oldest_first=True):
-    #             author = message.author
-    #             if (datetime.datetime.now() - last_edit).total_seconds() > 1:
-    #                 embed = discord.Embed(title="Processing messages",
-    #                                       description="Last Message text: {}, from {}, in {}".format(
-    #                                           message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
-    #                                           channel.mention), colour=discord.Colour.orange())
-    #                 embed.set_author(name=author.name, icon_url=author.avatar_url)
-    #                 embed.timestamp = message.created_at
-    #                 await processing_message.edit(embed=embed)
-    #                 last_edit = datetime.datetime.now()
-    #             if str(author.id) not in message_member_ids.keys():
-    #                 join_date = message.created_at.replace(tzinfo=datetime.timezone.utc)
-    #                 message_member_ids[str(author.id)] = join_date.timestamp()
-    #     messages_done = discord.Embed(title="Finished Messages.", description="Finished messages. I will now start to "
-    #                                                                           "apply the OG role to all deserving "
-    #                                                                           "users.", colour=discord.Colour.orange())
-    #     await processing_message.edit(embed=messages_done)
-    #     last_edit = datetime.datetime.now()
-    #     og_role = ctx.guild.get_role(795873287628128306)
-    #     members_processed = 0
-    #     async for member in ctx.guild.fetch_members(limit=None):
-    #         has_message = str(member.id) in message_member_ids.keys()
-    #         if has_message:
-    #             message_creation_date = datetime.datetime.fromtimestamp(message_member_ids[str(member.id)],
-    #                                                                     datetime.timezone.utc)
-    #             message_creation_message = message_creation_date.strftime("%Y-%m-%d %H:%M")
-    #             join_time = min(message_creation_date,
-    #                             member.joined_at.replace(tzinfo=datetime.timezone.utc))
-    #         else:
-    #             message_creation_message = "No"
-    #             join_time = member.joined_at.replace(tzinfo=datetime.timezone.utc)
-    #         is_og = join_time < self.july
-    #         if (datetime.datetime.now() - last_edit).total_seconds() > 1:
-    #             embed = discord.Embed(title="Processing Members...",
-    #                                   description="Last Member: {}. "
-    #                                               "Joined at: {}. "
-    #                                               "Has previous message: {}."
-    #                                               "Is OG: {}".format(member.name,
-    #                                                                  member.joined_at.strftime("%Y-%m-%d %H:%M"),
-    #                                                                  message_creation_message,
-    #                                                                  is_og))
-    #             embed.set_author(name=member.name, icon_url=member.avatar_url)
-    #             embed.timestamp = join_time.replace(tzinfo=None)
-    #             await processing_message.edit(embed=embed)
-    #             last_edit = datetime.datetime.now()
-    #         if is_og:
-    #             try:
-    #                 await member.add_roles(og_role)
-    #             except Exception as e:
-    #                 print(e)
-    #             members_processed += 1
-    #     embed = self.bot.create_completed_embed("Completed OG addition", "Successfully added all OGs!")
-    #     await processing_message.edit(embed=embed)
-    #     data = DataHelper()
-    #     data["og_messages"] = message_member_ids
+    @commands.command()
+    @is_owner()
+    async def reset_notifications(self, ctx, channel: discord.TextChannel):
+        await self.tiktok_db.notifications.delete_many({"channel_id": channel.id})
+        await ctx.reply("Removed notification channel.")
+
+    @commands.command()
+    @is_owner()
+    async def reset_followers(self, ctx, channel: discord.VoiceChannel):
+        await self.tiktok_db.followers.delete_many({"channel_id": channel.id})
+        await ctx.reply("Removed followers channel.")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -216,45 +178,6 @@ class Monkey(commands.Cog):
                                                                 "You removed the number that kept this message valid, "
                                                                 "so it will now be deleted."), delete_after=7)
             await after.delete()
-
-    @commands.command()
-    @is_owner()
-    async def give_roles_back(self, ctx):
-        message = await ctx.reply(embed=self.bot.create_completed_embed("Giving roles back", "Starting"))
-        for member in ctx.guild.members:
-            print(member.name)
-            await self.give_roles(member)
-        await message.edit(embed=self.bot.create_completed_embed("Given roles back!", "Completed."))
-
-    async def give_roles(self, member):
-        all_members = self.data.get("reapply_roles", {})
-        if str(member.id) in all_members:
-            role_list = []
-            for role in all_members[str(member.id)]:
-                role = member.guild.get_role(int(role))
-                if role is not None:
-                    role_list.append(role)
-            try:
-                attempts = 0
-                error = Exception()
-                while attempts < 3:
-                    try:
-                        await member.add_roles(*role_list)
-                        return
-                    except Exception as e:
-                        error = e
-                        print(e)
-                        attempts += 1
-                    await asyncio.sleep(2)
-                raise error
-            except Exception as e:
-                print(e)
-                for role in all_members[str(member.id)]:
-                    try:
-                        await member.add_roles(member.guild.get_role(int(role)))
-                    except Exception as e:
-                        print(e)
-                        print(role)
 
 
 def setup(bot):
