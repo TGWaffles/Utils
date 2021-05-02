@@ -321,101 +321,15 @@ class DBApiClient(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
                                                                       f"Counting {member.name}'s amount of "
                                                                       f"messages!"))
-        params = {"guild_id": ctx.guild.id, "member_id": member.id, "token": api_token}
-        response_json = await self.send_request("percentage", parameters=params)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! \n"
-                                                              f"Status: {response_json.get('status')}"))
-            return
-        amount = response_json.get("amount")
-        percentage = response_json.get("percentage")
+        guild_count = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": ctx.guild.id})
+        member_count = await self.bot.mongo.discord_db.messages.count_documents({"user_id": member.id,
+                                                                                 "guild_id": ctx.guild.id})
+        percentage = (member_count / guild_count) * 100
         embed = self.bot.create_completed_embed(f"Amount of messages {member.name} has sent!",
-                                                f"{member.name} has sent {amount:,} messages. "
-                                                f"That's {percentage}% "
+                                                f"{member.name} has sent {member_count:,} messages. "
+                                                f"That's {percentage:.3f}% "
                                                 f"of the server's total!")
         await sent.edit(embed=embed)
-
-    async def send_update(self, sent_message):
-        if len(self.last_update.description) < 2000:
-            await sent_message.edit(embed=self.last_update)
-
-    @commands.command()
-    @restart_check()
-    async def full_guild(self, ctx, reset=False):
-        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
-        tasks = []
-        for channel in ctx.guild.text_channels:
-            tasks.append(self.bot.loop.create_task(self.load_channel(channel, reset)))
-        while any([not task.done() for task in tasks]):
-            await self.send_update(sent_message)
-            await asyncio.sleep(1)
-        await asyncio.gather(*tasks)
-        await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
-
-    @commands.command()
-    @is_owner()
-    async def all_guilds(self, ctx):
-        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
-        tasks = []
-        channels_to_do = []
-        for guild in self.bot.guilds:
-            print(guild.name)
-            for channel in guild.text_channels:
-                print(channel.name)
-                channels_to_do.append(channel)
-        for i in range(10):
-            channel = channels_to_do.pop()
-            tasks.append(self.bot.loop.create_task(self.load_channel(channel, True)))
-        await asyncio.sleep(3)
-        while len(self.active_channel_ids) > 0:
-            if len(self.active_channel_ids) < 10:
-                print(len(self.active_channel_ids))
-                print(self.active_channel_ids)
-                channel = channels_to_do.pop()
-                print(f"Adding channel id {channel}")
-                tasks.append(self.bot.loop.create_task(self.load_channel(channel, True)))
-            await self.send_update(sent_message)
-            await asyncio.sleep(1)
-        print("done??")
-        print(self.active_channel_ids)
-        await asyncio.gather(*tasks)
-        await sent_message.edit(embed=self.bot.create_completed_embed("Finished", "done ALL messages. wow."))
-
-    async def load_channel(self, channel, reset):
-        print(channel.name)
-        last_edit = time.time()
-        resume_from = self.data.get("resume_from_{}".format(channel.id), None)
-        if reset:
-            resume_from = None
-        if resume_from is not None:
-            resume_from = await channel.fetch_message(resume_from)
-        messages_to_send = []
-        # noinspection DuplicatedCode
-        async for message in channel.history(limit=None, oldest_first=True, after=resume_from):
-            now = time.time()
-            if now - last_edit > 3:
-                embed = discord.Embed(title="Processing messages",
-                                      description="Last Message text: {}, from {}, in {}, in {}".format(
-                                          message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
-                                          channel.name, channel.guild.name), colour=discord.Colour.orange())
-                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-                embed.timestamp = message.created_at
-                self.last_update = embed
-                last_edit = now
-                self.data[f"resume_from_{channel.id}"] = message.id
-            if len(message.embeds) > 0:
-                embed_json = message.embeds[0].to_dict()
-            else:
-                embed_json = None
-            messages_to_send.append({"id": message.id, "channel_id": message.channel.id,
-                                     "guild_id": message.guild.id, "user_id": message.author.id,
-                                     "content": message.content, "embed_json": embed_json,
-                                     "timestamp": message.created_at.isoformat(), "name": message.author.name,
-                                     "bot": message.author.bot, "channel_name": message.channel.name})
-            if len(messages_to_send) >= 100:
-                await self.send_request("many_messages", parameters={"token": api_token,
-                                                                     "messages": messages_to_send},
-                                        request_type="post")
 
     @commands.command()
     async def leaderboard(self, ctx):
