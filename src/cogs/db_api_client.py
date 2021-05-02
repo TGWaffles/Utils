@@ -18,7 +18,7 @@ from src.checks.user_check import is_owner
 from src.checks.role_check import is_high_staff, is_staff
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels, file_from_timestamps
 from src.helpers.storage_helper import DataHelper
-from src.helpers.mongo_helper import run_guild_in_new_process
+from src.helpers.sync_mongo_helper import get_guild_score
 from src.helpers.api_helper import *
 from src.storage import config
 from src.storage.token import api_token
@@ -406,7 +406,7 @@ class DBApiClient(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
         with concurrent.futures.ProcessPoolExecutor() as pool:
-            results = await self.bot.loop.run_in_executor(pool, partial(run_guild_in_new_process, ctx.guild.id))
+            results = await self.bot.loop.run_in_executor(pool, partial(get_guild_score, ctx.guild.id))
         results = results[:12]
         embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
         embed.description = "```"
