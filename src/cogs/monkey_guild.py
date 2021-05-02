@@ -23,11 +23,12 @@ class Monkey(commands.Cog):
         self.data = DataHelper()
         self.tiktok_db = self.bot.mongo.client.tiktok
         self.send_tiktok_message.start()
+        self.update_followers.start()
 
     @tasks.loop(seconds=30, count=None)
     async def send_tiktok_message(self):
         tiktok_channels = self.tiktok_db.notifications
-        for channel in tiktok_channels:
+        async for channel in tiktok_channels.find():
             username = channel.get("username")
             channel_id = channel.get("channel_id")
             updates_channel = self.bot.get_channel(channel_id)
@@ -50,7 +51,7 @@ class Monkey(commands.Cog):
     @tasks.loop(seconds=600, count=None)
     async def update_followers(self):
         follower_channels = self.tiktok_db.followers
-        for channel in follower_channels:
+        async for channel in follower_channels.find():
             username = channel.get("username")
             update_channel_id = channel.get("channel_id")
             with concurrent.futures.ProcessPoolExecutor() as pool:
