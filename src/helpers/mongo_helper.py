@@ -57,9 +57,8 @@ class MongoDB:
         guild_result = await self.discord_db.guilds.find_one({"_id": member.guild.id})
         if guild_result is None:
             await self.insert_guild(member.guild)
-        compound_id = int(str(member.id) + str(member.guild.id))
-        member_document = {"_id": compound_id, "nick": member.nick, "joined_at": member.joined_at, "user_id": member.id,
-                           "guild_id": member.guild.id, "deleted": False}
+        member_document = {"_id": {"user_id": member.id, "guild_id": member.guild.id},
+                           "nick": member.nick, "joined_at": member.joined_at, "deleted": False}
         await self.force_insert(self.discord_db.members, member_document)
 
     async def get_guild_score(self, guild_id):
@@ -127,13 +126,16 @@ class MongoDB:
 
 
 async def main():
-    bot = commands.Bot(command_prefix="NoPrefix")
+    bot = commands.Bot(command_prefix="NoPrefix", intents=discord.Intents.all())
+    await bot.login(token)
+    asyncio.get_event_loop().create_task(bot.connect())
+    await bot.wait_until_ready()
     db = MongoDB()
     client = db.client
     discord_db = client.discord
-    messages = discord_db.messages
-    before = perf_counter()
-    await discord_db.channels.update_many({}, {"$set": {"excluded": False}})
+    for guild in bot.guilds:
+        async for member in guild.fetch_members(limit=None):
+            await db.insert_member(member)
     print("done")
     # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
     # message = await cursor.to_list(length=1)
