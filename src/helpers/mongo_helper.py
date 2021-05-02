@@ -41,7 +41,8 @@ class MongoDB:
         guild_result = await self.discord_db.guilds.find_one({"_id": channel.guild.id})
         if guild_result is None:
             await self.insert_guild(channel.guild)
-        channel_document = {"_id": channel.id, "name": channel.name, "guild_id": channel.guild.id, "deleted": False}
+        channel_document = {"_id": channel.id, "name": channel.name, "guild_id": channel.guild.id, "deleted": False,
+                            "excluded": False}
         await self.force_insert(self.discord_db.channels, channel_document)
 
     async def insert_user(self, user: discord.User):
@@ -111,16 +112,18 @@ async def main():
     discord_db = client.discord
     messages = discord_db.messages
     before = perf_counter()
-    pipeline = [
-        {
-            "$match": {"guild_id": 725886999646437407}
-        },
-        {
-            "$group": {"_id": "$created_at"}
-        }
-    ]
-    aggregation = messages.aggregate(pipeline)
-    print(await aggregation.next())
+    # pipeline = [
+    #     {
+    #         "$match": {"guild_id": 725886999646437407}
+    #     },
+    #     {
+    #         "$group": {"_id": "$created_at"}
+    #     }
+    # ]
+    # aggregation = messages.aggregate(pipeline)
+    # print(await aggregation.next())
+    await discord_db.channels.update_many({}, {"$set": {"excluded": False}})
+    print("done")
     # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
     # message = await cursor.to_list(length=1)
     # print(message)
