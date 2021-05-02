@@ -458,7 +458,6 @@ class Music(commands.Cog):
                 song = ""
             guild.voice_client.stop()
         else:
-
             guild_document = await self.guild_document_from_guild(guild)
             guild_queued = guild_document.get("queue", [])
             if len(guild_queued) == 0:

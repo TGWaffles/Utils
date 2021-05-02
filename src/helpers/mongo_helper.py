@@ -112,6 +112,11 @@ class MongoDB:
         list_of_tuples.sort(key=lambda x: x[1], reverse=True)
         return list_of_tuples
 
+    def run_guild_in_new_process(self, guild_id):
+        other_loop = asyncio.get_event_loop()
+        score_info = other_loop.run_until_complete(self.get_guild_score(guild_id))
+        return score_info
+
     async def insert_message(self, message: discord.Message):
         channel_result = await self.discord_db.channels.find_one({"_id": message.channel.id})
         if channel_result is None:

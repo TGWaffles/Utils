@@ -404,7 +404,9 @@ class DBApiClient(commands.Cog):
     async def leaderboard(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
-        results = await self.bot.mongo.get_guild_score(ctx.guild.id)
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            results = await self.bot.loop.run_in_executor(pool, partial(self.bot.mongo.run_guild_in_new_process,
+                                                                        ctx.guild.id))
         results = results[:12]
         embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
         embed.description = "```"
