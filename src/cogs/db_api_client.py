@@ -465,7 +465,7 @@ class DBApiClient(commands.Cog):
                 "$match": {"guild_id": ctx.guild.id}
             },
             {
-                "$group": {"_id": "$created_at"}
+                "$project": {"_id": "$created_at"}
             }
         ]
         aggregation = self.bot.mongo.discord_db.messages.aggregate(pipeline)
