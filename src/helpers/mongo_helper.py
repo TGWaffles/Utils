@@ -57,9 +57,29 @@ class MongoDB:
         guild_result = await self.discord_db.guilds.find_one({"_id": member.guild.id})
         if guild_result is None:
             await self.insert_guild(member.guild)
-        member_document = {"_id": member.id, "nick": member.nick, "joined_at": member.joined_at,
+        compound_id = int(str(member.id) + str(member.guild.id))
+        member_document = {"_id": compound_id, "nick": member.nick, "joined_at": member.joined_at, "user_id": member.id,
                            "guild_id": member.guild.id, "deleted": False}
         await self.force_insert(self.discord_db.members, member_document)
+
+    async def get_guild_score(self, guild_id):
+        now = datetime.datetime.now()
+        last_week = now - datetime.timedelta(days=7)
+        last_valid = {}
+        scores = {}
+        guild_members_pipeline = [
+            {
+                "$match": {
+                    "guild_id": guild_id,
+                    "deleted": False
+                }
+            },
+            {
+                "$project": {"_id": "$_id"}
+            }
+        ]
+        guild_members_query = self.discord_db
+        query = self.discord_db.messages.find({""})
 
     async def insert_message(self, message: discord.Message):
         channel_result = await self.discord_db.channels.find_one({"_id": message.channel.id})
@@ -107,21 +127,12 @@ class MongoDB:
 
 
 async def main():
+    bot = commands.Bot(command_prefix="NoPrefix")
     db = MongoDB()
     client = db.client
     discord_db = client.discord
     messages = discord_db.messages
     before = perf_counter()
-    # pipeline = [
-    #     {
-    #         "$match": {"guild_id": 725886999646437407}
-    #     },
-    #     {
-    #         "$group": {"_id": "$created_at"}
-    #     }
-    # ]
-    # aggregation = messages.aggregate(pipeline)
-    # print(await aggregation.next())
     await discord_db.channels.update_many({}, {"$set": {"excluded": False}})
     print("done")
     # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
