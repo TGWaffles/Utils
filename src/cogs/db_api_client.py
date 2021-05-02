@@ -229,6 +229,8 @@ class DBApiClient(commands.Cog):
         embed.add_field(name=f"Original Message ({original_timestamp_string})",
                         value=content, inline=False)
         for index, edit in enumerate(edits):
+            print(len(edits) - index)
+            print(edit)
             if len(embed) >= 5000:
                 break
             edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
