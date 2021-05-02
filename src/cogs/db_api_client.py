@@ -162,7 +162,7 @@ class DBApiClient(commands.Cog):
     async def snipe(self, ctx, amount=1):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
         cursor = self.bot.mongo.discord_db.messages.find({"deleted": True, "channel_id": ctx.channel.id})
-        cursor.sort("created_at", -1).limit(1).skip(amount-1)
+        cursor.sort("created_at", -1).limit(1).skip(amount - 1)
         messages_found = await cursor.to_list(length=1)
         if len(messages_found) == 0:
             await sent.edit(embed=self.bot.create_error_embed("There was nothing to snipe in this channel."))
@@ -470,8 +470,8 @@ class DBApiClient(commands.Cog):
         ]
         aggregation = self.bot.mongo.discord_db.messages.aggregate(pipeline)
         message_list = [x.get("_id") for x in await aggregation.to_list(length=None)]
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages",
-                                                                      "Creating graph of all server messages..."))
+        await sent.edit(embed=self.bot.create_processing_embed("Processing messages",
+                                                               "Creating graph of all server messages..."))
         with concurrent.futures.ProcessPoolExecutor() as pool:
             raw_data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, message_list, group))
         file = BytesIO(raw_data)
