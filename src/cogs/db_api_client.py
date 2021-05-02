@@ -260,8 +260,13 @@ class DBApiClient(commands.Cog):
             labels = []
             amounts = []
             for user_id, score in results[:30]:
-                username = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, user_id)
-                labels.append(username.get("name"))
+                member = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.members, {"user_id": user_id,
+                                                                                             "guild_id": ctx.guild.id})
+                nickname = member.get("nick", None)
+                if nickname is None:
+                    user = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, user_id)
+                    nickname = user.get("name", "Unknown")
+                labels.append(nickname)
                 amounts.append(score)
             smaller_amounts = amounts[15:]
             labels = labels[:15]
