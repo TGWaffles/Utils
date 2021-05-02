@@ -106,19 +106,15 @@ class MongoDB:
 
 
 async def main():
-    bot = commands.Bot(command_prefix="Nonelol", intents=discord.Intents.all())
-    await bot.login(token)
-    asyncio.get_event_loop().create_task(bot.connect())
-    await bot.wait_until_ready()
-
-    database = DatabaseHelper()
-    session = database.session_creator()
     db = MongoDB()
     client = db.client
     discord_db = client.discord
     messages = discord_db.messages
     before = perf_counter()
     known_channel_guild_ids = {}
+    cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
+    message = await cursor.to_list(length=1)
+    print(message)
     i = 0
     print(perf_counter() - before)
 

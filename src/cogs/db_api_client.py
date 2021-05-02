@@ -168,12 +168,6 @@ class DBApiClient(commands.Cog):
     @commands.command()
     async def snipe(self, ctx, amount=1):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
-        # params = {'token': api_token, 'channel_id': ctx.channel.id, "amount": amount}
-        # response_json = await self.send_request("snipe", parameters=params)
-        # if response_json.get("failure", False):
-        #     await sent.edit(embed=self.bot.create_error_embed(f"Couldn't snipe!\n"
-        #                                                       f"Status: {response_json.get('status')}"))
-        #     return
         cursor = self.bot.mongo.discord_db.messages.find({"deleted": True, "channel_id": ctx.channel.id})
         cursor.sort("created_at", -1).limit(1).skip(amount-1)
         messages_found = await cursor.to_list(length=1)
@@ -208,22 +202,22 @@ class DBApiClient(commands.Cog):
         await sent.edit(embed=embed)
 
     @commands.command()
-    async def edits(self, ctx):
-        if ctx.message.reference is None:
+    async def edits(self, ctx, message_id: Optional[int]):
+        if ctx.message.reference is None and message_id is None:
             await ctx.reply(embed=self.bot.create_error_embed("Please reply to a message with this command!"))
             return
-        referenced_message = ctx.message.reference
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
-        params = {'token': api_token, 'message_id': referenced_message.message_id}
-        response_json = await self.send_request("edits", parameters=params)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't fetch edits! \n"
-                                                              f"Status: {response_json.get('status')}"))
+        if message_id is None:
+            message_id = ctx.message.reference.message_id
+        cursor = self.bot.mongo.discord_db.messages.find({"_id": message_id, "channel_id": ctx.channel.id})
+        message = await cursor.to_list(length=1)
+        if len(message == 0):
+            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find that message!"))
             return
-        edits = response_json.get("edits")
-        original_message = response_json.get("original")
-        original_timestamp_string = datetime.datetime.fromisoformat(
-            original_message.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
+        message = message[0]
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
+        edits = message.get("edits")
+        original_message = message
+        original_timestamp_string = message.get("created_at").strftime("%Y-%m-%d %H:%M:%S")
         if len(edits) == 0:
             await sent.edit(embed=self.bot.create_error_embed("That message has no known edits."))
             return
@@ -237,18 +231,18 @@ class DBApiClient(commands.Cog):
         for index, edit in enumerate(edits):
             if len(embed) >= 5000:
                 break
-            edited_timestamp_string = datetime.datetime.fromisoformat(
-                edit.get("timestamp")).strftime("%Y-%m-%d %H:%M:%S")
-            if len(edit.get("edited_content")) > 1024:
-                content = edit.get("edited_content")[:1021] + "..."
+            edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
+            if len(edit.get("content")) > 1024:
+                content = edit.get("content")[:1021] + "..."
             else:
-                content = edit.get("edited_content")
+                content = edit.get("content")
             embed.insert_field_at(index=1, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
                                   value=content, inline=False)
-        if referenced_message.resolved is not None:
-            author = referenced_message.resolved.author
-            embed.set_author(name=author.name, url=author.avatar_url)
-        embed.add_field(name="\u200b", value=f"[Jump to Message]({referenced_message.jump_url})",
+        author = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, message.get("user_id"))
+        discord_author = self.bot.get_user(author.get("_id"))
+        embed.set_author(name=author.get("name"), url=discord_author.avatar_url)
+        embed.add_field(name="\u200b", value=f"[Jump to Message](https://discord.com/channels/{message.get('guild_id')}"
+                                             f"/{message.get('channel_id')}/{message.get('_id')})",
                         inline=False)
         await sent.edit(embed=embed)
 
