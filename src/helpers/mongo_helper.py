@@ -113,10 +113,13 @@ async def main():
     # await bot.login(token)
     # asyncio.get_event_loop().create_task(bot.connect())
     # await bot.wait_until_ready()
+    database = DatabaseHelper()
+    session = database.session_creator()
     db = MongoDB()
     client = db.client
     discord_db = client.discord
-    print(await db.get_guild_score(725886999646437407))
+    for channel in session.query(Channel).filter(Channel.excluded_from_leaderboard.is_(True)):
+        await discord_db.channels.update_one({"_id": channel.id}, {"$set": {"excluded": True}})
     # print(await aggregation.to_list(length=None))
     print("done")
     # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
