@@ -6,6 +6,7 @@ import motor.motor_asyncio
 import pymongo
 from time import perf_counter, time
 import ast
+from functools import partial
 from discord.ext import commands
 
 from src.helpers.sqlalchemy_helper import DatabaseHelper
@@ -107,7 +108,10 @@ class MongoDB:
                 last_valid[user_id] = timestamp
                 scores[user_id] += 1
         list_of_tuples = [(user_id, score) for user_id, score in scores.items()]
+        before = perf_counter()
         list_of_tuples.sort(key=lambda x: x[1], reverse=True)
+        after = perf_counter()
+        print(after - before)
         return list_of_tuples
 
     async def insert_message(self, message: discord.Message):
