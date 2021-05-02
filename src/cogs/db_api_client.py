@@ -210,7 +210,7 @@ class DBApiClient(commands.Cog):
             message_id = ctx.message.reference.message_id
         cursor = self.bot.mongo.discord_db.messages.find({"_id": message_id, "channel_id": ctx.channel.id})
         message = await cursor.to_list(length=1)
-        if len(message == 0):
+        if len(message) == 0:
             await ctx.reply(embed=self.bot.create_error_embed("I couldn't find that message!"))
             return
         message = message[0]
