@@ -1,12 +1,16 @@
 import pymongo
 import datetime
 
-client = pymongo.MongoClient('mongodb://192.168.1.100:27017,'
-                             '192.168.1.20:27017,'
-                             '192.168.1.135:27017/?replicaSet=thomasRep0')
+
+def get_client():
+    client = pymongo.MongoClient('mongodb://192.168.1.100:27017,'
+                                 '192.168.1.20:27017,'
+                                 '192.168.1.135:27017/?replicaSet=thomasRep0')
+    return client
 
 
 def get_guild_score(guild_id):
+    client = get_client()
     discord_db = client.discord
     now = datetime.datetime.now()
     last_week = now - datetime.timedelta(days=7)
