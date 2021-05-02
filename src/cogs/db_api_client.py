@@ -435,6 +435,8 @@ class DBApiClient(commands.Cog):
                                   description=first_message.get("content", ""),
                                   colour=discord.Colour.green(),
                                   timestamp=first_message.get("created_at", datetime.datetime(2015, 1, 1)))
+            embed.set_footer(text=first_message.get("created_at",
+                                                    datetime.datetime(2015, 1, 1)).strftime("%Y-%m-%d %H:%M:%S"))
             embed.set_author(name=member.display_name, icon_url=member.avatar_url)
             await ctx.reply(embed=embed)
 
