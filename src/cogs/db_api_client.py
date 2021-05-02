@@ -187,6 +187,7 @@ class DBApiClient(commands.Cog):
             user = await self.bot.fetch_user(user_id)
         embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
         embed.set_author(name=user.name, icon_url=user.avatar_url)
+        embed.set_footer(text=f"Message ID: {message_found.get('_id')}")
         preceding_message = (await ctx.channel.history(before=timestamp, limit=1).flatten())[0] or None
         if embed_json is None:
             embed.description = content
