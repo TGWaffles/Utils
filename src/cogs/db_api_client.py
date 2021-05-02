@@ -231,7 +231,7 @@ class DBApiClient(commands.Cog):
         for index, edit in enumerate(edits):
             print(len(edits) - index)
             print(edit)
-            if len(embed) >= 5000:
+            if len(embed) >= 5000 or len(embed.fields) > 24:
                 break
             edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
             if len(edit.get("content")) > 1024:
