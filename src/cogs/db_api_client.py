@@ -255,20 +255,20 @@ class DBApiClient(commands.Cog):
     async def leaderpie(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
-        results = await self.bot.mongo.get_guild_score(ctx.guild.id)
-        labels = []
-        amounts = []
-        for user_id, score in results[:30]:
-            username = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, user_id)
-            labels.append(username.get("name"))
-            amounts.append(score)
-        smaller_amounts = amounts[15:]
-        labels = labels[:15]
-        amounts = amounts[:15]
-        amounts.append(sum(smaller_amounts))
-        labels.append("Other")
-        await sent.edit(embed=self.bot.create_processing_embed("Got leaderboard!", "Generating pie chart."))
         with concurrent.futures.ProcessPoolExecutor() as pool:
+            results = await self.bot.loop.run_in_executor(pool, partial(get_guild_score, ctx.guild.id))
+            labels = []
+            amounts = []
+            for user_id, score in results[:30]:
+                username = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, user_id)
+                labels.append(username.get("name"))
+                amounts.append(score)
+            smaller_amounts = amounts[15:]
+            labels = labels[:15]
+            amounts = amounts[:15]
+            amounts.append(sum(smaller_amounts))
+            labels.append("Other")
+            await sent.edit(embed=self.bot.create_processing_embed("Got leaderboard!", "Generating pie chart."))
             data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
                                                                      labels, amounts))
         file = BytesIO(data)
