@@ -254,14 +254,18 @@ class DBApiClient(commands.Cog):
     async def leaderpie(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
                                                                       "Processing messages for leaderboard..."))
-        params = {'token': api_token, 'guild_id': ctx.guild.id}
-        response_json = await self.send_request("leaderboard_pie", parameters=params)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't generate leaderboard! \n"
-                                                              f"Status: {response_json.get('status')}"))
-            return
-        labels = response_json.get("labels")
-        amounts = response_json.get("amounts")
+        results = await self.bot.mongo.get_guild_score(ctx.guild.id)
+        labels = []
+        amounts = []
+        for user_id, score in results[:30]:
+            username = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, user_id)
+            labels.append(username)
+            amounts.append(score)
+        smaller_amounts = amounts[15:]
+        labels = labels[:15]
+        amounts = amounts[:15]
+        amounts.append(sum(smaller_amounts))
+        labels.append("Other")
         await sent.edit(embed=self.bot.create_processing_embed("Got leaderboard!", "Generating pie chart."))
         with concurrent.futures.ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(pie_chart_from_amount_and_labels,
