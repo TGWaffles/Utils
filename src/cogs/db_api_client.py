@@ -427,15 +427,16 @@ class DBApiClient(commands.Cog):
 
     @commands.command()
     async def first_message(self, ctx, member: Optional[discord.Member]):
-        if member is None:
-            member = ctx.author
-        first_message = await self.get_first_message(ctx.guild.id, member.id)
-        embed = discord.Embed(title=f"{member.display_name}'s first message",
-                              description=first_message.get("content", ""),
-                              colour=discord.Colour.green(),
-                              timestamp=first_message.get("created_at", datetime.datetime(2015, 1, 1)))
-        embed.set_author(name=member.display_name, icon_url=member.avatar_url)
-        await ctx.reply(embed=embed)
+        async with ctx.typing():
+            if member is None:
+                member = ctx.author
+            first_message = await self.get_first_message(ctx.guild.id, member.id)
+            embed = discord.Embed(title=f"{member.display_name}'s first message",
+                                  description=first_message.get("content", ""),
+                                  colour=discord.Colour.green(),
+                                  timestamp=first_message.get("created_at", datetime.datetime(2015, 1, 1)))
+            embed.set_author(name=member.display_name, icon_url=member.avatar_url)
+            await ctx.reply(embed=embed)
 
     async def get_first_message(self, guild_id, user_id):
         query = self.bot.mongo.discord_db.messages.find({"user_id": user_id, "guild_id": guild_id})
