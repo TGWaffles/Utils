@@ -215,7 +215,7 @@ class DBApiClient(commands.Cog):
             return
         message = message[0]
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
-        edits = sorted(message.get("edits"), key=lambda x: x.get("timestamp"), reverse=True)
+        edits = sorted(message.get("edits"), key=lambda x: x.get("timestamp"))
         original_message = message
         original_timestamp_string = message.get("created_at").strftime("%Y-%m-%d %H:%M:%S")
         if len(edits) == 0:
@@ -228,9 +228,16 @@ class DBApiClient(commands.Cog):
             content = original_message.get("content")
         embed.add_field(name=f"Original Message ({original_timestamp_string})",
                         value=content, inline=False)
-        for index, edit in enumerate(edits):
-            print(len(edits) - index)
-            print(edit)
+        first_three = edits[:3]
+        last_edits = edits[3::-1]
+        for index, edit in enumerate(first_three):
+            edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
+            if len(edit.get("content")) > 1024:
+                content = edit.get("content")[:1021] + "..."
+            else:
+                content = edit.get("content")
+            embed.add_field(name=f"Edit {index + 1} ({edited_timestamp_string})", value=content, inline=False)
+        for index, edit in enumerate(last_edits):
             if len(embed) >= 5000 or len(embed.fields) > 24:
                 break
             edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
@@ -238,7 +245,7 @@ class DBApiClient(commands.Cog):
                 content = edit.get("content")[:1021] + "..."
             else:
                 content = edit.get("content")
-            embed.insert_field_at(index=1, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
+            embed.insert_field_at(index=4, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
                                   value=content, inline=False)
         author = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, message.get("user_id"))
         discord_author = self.bot.get_user(author.get("_id"))
