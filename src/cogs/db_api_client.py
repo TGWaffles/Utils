@@ -215,7 +215,7 @@ class DBApiClient(commands.Cog):
             return
         message = message[0]
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting message edits..."))
-        edits = message.get("edits")
+        edits = sorted(message.get("edits"), key=lambda x: x.get("timestamp"), reverse=True)
         original_message = message
         original_timestamp_string = message.get("created_at").strftime("%Y-%m-%d %H:%M:%S")
         if len(edits) == 0:
