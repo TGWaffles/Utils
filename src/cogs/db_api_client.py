@@ -229,7 +229,8 @@ class DBApiClient(commands.Cog):
         embed.add_field(name=f"Original Message ({original_timestamp_string})",
                         value=content, inline=False)
         first_three = edits[:3]
-        last_edits = edits[3::-1]
+        last_edits = edits[3:]
+        last_edits = last_edits[::-1]
         for index, edit in enumerate(first_three):
             edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
             if len(edit.get("content")) > 1024:
