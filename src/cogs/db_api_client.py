@@ -425,12 +425,26 @@ class DBApiClient(commands.Cog):
         embed.description += "```"
         await sent.edit(embed=embed)
 
+    @commands.command()
+    async def first_message(self, ctx, member: Optional[discord.Member]):
+        if member is None:
+            member = ctx.author
+        first_message = await self.get_first_message(ctx.guild.id, member.id)
+        embed = discord.Embed(title=f"{member.display_name}'s first message",
+                              description=first_message.get("content", ""),
+                              colour=discord.Colour.green(),
+                              timestamp=first_message.get("created_at", datetime.datetime(2015, 1, 1)))
+        embed.set_author(name=member.display_name, icon_url=member.avatar_url)
+        await ctx.reply(embed=embed)
+
     async def get_first_message(self, guild_id, user_id):
-        params = {'token': api_token, 'guild_id': guild_id, "user_id": user_id}
-        response_json = await self.send_request("first_message", parameters=params)
-        if response_json.get("failure", False):
-            return None
-        return response_json.get("message")
+        query = self.bot.mongo.discord_db.messages.find({"user_id": user_id, "guild_id": guild_id})
+        query.sort("created_at", -1).limit(1)
+        first_message = await query.to_list(length=1)
+        try:
+            return first_message[0]
+        except IndexError:
+            return {}
 
     @commands.command()
     @is_high_staff()
@@ -439,15 +453,12 @@ class DBApiClient(commands.Cog):
             channel = ctx.channel
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Excluding channel...",
                                                                       "Sending exclusion request..."))
-        params = {'token': api_token, "channel": channel_to_json(channel)}
-        response_json = await self.send_request("exclude_channel", parameters=params, request_type="post", timeout=120)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't exclude channel!\n"
-                                                              f"Status: {response_json.get('status')}"))
-            return
+        channel = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.channels, channel.id)
+        await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id},
+                                                            {'$set': {"excluded": not channel.get("excluded", False)}})
         await sent.edit(embed=self.bot.create_completed_embed("Changed excluded status!",
                                                               f"Channel has been "
-                                                              f"{'un' if not response_json.get('excluded') else ''}"
+                                                              f"{'un' if not channel.get('excluded', False) else ''}"
                                                               f"excluded!"))
 
     @commands.command()
