@@ -8,7 +8,7 @@ def get_video(username):
     last_video = videos[0]
     dynamic_cover = last_video.get("video", {}).get("cover", "")
     image = requests.get(dynamic_cover, stream=True).raw
-    return last_video, image
+    return last_video, image.read()
 
 
 def get_user(username):

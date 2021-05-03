@@ -37,7 +37,7 @@ class Monkey(commands.Cog):
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 last_video, image = await asyncio.get_event_loop().run_in_executor(pool, partial(get_video, username))
             embed = discord.Embed()
-            image = BytesIO(image.read())
+            image = BytesIO(image)
             file = discord.File(fp=image, filename="image.png")
             embed.set_image(url="attachment://image.png")
             link = f"https://www.tiktok.com/@itslexismith/video/{last_video.get('video', {}).get('id')}"
