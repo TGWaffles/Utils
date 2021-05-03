@@ -14,6 +14,7 @@ from src.helpers.tiktok_helper import get_video, get_user
 from src.helpers.storage_helper import DataHelper
 from src.checks.guild_check import monkey_check
 from src.checks.message_check import check_trusted_reaction
+from src.checks.role_check import is_staff
 from src.storage import config
 
 
@@ -115,6 +116,7 @@ class Monkey(commands.Cog):
 
     @commands.command()
     @monkey_check()
+    @is_staff()
     async def trust(self, ctx, member: discord.Member):
         trusted_role = ctx.guild.get_role(config.trusted_role_id)
         trusted_spiel = """A moderator from ahhh monkey has offered you the Trusted role, which allows you to send 
