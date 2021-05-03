@@ -89,17 +89,9 @@ class DBApiClient(commands.Cog):
         monkey_guild: discord.Guild = self.bot.get_guild(config.monkey_guild_id)
         motw_role = monkey_guild.get_role(config.motw_role_id)
         motw_channel: discord.TextChannel = self.bot.get_channel(config.motw_channel_id)
-        params = {'token': api_token, 'guild_id': config.monkey_guild_id}
-        try:
-            async with self.session.get(url=f"http://{self.db_url}:{config.port}/leaderboard", timeout=30,
-                                        json=params) as request:
-                response_json = await request.json()
-                results = response_json.get("results")
-        except exceptions:
-            await self.restart_db_server()
-            return
-        except waiting_exceptions:
-            return
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            results = await self.bot.loop.run_in_executor(pool, partial(get_guild_score, config.monkey_guild_id))
+        results = results[:12]
         members = []
         for user in results:
             member = monkey_guild.get_member(user[0])
@@ -313,13 +305,8 @@ class DBApiClient(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
                                                                       f"Counting how many times \"{phrase}\" "
                                                                       f"has been said..."))
-        params = {"phrase": phrase, "guild_id": ctx.guild.id, "token": api_token}
-        response_json = await self.send_request("global_phrase_count", parameters=params)
-        if response_json.get("failure", False):
-            await sent.edit(embed=self.bot.create_error_embed(f"Couldn't count! \n"
-                                                              f"Status: {response_json.get('status')}"))
-            return
-        amount = response_json.get("amount")
+
+        amount = await self.bot.mongo.discord_db.messages.count_documents({"$text": {"$search": phrase}})
         embed = self.bot.create_completed_embed(
             f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
         embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes ("
