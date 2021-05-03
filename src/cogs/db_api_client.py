@@ -41,6 +41,7 @@ class DBApiClient(commands.Cog):
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
         self.active_channel_ids = []
+        self.update_message_count.start()
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
 
@@ -71,6 +72,16 @@ class DBApiClient(commands.Cog):
                 await asyncio.sleep(1)
                 attempts += 1
             await asyncio.sleep(0.5)
+
+    @tasks.loop(seconds=600, count=None)
+    async def update_message_count(self):
+        count_channel: discord.TextChannel = self.bot.get_channel(config.monkey_message_count_channel)
+        count = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": config.monkey_guild_id})
+        await count_channel.edit(name=f"Messages: {count:,}")
+        jace_count_channel = self.bot.get_channel(config.jace_message_count_channel)
+        count = await self.bot.mongo.discord_db.messages.count_documents(
+            {"guild_id": jace_count_channel.guild.id})
+        await jace_count_channel.edit(name=f"Messages: {count:,}")
 
     @tasks.loop(seconds=1800, count=None)
     async def update_motw(self):

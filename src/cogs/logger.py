@@ -31,7 +31,6 @@ class SQLAlchemyTest(commands.Cog):
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.channel_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.data = DataHelper()
-        self.update_message_count.start()
         app = web.Application()
         app.add_routes([web.get('/ping', self.check_up), web.post("/restart", self.nice_restart),
                         web.get("/someone", self.send_random_someone), web.get("/snipe", self.snipe),
@@ -52,16 +51,6 @@ class SQLAlchemyTest(commands.Cog):
         site = web.TCPSite(runner, "0.0.0.0", config.port)
         self.bot.loop.create_task(site.start())
         return
-
-    @tasks.loop(seconds=600, count=None)
-    async def update_message_count(self):
-        count_channel: discord.TextChannel = self.bot.get_channel(config.monkey_message_count_channel)
-        count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages, count_channel.guild.id))
-        await count_channel.edit(name=f"Messages: {count:,}")
-        jace_count_channel = self.bot.get_channel(config.jace_message_count_channel)
-        count = await self.bot.loop.run_in_executor(None, partial(self.database.all_messages,
-                                                                  jace_count_channel.guild.id))
-        await jace_count_channel.edit(name=f"Messages: {count:,}")
 
     @staticmethod
     async def check_up(request: web.Request):
