@@ -178,7 +178,7 @@ class DBApiClient(commands.Cog):
         cursor.sort("created_at", -1).limit(1).skip(amount - 1)
         messages_found = await cursor.to_list(length=1)
         if len(messages_found) == 0:
-            await sent.edit(embed=self.bot.create_error_embed("There was nothing to snipe in this channel."))
+            await sent.edit(embed=self.bot.create_error_embed("There aren't that many deleted messages!"))
             return
         message_found = messages_found[0]
         user_id = message_found.get("user_id")

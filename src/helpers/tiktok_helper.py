@@ -1,18 +1,24 @@
 from TikTokApi import TikTokApi, exceptions
 import bs4
+import time
 import requests
 
 
 def get_proxy(offset=0):
-    site = requests.get("https://scrapingant.com/free-proxies/").text
+    while True:
+        try:
+            site = requests.get("https://scrapingant.com/free-proxies/").text
 
-    soup = bs4.BeautifulSoup(site, 'html.parser')
-    offset = 5 * offset
-    table = [x.string for x in soup.find_all("td")]
-    first_proxy_ip = table[offset]
-    first_proxy_port = table[offset + 1]
-    complete_proxy = f"{first_proxy_ip}:{first_proxy_port}"
-    return complete_proxy
+            soup = bs4.BeautifulSoup(site, 'html.parser')
+            offset = 5 * offset
+            table = [x.string for x in soup.find_all("td")]
+            first_proxy_ip = table[offset]
+            first_proxy_port = table[offset + 1]
+            complete_proxy = f"{first_proxy_ip}:{first_proxy_port}"
+            return complete_proxy
+        except IndexError:
+            time.sleep(1)
+            offset = 0
 
 
 def get_video(username):
