@@ -76,7 +76,8 @@ class DBApiClient(commands.Cog):
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
         count_channel: discord.TextChannel = self.bot.get_channel(config.monkey_message_count_channel)
-        count = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": config.monkey_guild_id})
+        count = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": config.monkey_guild_id,
+                                                                          "deleted": False})
         await count_channel.edit(name=f"Messages: {count:,}")
         jace_count_channel = self.bot.get_channel(config.jace_message_count_channel)
         count = await self.bot.mongo.discord_db.messages.count_documents(
