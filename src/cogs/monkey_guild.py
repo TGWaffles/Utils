@@ -126,6 +126,7 @@ Community Guidelines and the server rules. I acknowledge that my trusted status 
 break these rules. \n
 This invite expires in 5 minutes. You may ask for a new one if it expires."""
         sent = await member.send(content=trusted_spiel)
+        await sent.add_reaction('👍')
         try:
             await self.bot.wait_for("reaction_add", timeout=300.0, check=check_trusted_reaction(member, sent.id))
             await member.add_roles(trusted_role)
