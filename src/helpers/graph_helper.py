@@ -1,8 +1,11 @@
 import pandas
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
 from io import BytesIO
+
+matplotlib.use("Agg")
 
 
 def file_from_timestamps(times, group):
