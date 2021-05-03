@@ -4,7 +4,7 @@ import requests
 
 def get_video(username):
     api = TikTokApi.get_instance(custom_verifyFp="verify_knxvpdqn_jjZdu7Te_mwZy_4EpT_8zzG_fVOU4SrmsLpA",
-                                 use_test_endpoint=True)
+                                 use_test_endpoints=True)
     videos = api.by_username(username, count=1)
     last_video = videos[0]
     dynamic_cover = last_video.get("video", {}).get("cover", "")
