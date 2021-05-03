@@ -31,22 +31,31 @@ class Monkey(commands.Cog):
         async for channel in tiktok_channels.find():
             username = channel.get("username")
             channel_id = channel.get("channel_id")
+            last_ids = channel.get("last_ids", [])
             updates_channel = self.bot.get_channel(channel_id)
             if updates_channel is None:
                 continue
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 last_video, image = await asyncio.get_event_loop().run_in_executor(pool, partial(get_video, username))
+            video_id = last_video.get('video', {}).get('id')
+            if video_id in last_ids:
+                continue
+            if len(last_ids) > 4:
+                last_ids.pop(0)
+            last_ids.append(video_id)
             embed = discord.Embed()
             image = BytesIO(image)
             file = discord.File(fp=image, filename="image.png")
             embed.set_image(url="attachment://image.png")
-            link = f"https://www.tiktok.com/@itslexismith/video/{last_video.get('video', {}).get('id')}"
+            link = f"https://www.tiktok.com/@itslexismith/video/{video_id}"
             embed.title = last_video.get('desc', '<no description>')
             embed.description = "Lexi Smith just uploaded a new video!"
             embed.url = link
             embed.set_author(name=f"@{last_video.get('author', {}).get('uniqueId', '')}",
                              icon_url=last_video.get('author', {}).get('avatarLarger', ''))
             await updates_channel.send(embed=embed, file=file)
+            await self.tiktok_db.notifications.update_one({"channel_id": channel_id, "username": username},
+                                                          {"$set": {"last_ids": last_ids}})
 
     @tasks.loop(seconds=600, count=None)
     async def update_followers(self):
