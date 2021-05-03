@@ -306,7 +306,9 @@ class DBApiClient(commands.Cog):
                                                                       f"Counting how many times \"{phrase}\" "
                                                                       f"has been said..."))
 
-        amount = await self.bot.mongo.discord_db.messages.count_documents({"$text": {"$search": phrase}})
+        amount = await self.bot.mongo.discord_db.messages.count_documents({"$text": {"$search": phrase},
+                                                                           "guild_id": ctx.guild.id,
+                                                                           "deleted": False})
         embed = self.bot.create_completed_embed(
             f"Number of times \"{phrase}\" has been said:", f"**{amount}** times!")
         embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes ("
