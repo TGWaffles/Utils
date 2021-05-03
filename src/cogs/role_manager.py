@@ -57,3 +57,8 @@ class RoleManager(commands.Cog):
             if check(role):
                 valid_roles.append(role)
         await member.add_roles(*valid_roles)
+
+
+def setup(bot):
+    cog = RoleManager(bot)
+    bot.add_cog(cog)
