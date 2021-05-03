@@ -35,7 +35,7 @@ class RoleManager(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         member_role_document = {"_id": {"user_id": member.id, "guild_id": member.guild.id},
-                                "roles": [role.id for role in member.roles]}
+                                "roles": [role.id for role in member.roles if role != member.guild.default_role]}
         await self.bot.mongo.force_insert(self.rejoin_logs, member_role_document)
 
     @commands.Cog.listener()
@@ -57,7 +57,7 @@ class RoleManager(commands.Cog):
         valid_roles = []
         for role_id in member_role_document.get("roles"):
             role = member.guild.get_role(role_id)
-            if role is None:
+            if role is None or role == member.guild.default_role:
                 continue
             if check(role):
                 valid_roles.append(role)
