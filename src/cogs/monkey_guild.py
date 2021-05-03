@@ -12,6 +12,8 @@ from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.helpers.tiktok_helper import get_video, get_user
 from src.helpers.storage_helper import DataHelper
+from src.checks.guild_check import monkey_check
+from src.checks.message_check import check_trusted_reaction
 from src.storage import config
 
 
@@ -110,6 +112,23 @@ class Monkey(commands.Cog):
     async def reset_followers(self, ctx, channel: discord.VoiceChannel):
         await self.tiktok_db.followers.delete_many({"channel_id": channel.id})
         await ctx.reply("Removed followers channel.")
+
+    @commands.command()
+    @monkey_check()
+    async def trust(self, ctx, member: discord.Member):
+        trusted_role = ctx.guild.get_role(config.trusted_role_id)
+        trusted_spiel = """A moderator from ahhh monkey has offered you the Trusted role, which allows you to send 
+        pictures and links. React to this to accept the rules and gain Trusted status. \n
+As a member with the Trusted role, I agree that all images and links I send will be in conformance with Discord 
+Community Guidelines and the server rules. I acknowledge that my trusted status may be taken away at any time if I 
+break these rules. \n
+This invite expires in 5 minutes. You may ask for a new one if it expires."""
+        sent = await member.send(content=trusted_spiel)
+        try:
+            await self.bot.wait_for("reaction_add", timeout=300.0, check=check_trusted_reaction(member, sent.id))
+            await member.add_roles(trusted_role)
+        except asyncio.TimeoutError:
+            await member.send(content="Timed out.")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

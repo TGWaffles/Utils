@@ -45,6 +45,7 @@ dep_mod_role_id = 740871749956009984
 head_mod_role_id = 727294744777982003
 lexi_role_id = 725895255198531675
 motw_role_id = 802584127634669609
+trusted_role_id = 794993948572516392
 high_staff = [mod_role_id, mod_dev_role_id, mod_god_role_id, dep_mod_role_id, head_mod_role_id, lexi_role_id]
 
 # Settings for the Suggestions cog

@@ -14,3 +14,9 @@ def check_reply(author):
 
 def check_pinned(message):
     return not message.pinned
+
+
+def check_trusted_reaction(author, message_id):
+    def check_author(reaction, user):
+        return user == author and str(reaction.emoji) == '👍' and reaction.message.id == message_id
+    return check_author
