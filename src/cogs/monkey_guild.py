@@ -18,7 +18,6 @@ from src.storage import config
 class Monkey(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
-        # self.july = datetime.datetime(2020, 7, 1, tzinfo=datetime.timezone.utc)
         self.previous_counting_number = None
         self.data = DataHelper()
         self.tiktok_db = self.bot.mongo.client.tiktok
@@ -63,10 +62,12 @@ class Monkey(commands.Cog):
         async for channel in follower_channels.find():
             username = channel.get("username")
             update_channel_id = channel.get("channel_id")
+            discord_channel = self.bot.get_channel(update_channel_id)
+            if discord_channel is None:
+                continue
             with concurrent.futures.ProcessPoolExecutor() as pool:
                 user = await asyncio.get_event_loop().run_in_executor(pool, partial(get_user, username))
             followers = user.get("userInfo").get("stats").get("followerCount", "Unknown")
-            discord_channel = self.bot.get_channel(update_channel_id)
             await discord_channel.edit(name=f"Followers: {followers:,}")
 
     @commands.command()
