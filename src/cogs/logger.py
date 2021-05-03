@@ -182,28 +182,6 @@ class SQLAlchemyTest(commands.Cog):
         response_json = {"labels": labels, "amounts": amounts}
         return web.json_response(response_json)
 
-    @commands.command()
-    async def stats(self, ctx, member: Optional[discord.Member], group: Optional[str] = "m"):
-        group = group.lower()
-        if member is None:
-            member = ctx.author
-        if group not in ['d', 'w', 'm', 'y']:
-            await ctx.reply(embed=self.bot.create_error_embed("Valid grouping options are d, w, m, y"))
-            return
-        english_group = {'d': "Day", 'w': "Week", 'm': "Month", 'y': "Year"}
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages", "Compiling graph for all "
-                                                                                             "your messages..."))
-        times = await self.bot.loop.run_in_executor(None, partial(self.database.get_graph_of_messages, member))
-        with ProcessPoolExecutor() as pool:
-            data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
-        file = BytesIO(data)
-        file.seek(0)
-        discord_file = discord.File(fp=file, filename="image.png")
-        embed = discord.Embed(title=f"{member.display_name}'s stats, grouped by {english_group[group]}:")
-        embed.set_image(url="attachment://image.png")
-        await sent.delete()
-        await ctx.reply(embed=embed, file=discord_file)
-
     async def percentage(self, request: web.Request):
         try:
             request_json = await request.json()

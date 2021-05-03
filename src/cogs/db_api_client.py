@@ -393,6 +393,37 @@ class DBApiClient(commands.Cog):
             return {}
 
     @commands.command()
+    async def stats(self, ctx, member: Optional[discord.Member], group: Optional[str] = "m"):
+        group = group.lower()
+        if member is None:
+            member = ctx.author
+        if group not in ['d', 'w', 'm', 'y']:
+            await ctx.reply(embed=self.bot.create_error_embed("Valid grouping options are d, w, m, y"))
+            return
+        english_group = {'d': "Day", 'w': "Week", 'm': "Month", 'y': "Year"}
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing messages", "Compiling graph for all "
+                                                                                             "your messages..."))
+        pipeline = [
+            {
+                "$match": {"guild_id": ctx.guild.id, "user_id": member.id}
+            },
+            {
+                "$project": {"_id": "$created_at"}
+            }
+        ]
+        aggregation = self.bot.mongo.discord_db.messages.aggregate(pipeline)
+        times = [x.get("_id") for x in await aggregation.to_list(length=None)]
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
+        embed = discord.Embed(title=f"{member.display_name}'s stats, grouped by {english_group[group]}:")
+        embed.set_image(url="attachment://image.png")
+        await sent.delete()
+        await ctx.reply(embed=embed, file=discord_file)
+
+    @commands.command()
     @is_high_staff()
     async def exclude_channel(self, ctx, channel: Optional[discord.TextChannel]):
         if channel is None:
