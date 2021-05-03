@@ -46,9 +46,9 @@ class Monkey(commands.Cog):
             image = BytesIO(image)
             file = discord.File(fp=image, filename="image.png")
             embed.set_image(url="attachment://image.png")
-            link = f"https://www.tiktok.com/@itslexismith/video/{video_id}"
+            link = f"https://www.tiktok.com/@{last_video.get('author', {}).get('uniqueId', '')}/video/{video_id}"
             embed.title = last_video.get('desc', '<no description>')
-            embed.description = "Lexi Smith just uploaded a new video!"
+            embed.description = f"{last_video.get('author', {}).get('nickname', '')} just uploaded a new video!"
             embed.url = link
             embed.set_author(name=f"@{last_video.get('author', {}).get('uniqueId', '')}",
                              icon_url=last_video.get('author', {}).get('avatarLarger', ''))
