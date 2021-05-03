@@ -31,6 +31,7 @@ class Monkey(commands.Cog):
             username = channel.get("username")
             channel_id = channel.get("channel_id")
             last_ids = channel.get("last_ids", [])
+            text = channel.get("text", None)
             updates_channel = self.bot.get_channel(channel_id)
             if updates_channel is None:
                 continue
@@ -52,7 +53,10 @@ class Monkey(commands.Cog):
             embed.url = link
             embed.set_author(name=f"@{last_video.get('author', {}).get('uniqueId', '')}",
                              icon_url=last_video.get('author', {}).get('avatarLarger', ''))
-            await updates_channel.send(embed=embed, file=file)
+            if text is None:
+                await updates_channel.send(embed=embed, file=file)
+            else:
+                await updates_channel.send(embed=embed, file=file, content=text)
             await self.tiktok_db.notifications.update_one({"channel_id": channel_id, "username": username},
                                                           {"$set": {"last_ids": last_ids}})
 
@@ -72,12 +76,15 @@ class Monkey(commands.Cog):
 
     @commands.command()
     @is_owner()
-    async def set_notifications(self, ctx, username: str, channel: Optional[discord.TextChannel]):
+    async def set_notifications(self, ctx, username: str, channel: Optional[discord.TextChannel],
+                                optional_text: str = None):
         overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False),
                       ctx.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
         if channel is None:
             channel = await ctx.guild.create_text_channel("tiktok-notifications", overwrites=overwrites)
-        channel_document = {"channel_id": channel.id, "username": username}
+        if optional_text == "":
+            optional_text = None
+        channel_document = {"channel_id": channel.id, "username": username, "text": optional_text}
         await self.bot.mongo.force_insert(self.tiktok_db.notifications, channel_document)
         await ctx.reply("Set notifications channel as {}".format(channel.mention))
 
