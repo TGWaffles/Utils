@@ -106,33 +106,6 @@ class SQLAlchemyTest(commands.Cog):
             except asyncio.CancelledError:
                 return
 
-    @commands.command()
-    @is_owner()
-    async def channel_backwards(self, ctx):
-        channel = ctx.channel
-        last_edit = time.time()
-        resume_from = self.data.get("resume_before_{}".format(channel.id), None)
-        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Working...", "Starting processing!"))
-        task = self.bot.loop.create_task(self.send_channel_update(sent_message))
-        if resume_from is not None:
-            resume_from = await channel.fetch_message(resume_from)
-        # noinspection DuplicatedCode
-        with ThreadPoolExecutor() as executor:
-            async for message in channel.history(limit=None, oldest_first=False, before=resume_from):
-                now = time.time()
-                if now - last_edit > 5:
-                    embed = discord.Embed(title="Processing messages",
-                                          description="Last Message text: {}, from {}, in {}".format(
-                                              message.clean_content, message.created_at.strftime("%Y-%m-%d %H:%M"),
-                                              channel.mention), colour=discord.Colour.orange())
-                    embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
-                    embed.timestamp = message.created_at
-                    self.channel_update = embed
-                    last_edit = now
-                    self.data[f"resume_before_{channel.id}"] = message.id
-                executor.submit(partial(self.database.save_message, message))
-        task.cancel()
-
     async def leaderboard(self, request: web.Request):
         try:
             request_json = await request.json()
@@ -293,22 +266,6 @@ class SQLAlchemyTest(commands.Cog):
         to_return += "```"
         return web.json_response({"description": to_return})
 
-    @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
-    async def count_user(self, ctx, member: Optional[discord.Member], *, phrase):
-        if member is None:
-            member = ctx.author
-        if len(phrase) > 180:
-            await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
-            return
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
-                                                                      f"Counting how many times {member.display_name} "
-                                                                      f"said: \"{phrase}\""))
-        amount = await self.bot.loop.run_in_executor(None, partial(self.database.count_member, member, phrase))
-        embed = self.bot.create_completed_embed(
-            f"Number of times {member.display_name} said: \"{phrase}\":", f"**{amount}** times!")
-        embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes (\"\")!")
-        await sent.edit(embed=embed)
-
     @commands.Cog.listener()
     async def on_member_update(self, _, after):
         await self.bot.loop.run_in_executor(None, partial(self.database.update_member, after))
@@ -316,9 +273,6 @@ class SQLAlchemyTest(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         await self.bot.loop.run_in_executor(None, partial(self.database.update_member, member))
-
-    # async def on_member_join_api(self, request: web.Request):
-    #
 
     async def on_member_remove_api(self, request: web.Request):
         try:

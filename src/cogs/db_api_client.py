@@ -315,6 +315,25 @@ class DBApiClient(commands.Cog):
                               "\"\")!")
         await sent.edit(embed=embed)
 
+    @commands.command(description="Count how many times a user has said a phrase!", aliases=["countuser", "usercount"])
+    async def count_user(self, ctx, member: Optional[discord.Member], *, phrase):
+        if member is None:
+            member = ctx.author
+        if len(phrase) > 180:
+            await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
+            return
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...",
+                                                                      f"Counting how many times {member.display_name} "
+                                                                      f"said: \"{phrase}\""))
+        amount = await self.bot.mongo.discord_db.messages.count_documents({"$text": {"$search": phrase},
+                                                                           "guild_id": ctx.guild.id,
+                                                                           "user_id": member.id,
+                                                                           "deleted": False})
+        embed = self.bot.create_completed_embed(
+            f"Number of times {member.display_name} said: \"{phrase}\":", f"**{amount}** times!")
+        embed.set_footer(text="If you entered a phrase, remember to surround it in **straight** quotes (\"\")!")
+        await sent.edit(embed=embed)
+
     @commands.command(aliases=["ratio", "percentage"])
     async def percent(self, ctx, member: Optional[discord.User]):
         if member is None:
