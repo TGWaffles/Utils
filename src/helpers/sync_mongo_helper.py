@@ -1,11 +1,10 @@
 import pymongo
 import datetime
+from src.storage import config
 
 
 def get_client():
-    client = pymongo.MongoClient('mongodb://192.168.1.100:27017,'
-                                 '192.168.1.20:27017,'
-                                 '192.168.1.135:27017/?replicaSet=thomasRep0')
+    client = pymongo.MongoClient(config.mongo_connection_uri)
     return client
 
 

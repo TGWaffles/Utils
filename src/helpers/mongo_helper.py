@@ -1,16 +1,14 @@
 import asyncio
 import datetime
 
-import pymongo
+from src.storage import config
 import discord
 import motor.motor_asyncio
 
 
 class MongoDB:
     def __init__(self):
-        self.client = motor.motor_asyncio.AsyncIOMotorClient('mongodb://192.168.1.100:27017,'
-                                                             '192.168.1.20:27017,'
-                                                             '192.168.1.135:27017/?replicaSet=thomasRep0')
+        self.client = motor.motor_asyncio.AsyncIOMotorClient(config.mongo_connection_uri)
         self.discord_db = self.client.discord
 
     @staticmethod
