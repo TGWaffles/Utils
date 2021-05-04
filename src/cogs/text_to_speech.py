@@ -46,10 +46,10 @@ class TTS(commands.Cog):
         had_perms = False
         if old_member is None:
             member_document = {"_id": {"user_id": member.id, "guild_id": member.guild.id}}
+            await self.bot.mongo.force_insert(self.tts_db.perms, member_document)
         else:
             had_perms = True
-            member_document = {"_id": {"user_id": member.id, "guild_id": member.guild.id}}
-        await self.bot.mongo.force_insert(self.tts_db.perms, member_document)
+            await self.tts_db.perms.delete_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}})
         if had_perms:
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Revoked",
                                                                   f"Revoked {member.display_name}'s permissions!"))
