@@ -135,7 +135,11 @@ This invite expires in 5 minutes. You may ask for a new one if it expires."""
             await member.send(content="Timed out.")
 
     @commands.Cog.listener()
+    @monkey_check()
     async def on_message(self, message: discord.Message):
+        chill_peeps = message.guild.get_role(725895768703238255)
+        if len([x for x in message.author.roles if x != message.guild.default_role]) == 0:
+            await message.author.add_roles(chill_peeps)
         if message.author.id == self.bot.user.id and message.channel.id == config.counting_channel_id:
             await asyncio.sleep(10)
             try:
