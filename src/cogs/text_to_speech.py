@@ -141,7 +141,6 @@ class TTS(commands.Cog):
     async def speakers(self, ctx):
         query = self.tts_db.speakers.find({"_id.guild_id": ctx.guild.id})
         speaking_list = [x.get("_id").get("user_id") for x in await query.to_list(length=None)]
-        print(speaking_list)
         query = self.tts_db.perms.find({"_id.guild_id": ctx.guild.id})
         guild_perms = [x.get("_id").get("user_id") for x in await query.to_list(length=None)]
         embed = discord.Embed(title="Speaking Users", description="", colour=discord.Colour.green())

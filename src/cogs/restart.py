@@ -57,20 +57,19 @@ class Restart(commands.Cog):
 
     @commands.command()
     @is_owner()
-    async def restart_perms(self, ctx, member: discord.Member):
-        data = DataHelper()
-        restart_users = data.get("restart_perms", [])
-        if str(member.id) in restart_users:
-            restart_users.remove(str(member.id))
+    async def restart_perms(self, ctx, user: discord.User):
+        restart_coll = self.bot.mongo.discord_db.restart
+        old_member = await restart_coll.find_one({"_id": user.id})
+        if old_member is not None:
+            await restart_coll.delete_one({"_id": user.id})
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Removed!", "Taken {}'s permissions to "
                                                                                     "restart the bot.".format(
-                member.mention)))
+                                                                                        user.mention)))
         else:
-            restart_users.append(str(member.id))
+            await self.bot.mongo.force_insert(restart_coll, {"_id": user.id})
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Granted!",
                                                                   "Given {} permission to restart the bot.".format(
-                                                                      member.mention)))
-        data["restart_perms"] = restart_users
+                                                                      user.mention)))
 
     @commands.command()
     async def changelog(self, ctx):

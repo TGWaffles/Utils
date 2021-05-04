@@ -16,7 +16,7 @@ def speak_changer_check():
 def restart_check():
     async def predicate(ctx):
         db = MongoDB()
-        query = db.client.discord.restart.find()
+        query = db.discord_db.restart.find()
         restart_users = [x.get("_id") for x in await query.to_list(length=None)]
         return ctx.author.id in restart_users or ctx.author.id == config.owner_id
 
