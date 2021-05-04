@@ -1,27 +1,22 @@
 import asyncio
 import concurrent.futures
 import datetime
-import time
 from functools import partial
 from io import BytesIO
-from typing import Optional, Any, Dict
+from typing import Optional
 
 import aiohttp
 import aiohttp.client_exceptions
 import unidecode
-import base64
 from discord.ext import commands, tasks
 
 from main import UtilsBot
-from src.checks.custom_check import restart_check
-from src.checks.user_check import is_owner
 from src.checks.role_check import is_high_staff, is_staff
+from src.helpers.api_helper import *
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels, file_from_timestamps
 from src.helpers.storage_helper import DataHelper
 from src.helpers.sync_mongo_helper import get_guild_score, get_user_score
-from src.helpers.api_helper import *
 from src.storage import config
-from src.storage.token import api_token
 
 exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
               aiohttp.client_exceptions.ClientConnectorError)
@@ -36,42 +31,12 @@ class DBApiClient(commands.Cog):
         self.session = aiohttp.ClientSession()
         self.restarting = False
         self.data = DataHelper()
-        self.db_url = "elastic.thom.club"
-        self.bot.loop.create_task(self.ping_db_server())
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
         self.active_channel_ids = []
         self.update_message_count.start()
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
-
-    async def send_request(self, endpoint, parameters, request_type="get", timeout=default_timeout) -> Dict[Any, Any]:
-        attempts = 0
-        last_status = -1
-        while True:
-            if attempts > 10:
-                return {"failure": True, "status": last_status}
-            try:
-                if request_type == "get":
-                    request = await self.session.get(f"http://{self.db_url}:{config.port}/{endpoint}", timeout=timeout,
-                                                     json=parameters)
-                else:
-                    request = await self.session.post(f"http://{self.db_url}:{config.port}/{endpoint}", timeout=timeout,
-                                                      json=parameters)
-                if request.status != 200:
-                    last_status = request.status
-                    attempts += 1
-                    await asyncio.sleep(0.5)
-                    continue
-                response_json = await request.json()
-                return response_json
-            except exceptions:
-                await self.restart_db_server()
-                attempts += 1
-            except waiting_exceptions:
-                await asyncio.sleep(1)
-                attempts += 1
-            await asyncio.sleep(0.5)
 
     @tasks.loop(seconds=600, count=None)
     async def update_message_count(self):
@@ -96,7 +61,9 @@ class DBApiClient(commands.Cog):
         for user in results:
             member = monkey_guild.get_member(user[0])
             if member is None:
-                await self.request_member_remove(user[0], monkey_guild.id)
+                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": user[0],
+                                                                            "guild_id": monkey_guild.id}},
+                                                                   {'$set': {"deleted": True}})
                 continue
             members.append(member)
         for member in monkey_guild.members:
@@ -107,61 +74,6 @@ class DBApiClient(commands.Cog):
             if motw_role not in member.roles:
                 await member.add_roles(motw_role)
                 await motw_channel.send(f"Welcome {member.mention}! I hope you enjoy your stay!")
-
-    async def ping_db_server(self):
-        while True:
-            try:
-                params = {'timestamp': datetime.datetime.utcnow().timestamp()}
-                async with self.session.get(url=f"http://{self.db_url}:{config.port}/ping", timeout=5,
-                                            json=params) as request:
-                    json_info = await request.json()
-                    self.last_ping = datetime.datetime.now()
-                    if json_info.get("time_delay", 100) > 3:
-                        self.bot.loop.create_task(self.restart_db_server())
-                        await asyncio.sleep(3)
-            except exceptions:
-                self.bot.loop.create_task(self.restart_db_server())
-                await asyncio.sleep(5)
-            except waiting_exceptions:
-                await asyncio.sleep(2)
-            await asyncio.sleep(1)
-
-    async def restart_db_server(self):
-        if not self.restarting:
-            try:
-                params = {'token': api_token}
-                self.restarting = True
-                try:
-                    async with self.session.post(url=f"http://{self.db_url}:{config.port}/restart", timeout=60,
-                                                 json=params) as request:
-                        if request.status == 202:
-                            print("Restarted DB server")
-                        else:
-                            raise aiohttp.client_exceptions.ClientConnectorError
-                except (aiohttp.client_exceptions.ClientConnectorError, *exceptions):
-                    while True:
-                        try:
-                            await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart",
-                                                    json=params)
-                            break
-                        except exceptions:
-                            await asyncio.sleep(0.5)
-                            print("Failed to force a restart. trying again.")
-                    print("Force restarted DB server due to error in normal restart.")
-                except waiting_exceptions:
-                    self.restarting = False
-                    await self.restart_db_server()
-                last_ping = self.last_ping
-                seconds_waited = 0
-                while self.last_ping == last_ping:
-                    if seconds_waited > 30:
-                        await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/restart", json=params)
-                        print("Force restarted DB server due to ping not working..")
-                        seconds_waited = 0
-                    seconds_waited += 0.1
-                    await asyncio.sleep(0.1)
-            finally:
-                self.restarting = False
 
     @commands.command()
     async def snipe(self, ctx, amount=1):
@@ -527,19 +439,12 @@ class DBApiClient(commands.Cog):
             name = (member.nick or member.name)
         return name
 
-    async def update(self):
-        params = {'token': api_token}
-        await self.session.post(url=f"http://{self.db_url}:{config.restart_port}/update", json=params)
-
     @commands.Cog.listener()
     async def on_message(self, message):
         if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None or \
                 not isinstance(message.author, discord.Member):
             return
         await self.bot.mongo.insert_message(message)
-        message_dict = message_to_json(message)
-        params = {'token': api_token, 'message': message_dict}
-        await self.send_request("on_message", parameters=params, request_type="post", timeout=120)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
@@ -549,19 +454,11 @@ class DBApiClient(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
         await self.bot.mongo.message_edit(payload)
-        payload_data = payload.data
-        params = {'token': api_token, 'payload_data': payload_data}
-        await self.send_request("on_edit", parameters=params, request_type="post", timeout=120)
-
-    async def request_member_remove(self, member_id, guild_id):
-        params = {"token": api_token, "user_id": member_id, "guild_id": guild_id}
-        await self.send_request("on_member_remove", parameters=params, request_type="post", timeout=120)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}},
                                                            {'$set': {"deleted": True}})
-        await self.request_member_remove(member.id, member.guild.id)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
