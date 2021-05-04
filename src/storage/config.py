@@ -9,7 +9,7 @@ api_port = 9987
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
-owner_id = 230778630597246983
+owner_id = 279323004087959552
 power_id = 739600091480064010
 zex_id = 734597893624692778
 lexi_id = 280843294508974103
