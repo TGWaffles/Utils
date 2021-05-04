@@ -96,10 +96,11 @@ class OGCog(commands.Cog):
                 }
             }
         ]
+        og_date = og_date.replace(tzinfo=datetime.timezone.utc)
         aggregation = self.bot.mongo.discord_db.messages.aggregate(pipeline=pipeline)
         og_users = [x.get("_id") for x in await aggregation.to_list(length=None)]
         async for member in ctx.guild.fetch_members(limit=None):
-            is_og = member.id in og_users
+            is_og = member.id in og_users or member.joined_at.replace(tzinfo=datetime.timezone.utc) < og_date
             if (datetime.datetime.now() - last_edit).total_seconds() > 1:
                 embed = discord.Embed(title="Processing Members...",
                                       description="Last Member: {}. "
@@ -246,23 +247,6 @@ class OGCog(commands.Cog):
         await ctx.reply(embed=self.bot.create_completed_embed("Set OG Role!",
                                                               "OG Role has been set to {}!".format(
                                                                   og_role.mention)))
-
-    @commands.command()
-    @is_owner()
-    async def do_transfer(self, ctx):
-        data = DataHelper()
-        for guild_id_string, date_timestamp in data.get("og_dates").items():
-            guild_document = await self.og_coll.find_one({"_id": int(guild_id_string)})
-            if guild_document is None:
-                guild_document = {"_id": int(guild_id_string)}
-            guild_document["date"] = datetime.datetime.utcfromtimestamp(date_timestamp)
-            await self.bot.mongo.force_insert(self.og_coll, guild_document)
-        for guild_id_string, role_id in data.get("og_roles").items():
-            guild_document = await self.og_coll.find_one({"_id": int(guild_id_string)})
-            if guild_document is None:
-                guild_document = {"_id": int(guild_id_string)}
-            guild_document["role_id"] = role_id
-            await self.bot.mongo.force_insert(self.og_coll, guild_document)
 
 
 def setup(bot):
