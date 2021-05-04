@@ -14,6 +14,8 @@ def get_proxy(offset=0):
             table = [x.string for x in soup.find_all("td")]
             first_proxy_ip = table[offset]
             first_proxy_port = table[offset + 1]
+            if "China" in table[offset + 3]:
+                return get_proxy(offset+1)
             complete_proxy = f"{first_proxy_ip}:{first_proxy_port}"
             return complete_proxy
         except IndexError:
