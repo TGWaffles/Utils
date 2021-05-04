@@ -3,6 +3,7 @@ import re
 import concurrent.futures
 
 import discord
+from multiprocessing import Manager
 from discord.ext import commands, tasks
 from io import BytesIO
 from typing import Optional, Union
@@ -26,6 +27,17 @@ class Monkey(commands.Cog):
         self.tiktok_db = self.bot.mongo.client.tiktok
         self.send_tiktok_message.start()
         self.update_followers.start()
+        self.restarting = Manager().Event()
+
+    async def restart_watcher(self):
+        if self.bot.restart_event is None:
+            self.bot.restart_event = asyncio.Event()
+        await self.bot.restart_event.wait()
+        async with self.bot.restart_waiter_lock:
+            self.bot.restart_waiters += 1
+        self.restarting.set()
+        async with self.bot.restart_waiter_lock:
+            self.bot.restart_waiters -= 1
 
     @tasks.loop(seconds=30, count=None)
     async def send_tiktok_message(self):
@@ -39,7 +51,8 @@ class Monkey(commands.Cog):
             if updates_channel is None:
                 continue
             with concurrent.futures.ProcessPoolExecutor() as pool:
-                last_video, image = await asyncio.get_event_loop().run_in_executor(pool, partial(get_video, username))
+                last_video, image = await asyncio.get_event_loop().run_in_executor(pool, partial(get_video, username,
+                                                                                                 self.restarting))
             video_id = last_video.get('video', {}).get('id')
             if video_id in last_ids:
                 continue
@@ -73,7 +86,8 @@ class Monkey(commands.Cog):
             if discord_channel is None:
                 continue
             with concurrent.futures.ProcessPoolExecutor() as pool:
-                user = await asyncio.get_event_loop().run_in_executor(pool, partial(get_user, username))
+                user = await asyncio.get_event_loop().run_in_executor(pool, partial(get_user, username,
+                                                                                    self.restarting))
             followers = user.get("userInfo").get("stats").get("followerCount", "Unknown")
             await discord_channel.edit(name=f"Followers: {followers:,}")
 

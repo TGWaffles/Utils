@@ -4,8 +4,10 @@ import time
 import requests
 
 
-def get_proxy(offset=0):
+def get_proxy(restarting_event, offset=0):
     while True:
+        if restarting_event.is_set():
+            exit()
         try:
             site = requests.get("https://scrapingant.com/free-proxies/").text
 
@@ -23,12 +25,14 @@ def get_proxy(offset=0):
             offset = 0
 
 
-def get_video(username):
+def get_video(username, restarting_event):
     offset = 0
     while True:
+        if restarting_event.is_set():
+            return
         try:
             api = TikTokApi.get_instance(custom_verifyFp="verify_knxvpdqn_jjZdu7Te_mwZy_4EpT_8zzG_fVOU4SrmsLpA",
-                                         use_test_endpoints=True, proxy=get_proxy(offset))
+                                         use_test_endpoints=True, proxy=get_proxy(restarting_event, offset))
             videos = api.by_username(username, count=1)
             last_video = videos[0]
             dynamic_cover = last_video.get("video", {}).get("cover", "")
@@ -38,12 +42,14 @@ def get_video(username):
             offset += 1
 
 
-def get_user(username):
+def get_user(username, restarting_event):
     offset = 0
     while True:
+        if restarting_event.is_set():
+            return
         try:
             api = TikTokApi.get_instance(custom_verifyFp="verify_knxvpdqn_jjZdu7Te_mwZy_4EpT_8zzG_fVOU4SrmsLpA",
-                                         use_test_endpoints=True, proxy=get_proxy(offset))
+                                         use_test_endpoints=True, proxy=get_proxy(restarting_event, offset))
             user = api.get_user(username)
             return user
         except exceptions.TikTokCaptchaError:

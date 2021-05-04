@@ -138,7 +138,8 @@ class Music(commands.Cog):
         self.bot.loop.create_task(self.restart_watcher())
 
     async def restart_watcher(self):
-        self.bot.restart_event = asyncio.Event()
+        if self.bot.restart_event is None:
+            self.bot.restart_event = asyncio.Event()
         while True:
             try:
                 await self.bot.wait_until_ready()
