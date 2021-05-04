@@ -140,6 +140,8 @@ This invite expires in 5 minutes. You may ask for a new one if it expires."""
         chill_peeps = message.guild.get_role(725895768703238255)
         if isinstance(message.author, discord.Member) and \
                 len([x for x in message.author.roles if x != message.guild.default_role]) == 0:
+            if chill_peeps is None:
+                return
             await message.author.add_roles(chill_peeps)
         if message.author.id == self.bot.user.id and message.channel.id == config.counting_channel_id:
             await asyncio.sleep(10)
