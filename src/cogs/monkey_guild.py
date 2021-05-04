@@ -139,6 +139,8 @@ As a member with the Trusted role, I agree that all images and links I send will
 Community Guidelines and the server rules. I acknowledge that my trusted status may be taken away at any time if I 
 break these rules. \n
 This invite expires in 5 minutes. You may ask for a new one if it expires."""
+        await ctx.reply("A DM is being sent to the mentioned users. Once they react to it, "
+                        "they'll be granted the Trusted role.")
         sent = await member.send(content=trusted_spiel)
         await sent.add_reaction('👍')
         try:
