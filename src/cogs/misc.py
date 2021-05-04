@@ -102,14 +102,13 @@ class Misc(commands.Cog):
     @commands.command()
     @is_owner()
     async def oldest(self, ctx):
-        current_member = 0
         if self.bot.latest_joins == {}:
             await self.bot.get_latest_joins()
         members = self.bot.latest_joins[ctx.guild.id]
+        print(members)
         leader_board = ""
-        for member in members:
-            current_member += 1
-            string_to_add = "{}: {} - {}\n".format(current_member, member.name,
+        for index, member in enumerate(members):
+            string_to_add = "{}: {} - {}\n".format(index, member.name,
                                                    member.joined_at.strftime("%Y-%m-%d %H:%M"))
             if len(leader_board + string_to_add) > 2048:
                 break
