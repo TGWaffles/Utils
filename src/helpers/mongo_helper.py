@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 
+import pymongo
 import discord
 import motor.motor_asyncio
 
@@ -112,42 +113,7 @@ async def main():
     db = MongoDB()
     client = db.client
     discord_db = client.discord
-    stored_msg = []
-    pipeline = [
-        {
-            "$match": {"guild_id": 758084479397920779}
-        },
-        {
-            "$lookup": {
-                "from": "users",
-                "localField": "user_id",
-                "foreignField": "_id",
-                "as": "user"
-            }
-        },
-        {
-            "$unwind": {
-                "path": "$user"
-            }
-        }
-
-    ]
-    async for message in discord_db.messages.aggregate(pipeline):
-        message_text = f"{message.get('created_at').isoformat(' ')} {message.get('user').get('name')}:" \
-                       f" {message.get('content')}"
-        stored_msg.append(message_text)
-    with open("temp.txt", 'w', encoding="utf-8") as file:
-        file.write('\n'.join(stored_msg))
-    print("done")
-    # for channel in session.query(Channel).filter(Channel.excluded_from_leaderboard.is_(True)):
-    #     await discord_db.channels.update_one({"_id": channel.id}, {"$set": {"excluded": True}})
-    # # print(await aggregation.to_list(length=None))
-    # print("done")
-    # cursor = discord_db.messages.find({"_id": 12312412, "channel_id": 725896089542197278})
-    # message = await cursor.to_list(length=1)
-    # print(message)
-    # i = 0
-    # print(perf_counter() - before)
+    print()
 
 
 if __name__ == '__main__':

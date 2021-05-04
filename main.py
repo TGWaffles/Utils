@@ -5,6 +5,7 @@ import json
 import os
 import datetime
 import time
+import pymongo
 import subprocess
 
 from typing import Union
@@ -60,20 +61,15 @@ class UtilsBot(commands.Bot):
     async def get_sorted_members(self, guild):
         members = await guild.fetch_members(limit=None).flatten()
         members = [member for member in members if not member.bot]
-        sorting_members = {member: (member, member.joined_at) for member in members}
-        member_ids = [user.id for user in members]
-        all_guilds = self.data.get("og_messages", {})
-        og_messages = all_guilds.get(str(guild.id), {})
-        for user_id in og_messages.keys():
-            try:
-                member_object = members[member_ids.index(int(user_id))]
-                first_join = datetime.datetime.utcfromtimestamp(og_messages[user_id])
-                if first_join < member_object.joined_at:
-                    sorting_members[member_object] = (member_object, first_join)
-                    member_object.joined_at = first_join
-                    members[member_ids.index(int(user_id))] = member_object
-            except (ValueError, IndexError):
-                pass
+        sorting_members = {member: (member,
+                                    member.joined_at.replace(tzinfo=datetime.timezone.utc)) for member in members}
+        for member in members:
+            earliest_message = await self.mongo.discord_db.messages.find_one({"user_id": member.id},
+                                                                             sort=[("created_at", pymongo.ASCENDING)])
+            if earliest_message is not None:
+                message_time = earliest_message.get("created_at").replace(tzinfo=datetime.timezone.utc)
+                if message_time < member.joined_at.replace(tzinfo=datetime.timezone.utc):
+                    sorting_members[member]: (member, message_time)
         members = list(sorting_members.values())
         members.sort(key=lambda x: x[1])
         members = [member[0] for member in members]
@@ -107,7 +103,6 @@ class UtilsBot(commands.Bot):
                                                                       "'no' detected. "
                                                                       "Request cancelled."))
             return False
-
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod
@@ -195,7 +190,8 @@ def get_bot():
             else:
                 perms_formatted = ' and '.join(missing)
             try:
-                await ctx.reply(f"In order to run these commands, I need the following permission(s): {perms_formatted}")
+                await ctx.reply(
+                    f"In order to run these commands, I need the following permission(s): {perms_formatted}")
             except discord.errors.Forbidden:
                 await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "
                                                                    "have permission to send "
