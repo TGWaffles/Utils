@@ -21,7 +21,8 @@ class OGCog(commands.Cog):
         guild_document = await self.og_coll.find_one({"_id": member.guild.id})
         assert guild_document is not None and guild_document.get("date", None) is not None
         og_date = guild_document.get("date").replace(tzinfo=datetime.timezone.utc)
-        earliest_message = await self.bot.mongo.discord_db.messages.find_one({"user_id": member.id},
+        earliest_message = await self.bot.mongo.discord_db.messages.find_one({"user_id": member.id,
+                                                                              "guild_id": member.guild.id},
                                                                              sort=[("created_at", pymongo.ASCENDING)])
         first_join_date = member.joined_at
         # noinspection SpellCheckingInspection
@@ -41,7 +42,8 @@ class OGCog(commands.Cog):
             return
         is_og = await self.is_og(member)
         message_time = None
-        earliest_message = await self.bot.mongo.discord_db.messages.find_one({"user_id": member.id},
+        earliest_message = await self.bot.mongo.discord_db.messages.find_one({"user_id": member.id,
+                                                                              "guild_id": ctx.guild.id},
                                                                              sort=[("created_at", pymongo.ASCENDING)])
         if earliest_message is not None:
             message_time = earliest_message.get("created_at").replace(tzinfo=datetime.timezone.utc)

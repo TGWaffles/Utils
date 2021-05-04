@@ -70,11 +70,11 @@ class UtilsBot(commands.Bot):
                 message_time = earliest_message.get("created_at").replace(tzinfo=datetime.timezone.utc)
                 if message_time < member.joined_at.replace(tzinfo=datetime.timezone.utc):
                     sorting_members[member]: (member, message_time)
+                    member.joined_at = message_time
         members = list(sorting_members.values())
         members.sort(key=lambda x: x[1])
         members = [member[0] for member in members]
         members = [user for user in members if user.joined_at is not None]
-        members.sort(key=lambda x: x.joined_at)
         return members
 
     async def ask_boolean(self, to_reply_to: Union[discord.Message, discord.abc.Messageable], user: discord.User,
