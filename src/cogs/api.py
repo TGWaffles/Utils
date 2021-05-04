@@ -15,6 +15,7 @@ class API(commands.Cog):
         self.bot = bot
         self.data = DataHelper()
         self.speller = aspell.Speller('lang', 'en')
+        self.api_db = self.bot.mongo.discord_db.api
         app = web.Application()
         app.add_routes([web.post('/speak', self.handle_speak_message)])
         # noinspection PyProtectedMember
@@ -32,9 +33,11 @@ class API(commands.Cog):
         return suggestions[0] if len(suggestions) > 0 else word
 
     async def handle_speak_message(self, request: web.Request):
+        query = self.api_db.find()
+        known_keys = await query.to_list(length=None)
         try:
             request_json = await request.json()
-            assert request_json.get("token", "") in self.data.get("api_keys", {}).keys()
+            assert request_json.get("token", "") in [x.get("key") for x in known_keys]
         except (TypeError, json.JSONDecodeError):
             return web.Response(status=400)
         except AssertionError:
@@ -45,7 +48,7 @@ class API(commands.Cog):
         if content == "":
             return web.Response(status=400)
         try:
-            member_id = int(self.data.get("api_keys", {}).get(token))
+            member_id = [x for x in known_keys if x.get("key") == token][0].get("_id")
         except ValueError:
             return
         if member_id == 230778630597246983:
@@ -58,16 +61,20 @@ class API(commands.Cog):
         return web.Response(status=202)
 
     @commands.command()
+    async def do_transfer_pog(self, ctx):
+        key_dict = self.data.get("api_keys")
+        for key, user_id in key_dict.items():
+            user_document = {"_id": user_id, "key": key}
+            await self.bot.mongo.force_insert(self.api_db, user_document)
+        await ctx.reply("done!")
+
+    @commands.command()
     async def api_key(self, ctx):
         await ctx.reply(embed=self.bot.create_completed_embed("Generated API Key",
                                                               "I have DM'd you your api key."))
         key = secrets.token_urlsafe(16)
-        all_keys = self.data.get("api_keys", {})
-        for old_key in all_keys.keys():
-            if all_keys[old_key] == str(ctx.author.id):
-                del all_keys[old_key]
-        all_keys[key] = ctx.author.id
-        self.data["api_keys"] = all_keys
+        user_document = {"_id": ctx.user.id, "key": key}
+        await self.bot.mongo.force_insert(self.api_db, user_document)
         await ctx.author.send("Your API key is: {}".format(key))
 
 

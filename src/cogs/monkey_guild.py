@@ -1,21 +1,20 @@
 import asyncio
-import re
 import concurrent.futures
+import re
+from functools import partial
+from io import BytesIO
+from multiprocessing import Manager
+from typing import Optional
 
 import discord
-from multiprocessing import Manager
 from discord.ext import commands, tasks
-from io import BytesIO
-from typing import Optional, Union
-from functools import partial
 
 from main import UtilsBot
-from src.checks.user_check import is_owner
-from src.helpers.tiktok_helper import get_video, get_user
-from src.helpers.storage_helper import DataHelper
 from src.checks.guild_check import monkey_check
 from src.checks.message_check import check_trusted_reaction
 from src.checks.role_check import is_staff
+from src.checks.user_check import is_owner
+from src.helpers.tiktok_helper import get_video, get_user
 from src.storage import config
 
 
@@ -23,7 +22,6 @@ class Monkey(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.previous_counting_number = None
-        self.data = DataHelper()
         self.tiktok_db = self.bot.mongo.client.tiktok
         self.send_tiktok_message.start()
         self.update_followers.start()
@@ -133,7 +131,7 @@ class Monkey(commands.Cog):
     @is_staff()
     async def trust(self, ctx, member: discord.Member):
         trusted_role = ctx.guild.get_role(config.trusted_role_id)
-        trusted_spiel = """A moderator from ahhh monkey has offered you the Trusted role, which allows you to send 
+        trusted_spiel = """A moderator from ahh monkey has offered you the Trusted role, which allows you to send 
         pictures and links. React to this to accept the rules and gain Trusted status. \n
 As a member with the Trusted role, I agree that all images and links I send will be in conformance with Discord 
 Community Guidelines and the server rules. I acknowledge that my trusted status may be taken away at any time if I 
@@ -209,8 +207,8 @@ This invite expires in 5 minutes. You may ask for a new one if it expires."""
             if previous_number + 1 not in numbers_in_message:
                 await message.reply(embed=self.bot.create_error_embed("{}'s not the next number, {} "
                                                                       "(I'm looking for {})".format(
-                    numbers_in_message[0], message.author.mention,
-                    previous_number + 1)), delete_after=7)
+                                                                        numbers_in_message[0], message.author.mention,
+                                                                        previous_number + 1)), delete_after=7)
                 await message.delete()
                 return
             else:
