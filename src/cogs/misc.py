@@ -105,7 +105,6 @@ class Misc(commands.Cog):
         if self.bot.latest_joins == {}:
             await self.bot.get_latest_joins()
         members = self.bot.latest_joins[ctx.guild.id]
-        print(members)
         leader_board = ""
         for index, member in enumerate(members):
             string_to_add = "{}: {} - {}\n".format(index, member.name,

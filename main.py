@@ -73,7 +73,9 @@ class UtilsBot(commands.Bot):
                     sorting_members[member]: (member, message_time)
                     member.joined_at = message_time
         members = list(sorting_members.values())
+        print([x[0].name for x in members])
         members.sort(key=lambda x: x[1])
+        print([x[0].name for x in members])
         members = [member[0] for member in members]
         members = [user for user in members if user.joined_at is not None]
         return members
