@@ -335,7 +335,7 @@ class DBApiClient(commands.Cog):
     @commands.command(description="Count how many messages have been sent in this guild!")
     async def messages(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...", "Counting all messages sent..."))
-        amount = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": ctx.guild.id})
+        amount = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": ctx.guild.id, "deleted": False})
         await sent.edit(embed=self.bot.create_completed_embed(
             title="Total Messages sent in this guild!", text=f"**{amount:,}** messages!"
         ))
