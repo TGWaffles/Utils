@@ -27,12 +27,10 @@ class Restart(commands.Cog):
             if waited > 5.0:
                 await reply_message.edit(embed=self.bot.create_error_embed("Update download failed."))
                 return
-        await self.bot.database_handler.update()
         await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
                                                                                       "Restarting database..."))
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Update Complete!",
                                          "Updated and Restarted successfully!")
-        await self.bot.database_handler.restart_db_server()
         await self.wait_on_events(reply_message)
         self.bot.restart()
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
