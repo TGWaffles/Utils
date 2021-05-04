@@ -332,6 +332,43 @@ class DBApiClient(commands.Cog):
                                                 f"of the server's total!")
         await sent.edit(embed=embed)
 
+    @commands.command(description="Count how many messages have been sent in this guild!")
+    async def messages(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Counting...", "Counting all messages sent..."))
+        amount = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": ctx.guild.id})
+        await sent.edit(embed=self.bot.create_completed_embed(
+            title="Total Messages sent in this guild!", text=f"**{amount:,}** messages!"
+        ))
+
+    # noinspection DuplicatedCode
+    @commands.command(description="Plots a graph of word usage over time.", aliases=["wordstats, wordusage",
+                                                                                     "word_stats", "phrase_usage",
+                                                                                     "phrasestats", "phrase_stats",
+                                                                                     "phraseusage"])
+    async def word_usage(self, ctx, phrase, group: Optional[str] = "m"):
+        async with ctx.typing():
+            if len(phrase) > 180:
+                await ctx.reply(embed=self.bot.create_error_embed("That phrase was too long!"))
+                return
+            pipeline = [
+                {
+                    "$match": {"guild_id": ctx.guild.id, "deleted": False, "$text": {"$search": phrase}}
+                },
+                {
+                    "$project": {"_id": "$created_at"}
+                }
+            ]
+            aggregation = self.bot.mongo.discord_db.messages.aggregate(pipeline=pipeline)
+            times = [x.get("_id") for x in await aggregation.to_list(length=None)]
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(file_from_timestamps, times, group))
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+            embed = discord.Embed(title=f"Number of times \"{phrase}\" has been said:")
+            embed.set_image(url="attachment://image.png")
+            await ctx.reply(embed=embed, file=discord_file)
+
     @commands.command()
     async def leaderboard(self, ctx):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Generating leaderboard",
