@@ -7,8 +7,9 @@ port = 8080
 restart_port = 8880
 api_port = 9987
 
-mongo_connection_uri = (f'mongodb://{token.mongo_user}:{token.mongo_password}@mongo1:27017,' 
-                        f'192.168.1.20:27017,192.168.1.135:27017/{token.auth_db}?replicaSet=thomasRep0')
+mongo_connection_uri = (f'mongodb://{token.mongo_user}:{token.mongo_password}@mongo1.thom.club:27017,' 
+                        f'mongo1.thom.club:27018,mongo1.thom.club:27016,mongo2.thom.club:27017/'
+                        f'{token.auth_db}?replicaSet=thomasRep0')
 
 bot_prefix = "!"
 description = "Discord Utility Bot"
