@@ -17,7 +17,7 @@ def get_proxy(restarting_event, offset=0):
             first_proxy_ip = table[offset]
             first_proxy_port = table[offset + 1]
             if "China" in table[offset + 3]:
-                return get_proxy(offset+1)
+                return get_proxy(restarting_event, offset+1)
             complete_proxy = f"{first_proxy_ip}:{first_proxy_port}"
             return complete_proxy
         except IndexError:
