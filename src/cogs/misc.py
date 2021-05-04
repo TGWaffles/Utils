@@ -178,7 +178,7 @@ class Misc(commands.Cog):
         await self.on_member_change(member)
         og_cog: OGCog = self.bot.get_cog("OGCog")
         try:
-            is_og = og_cog.is_og(member)
+            is_og = await og_cog.is_og(member)
             print("checking og for {}".format(member.name))
             if is_og:
                 print("IS OG!")
@@ -279,6 +279,7 @@ class Misc(commands.Cog):
     @commands.command()
     async def choose(self, ctx, *choices):
         await ctx.reply(embed=self.bot.create_completed_embed("Random Choice", f"I choose {random.choice(choices)}"))
+
 
 def setup(bot):
     cog = Misc(bot)
