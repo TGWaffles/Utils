@@ -6,14 +6,12 @@ from aiohttp import web
 from discord.ext import commands
 
 from main import UtilsBot
-from src.helpers.storage_helper import DataHelper
 from src.storage import config
 
 
 class API(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
-        self.data = DataHelper()
         self.speller = aspell.Speller('lang', 'en')
         self.api_db = self.bot.mongo.discord_db.api
         app = web.Application()
@@ -59,14 +57,6 @@ class API(commands.Cog):
             content = ' '.join([self.find_autocorrect(word) for word in content.split(" ")])
         self.bot.loop.create_task(tts_cog.speak_id_content(int(member_id), content))
         return web.Response(status=202)
-
-    @commands.command()
-    async def do_transfer_pog(self, ctx):
-        key_dict = self.data.get("api_keys")
-        for key, user_id in key_dict.items():
-            user_document = {"_id": user_id, "key": key}
-            await self.bot.mongo.force_insert(self.api_db, user_document)
-        await ctx.reply("done!")
 
     @commands.command()
     async def api_key(self, ctx):
