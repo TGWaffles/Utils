@@ -10,8 +10,6 @@ from discord.ext import commands
 from main import UtilsBot
 from src.checks.custom_check import speak_changer_check
 from src.checks.role_check import is_high_staff
-from src.checks.user_check import is_owner
-from src.helpers.storage_helper import DataHelper
 from src.helpers.tts_helper import get_speak_file
 from src.storage import config
 from src.storage import messages
@@ -20,11 +18,11 @@ from src.storage import messages
 class TTS(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
-        self.data = DataHelper()
         self.index_num = 0
         self.queue_change_lock = asyncio.Lock()
         self.guild_queues = {}
         self.uid = 0
+        self.tts_db = self.bot.mongo.client.tts
 
     @commands.command(pass_context=True)
     @speak_changer_check()
@@ -44,45 +42,47 @@ class TTS(commands.Cog):
                       description="Gives other people access to the !speak command.")
     @is_high_staff()
     async def speak_perms(self, ctx, member: discord.Member):
-        all_guilds = self.data.get("speak_changer", {})
-        changer_list = all_guilds.get(str(ctx.guild.id), [])
-        if member.id in changer_list:
-            changer_list.remove(member.id)
+        old_member = await self.tts_db.perms.find_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}})
+        had_perms = False
+        if old_member is None:
+            member_document = {"_id": {"user_id": member.id, "guild_id": member.guild.id}}
+        else:
+            had_perms = True
+            member_document = {"_id": {"user_id": member.id, "guild_id": member.guild.id}}
+        await self.bot.mongo.force_insert(self.tts_db.perms, member_document)
+        if had_perms:
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Revoked",
                                                                   f"Revoked {member.display_name}'s permissions!"))
         else:
-            changer_list.append(member.id)
             await ctx.reply(embed=self.bot.create_completed_embed("Perms Granted",
                                                                   f"Given {member.display_name} permissions!"))
-        all_guilds[str(ctx.guild.id)] = changer_list
-        self.data["speak_changer"] = all_guilds
 
     @commands.command(pass_context=True, name="speak", description="Adds/removes a user to the TTS list.")
     @speak_changer_check()
     async def speak(self, ctx, member: Optional[discord.Member] = None):
         if member is None:
             member = ctx.author
-        all_guilds = self.data.get("speaking", {})
-        speaking_list = all_guilds.get(str(ctx.guild.id), [])
-        if member.id in speaking_list:
-            speaking_list.remove(member.id)
+        old_member = await self.tts_db.speakers.find_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}})
+        if old_member is not None:
+            await self.tts_db.speakers.delete_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}})
             await ctx.reply(embed=self.bot.create_completed_embed("Disabled TTS", f"Removed {member.display_name} from "
                                                                                   f"the TTS list"))
         else:
-            speaking_list.append(member.id)
+            await self.bot.mongo.force_insert(self.tts_db.speakers,
+                                              {"_id": {"user_id": member.id, "guild_id": member.guild.id}})
             await ctx.reply(embed=self.bot.create_completed_embed("Enabled TTS", f"Added {member.display_name} to the "
                                                                                  f"TTS list."))
-        all_guilds[str(ctx.guild.id)] = speaking_list
-        self.data["speaking"] = all_guilds
 
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def speed(self, ctx, new_speed: float):
         if new_speed < 0:
             await ctx.reply(embed=self.bot.create_error_embed("A speed less than 0 makes no sense."))
-        all_guilds = self.data.get("speak_speeds", {})
-        all_guilds[str(ctx.guild.id)] = new_speed
-        self.data["speak_speeds"] = all_guilds
+        old_guild_document = await self.tts_db.settings.find_one({"_id": ctx.guild.id})
+        if old_guild_document is None:
+            old_guild_document = {"_id": ctx.guild.id, "speed": 1.0, "lang": "en", "tld": "com"}
+        old_guild_document["speed"] = new_speed
+        await self.bot.mongo.force_insert(self.tts_db.settings, old_guild_document)
         await ctx.reply(embed=self.bot.create_completed_embed("Speed Changed!", "New speed in here is {}. "
                                                                                 "(default 1.0)".format(new_speed)))
 
@@ -116,29 +116,33 @@ class TTS(commands.Cog):
                 await ctx.reply(embed=lang_embed)
                 return
         new_lang = in_lang
-        server_languages = self.data.get("server_languages", {})
-        server_languages[ctx.guild.id] = new_lang
-        self.data["server_languages"] = server_languages
+        old_guild_document = await self.tts_db.settings.find_one({"_id": ctx.guild.id})
+        if old_guild_document is None:
+            old_guild_document = {"_id": ctx.guild.id, "speed": 1.0, "lang": "en", "tld": "com"}
+        old_guild_document["lang"] = new_lang
+        await self.bot.mongo.force_insert(self.tts_db.settings, old_guild_document)
         lang_real_name = gtts.lang.tts_langs()[new_lang]
         await ctx.reply(embed=self.bot.create_completed_embed("Language changed!",
                                                               f"Changed voice language to {lang_real_name}"))
 
     @commands.command(pass_context=True)
-    @is_owner()
+    @speak_changer_check()
     async def tld(self, ctx, new_tld):
-        server_tlds = self.data.get("server_tlds", {})
-        server_tlds[ctx.guild.id] = new_tld
-        self.data["server_tlds"] = server_tlds
+        old_guild_document = await self.tts_db.settings.find_one({"_id": ctx.guild.id})
+        if old_guild_document is None:
+            old_guild_document = {"_id": ctx.guild.id, "speed": 1.0, "lang": "en", "tld": "com"}
+        old_guild_document["tld"] = new_tld
+        await self.bot.mongo.force_insert(self.tts_db.settings, old_guild_document)
         await ctx.reply(embed=self.bot.create_completed_embed("TLD Changed!",
                                                               "Attempted to change TLD to {}".format(new_tld)))
 
     @commands.command(pass_context=True)
     @speak_changer_check()
     async def speakers(self, ctx):
-        all_guilds = self.data.get("speaking", {})
-        speaking_list = all_guilds.get(str(ctx.guild.id), [])
-        all_perms = self.data.get("speak_changer", {})
-        guild_perms = all_perms.get(str(ctx.guild.id), [])
+        query = self.tts_db.speakers.find({"_id": {"guild_id": ctx.guild.id}})
+        speaking_list = [x.get("_id").get("user_id") for x in await query.to_list(length=None)]
+        query = self.tts_db.perms.find({"_id": {"guild_id": ctx.guild.id}})
+        guild_perms = [x.get("_id").get("user_id") for x in await query.to_list(length=None)]
         embed = discord.Embed(title="Speaking Users", description="", colour=discord.Colour.green())
         for member_id in speaking_list:
             try:
@@ -154,9 +158,7 @@ class TTS(commands.Cog):
     @commands.command(pass_context=True)
     @is_high_staff()
     async def reset_speakers(self, ctx):
-        all_guilds = self.data.get("speaking", {})
-        all_guilds[str(ctx.guild.id)] = []
-        self.data["speaking"] = all_guilds
+        await self.tts_db.speakers.delete_many({"_id": {"guild_id": ctx.guild.id}})
         await ctx.reply(embed=self.bot.create_completed_embed("Reset All Speakers", "Removed all speakers. \n\n"
                                                                                     "Some people may still have perms "
                                                                                     "to add themselves back to the "
@@ -189,11 +191,14 @@ class TTS(commands.Cog):
                 voice_client = await voice_channel.connect()
         else:
             voice_client = await voice_channel.connect()
-        server_languages = self.data.get("server_languages", {})
-        lang = server_languages.get(str(voice_channel.guild.id), "en")
-        speed = self.data.get("speak_speeds", {}).get(str(voice_channel.guild.id), 1.0)
+        old_guild_document = await self.tts_db.settings.find_one({"_id": member.guild.id})
+        if old_guild_document is None:
+            old_guild_document = {"_id": member.guild.id, "speed": 1.0, "lang": "en", "tld": "com"}
+            await self.bot.mongo.force_insert(self.tts_db.settings, old_guild_document)
+        lang = old_guild_document.get("lang")
+        speed = old_guild_document.get("speed")
+        tld = old_guild_document.get("tld")
         with concurrent.futures.ProcessPoolExecutor() as pool:
-            tld = self.data.get("server_tlds", {}).get(str(voice_channel.guild.id), "com")
             output = await self.bot.loop.run_in_executor(pool, partial(get_speak_file, content,
                                                                        lang, speed, tld))
         if member.guild.id not in self.guild_queues:
@@ -224,9 +229,8 @@ class TTS(commands.Cog):
                 return
         except AttributeError:
             return
-        all_guilds = self.data.get("speaking", {})
-        speaking = all_guilds.get(str(message.guild.id), [])
-        if member.id not in speaking:
+        old_member = await self.tts_db.speakers.find_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}})
+        if old_member is None:
             return
         if message.content.startswith("!") or message.content.startswith("~"):
             return

@@ -220,8 +220,15 @@ def get_bot():
             embed.add_field(name="Command passed error", value=str(error))
             embed.add_field(name="Context", value=ctx.message.content)
             print_tb(error.__traceback__)
-            guild_error_channel_id = data.get("guild_error_channels", {}).get(str(ctx.guild.id), 795057163768037376)
+            guild_error_channel_id = await bot.mongo.discord_db.channels.find_one({"guild_id": ctx.guild.id,
+                                                                                   "error_channel": True})
+            if guild_error_channel_id is None:
+                guild_error_channel_id = config.error_channel_id
+            else:
+                guild_error_channel_id = guild_error_channel_id.get("_id", None)
             error_channel = bot.get_channel(guild_error_channel_id)
+            if error_channel is None:
+                error_channel = bot.get_channel(config.error_channel_id)
             await error_channel.send(embed=embed)
             await ctx.reply(embed=embed)
             # bot.restart()
