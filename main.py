@@ -64,7 +64,8 @@ class UtilsBot(commands.Bot):
         sorting_members = {member: (member,
                                     member.joined_at.replace(tzinfo=datetime.timezone.utc)) for member in members}
         for member in members:
-            earliest_message = await self.mongo.discord_db.messages.find_one({"user_id": member.id},
+            earliest_message = await self.mongo.discord_db.messages.find_one({"user_id": member.id,
+                                                                              "guild_id": guild.id},
                                                                              sort=[("created_at", pymongo.ASCENDING)])
             if earliest_message is not None:
                 message_time = earliest_message.get("created_at").replace(tzinfo=datetime.timezone.utc)
