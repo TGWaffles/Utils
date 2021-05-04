@@ -107,7 +107,7 @@ class Misc(commands.Cog):
         members = self.bot.latest_joins[ctx.guild.id]
         leader_board = ""
         for index, member in enumerate(members):
-            string_to_add = "{}: {} - {}\n".format(index, member.name,
+            string_to_add = "{}: {} - {}\n".format(index + 1, member.name,
                                                    member.joined_at.strftime("%Y-%m-%d %H:%M"))
             if len(leader_board + string_to_add) > 2048:
                 break
