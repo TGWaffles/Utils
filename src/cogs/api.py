@@ -13,7 +13,7 @@ class API(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.speller = aspell.Speller('lang', 'en')
-        self.api_db = self.bot.mongo.discord_db.api
+        self.api_db = self.bot.mongo.client.api.users
         app = web.Application()
         app.add_routes([web.post('/speak', self.handle_speak_message)])
         # noinspection PyProtectedMember
