@@ -185,6 +185,7 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx: commands.Context, error):
+        raise error
         if ctx.kwargs.get("resolved", False):
             return
         if isinstance(error, commands.CommandInvokeError):
