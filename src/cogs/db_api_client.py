@@ -140,7 +140,7 @@ class DBApiClient(commands.Cog):
         first_three = edits[:3]
         last_edits = edits[3:]
         last_edits = last_edits[::-1]
-        if content != "" or not any(len(x.get("embeds")) > 0 for x in [*edits, original_message]):
+        if content != "" and not any(len(x.get("embeds")) > 0 for x in [*edits, original_message]):
             embed.add_field(name=f"Original Message ({original_timestamp_string})",
                             value=content, inline=False)
 
