@@ -190,10 +190,11 @@ class DBApiClient(commands.Cog):
                 else:
                     edit_embed = discord.Embed.from_dict(edit.get("embeds")[0])
                     field_value = ""
-                    if edit_embed.title != last_edit_title:
+                    if edit_embed.title != last_edit_title and edit_embed.title != discord.Embed.Empty:
                         last_edit_title = edit_embed.title
                         field_value += f"New Title: {last_edit_title}\n"
-                    if edit_embed.description != last_edit_description:
+                    if edit_embed.description != last_edit_description and \
+                            edit_embed.description != discord.Embed.Empty:
                         last_edit_description = edit_embed.description
                         field_value += (last_edit_description + "\n")[:1024 - len(field_value)]
                     if edit_embed.fields != last_edit_fields:
