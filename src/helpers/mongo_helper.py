@@ -14,7 +14,7 @@ class MongoDB:
     @staticmethod
     async def force_insert(collection, document):
         if "_id" in document:
-            await collection.replace_one({"_id": document.get("_id")}, document, upsert=True)
+            await collection.update_one({"_id": document.get("_id")}, document, upsert=True)
         else:
             await collection.insert_one(document)
 
@@ -28,6 +28,7 @@ class MongoDB:
     async def insert_guild(self, guild: discord.Guild):
         guild_document = {"_id": guild.id, "name": guild.name, "removed": False}
         await self.force_insert(self.discord_db.guilds, guild_document)
+        return guild_document
 
     async def insert_channel(self, channel: discord.TextChannel):
         guild_result = await self.discord_db.guilds.find_one({"_id": channel.guild.id})

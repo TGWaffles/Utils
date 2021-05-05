@@ -4,6 +4,7 @@ from discord.ext import commands
 
 from main import UtilsBot
 from src.checks.user_check import is_owner
+from src.checks.role_check import is_high_staff
 
 
 class CommandManager(commands.Cog):
@@ -39,10 +40,18 @@ class CommandManager(commands.Cog):
         except TypeError:
             pass
         enabling_msg = await ctx.reply(embed=self.bot.create_processing_embed("Enabling...",
-                                                                             text="Enabling {}".format(command_name)))
+                                                                              text="Enabling {}".format(command_name)))
         await asyncio.sleep(3)
         await enabling_msg.edit(embed=self.bot.create_completed_embed("Enabled.",
                                                                       "Command {} enabled!".format(command_name)))
+
+    @commands.command()
+    @is_high_staff()
+    async def prefix(self, ctx, new_prefix):
+        guild_document = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.guilds, ctx.guild.id)
+        if guild_document is None:
+            await self.bot.mongo.insert_guild(ctx.guild)
+        await self.bot.mongo.discord_db.guilds.update_one({"_id": ctx.guild.id}, {"$set": {"prefix": new_prefix}})
 
 
 def setup(bot):

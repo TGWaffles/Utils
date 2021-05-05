@@ -44,14 +44,23 @@ class UtilsBot(commands.Bot):
         self.restart_waiters = 0
 
     async def determine_prefix(self, bot, message):
-        music_cog: commands.Cog = self.get_cog("Music")
-        if music_cog is not None:
-            for command in music_cog.get_commands():
-                possible_command = [command.name] + command.aliases
-                possible_command = [config.bot_prefix + x for x in possible_command]
-                if message.content.split(" ")[0] in possible_command:
-                    return commands.when_mentioned_or("u" + config.bot_prefix)(bot, message)
-        return commands.when_mentioned_or(config.bot_prefix, "u" + config.bot_prefix)(bot, message)
+        if not hasattr(message, "guild") or message.guild is None:
+            return
+        if self.mongo is None:
+            return
+        guild_document = await self.mongo.find_by_id(self.mongo.discord_db.guilds, message.guild.id)
+        if guild_document is None or guild_document.get("prefix") is None:
+            music_cog: commands.Cog = self.get_cog("Music")
+            if music_cog is not None:
+                for command in music_cog.get_commands():
+                    possible_command = [command.name] + command.aliases
+                    possible_command = [config.bot_prefix + x for x in possible_command]
+                    if message.content.split(" ")[0] in possible_command:
+                        return commands.when_mentioned_or("u" + config.bot_prefix)(bot, message)
+            return commands.when_mentioned_or(config.bot_prefix, "u" + config.bot_prefix)(bot, message)
+        else:
+            guild_prefix = guild_document.get("prefix")
+            return commands.when_mentioned_or(guild_prefix, "u" + config.bot_prefix)(bot, message)
 
     async def get_latest_joins(self):
         for guild in self.guilds:

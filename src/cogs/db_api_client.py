@@ -396,7 +396,6 @@ class DBApiClient(commands.Cog):
                                                               f"excluded!"))
 
     @commands.command()
-    @is_staff()
     async def server_stats(self, ctx, group: Optional[str] = "m"):
         group = group.lower()
         if group not in ['d', 'w', 'm', 'y']:
