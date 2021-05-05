@@ -206,7 +206,10 @@ class DBApiClient(commands.Cog):
             score = await self.bot.loop.run_in_executor(pool, partial(get_user_score, member.id, member.guild.id))
         embed = self.bot.create_completed_embed(f"Score for {member.nick or member.name} - past 7 days",
                                                 str(score))
-        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        if ctx.guild.id == config.monkey_guild_id:
+            embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        else:
+            embed.set_footer(text="Score is based off of your active time this week.")
         await ctx.reply(embed=embed)
 
     @commands.command(description="Count how many times a phrase has been said!")
@@ -309,7 +312,10 @@ class DBApiClient(commands.Cog):
         results = results[:12]
         embed = discord.Embed(title="Activity Leaderboard - Past 7 Days", colour=discord.Colour.green())
         embed.description = "```"
-        embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        if ctx.guild.id == config.monkey_guild_id:
+            embed.set_footer(text="More information about this in #role-assign (monkeys of the week!)")
+        else:
+            embed.set_footer(text="Most active users this week! Score is based off of your active time this week.")
         lengthening = []
         for index, user in enumerate(results):
             name = await self.name_from_id(user[0], ctx.guild)
