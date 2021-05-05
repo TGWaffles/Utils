@@ -14,7 +14,7 @@ class MongoDB:
     @staticmethod
     async def force_insert(collection, document):
         if "_id" in document:
-            await collection.update_one({"_id": document.get("_id")}, document, upsert=True)
+            await collection.update_one({"_id": document.get("_id")}, {"$set": document}, upsert=True)
         else:
             await collection.insert_one(document)
 
