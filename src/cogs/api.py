@@ -63,7 +63,7 @@ class API(commands.Cog):
         await ctx.reply(embed=self.bot.create_completed_embed("Generated API Key",
                                                               "I have DM'd you your api key."))
         key = secrets.token_urlsafe(16)
-        user_document = {"_id": ctx.user.id, "key": key}
+        user_document = {"_id": ctx.author.id, "key": key}
         await self.bot.mongo.force_insert(self.api_db, user_document)
         await ctx.author.send("Your API key is: {}".format(key))
 
