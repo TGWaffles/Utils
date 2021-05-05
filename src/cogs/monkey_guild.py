@@ -151,6 +151,8 @@ This invite expires in 5 minutes. You may ask for a new one if it expires."""
     @commands.Cog.listener()
     @monkey_check()
     async def on_message(self, message: discord.Message):
+        if message.guild is None or message.guild.id != config.monkey_guild_id:
+            return
         chill_peeps = message.guild.get_role(725895768703238255)
         if isinstance(message.author, discord.Member) and \
                 len([x for x in message.author.roles if x != message.guild.default_role]) == 0:
