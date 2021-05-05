@@ -52,6 +52,10 @@ class CommandManager(commands.Cog):
         if guild_document is None:
             await self.bot.mongo.insert_guild(ctx.guild)
         await self.bot.mongo.discord_db.guilds.update_one({"_id": ctx.guild.id}, {"$set": {"prefix": new_prefix}})
+        await ctx.reply(embed=self.bot.create_completed_embed("Prefix Updated!", f"Set prefix in this guild to: "
+                                                                                 f"{new_prefix} (note that "
+                                                                                 f"\"u!command\" "
+                                                                                 f"always works)"))
 
 
 def setup(bot):
