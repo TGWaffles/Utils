@@ -1,5 +1,5 @@
-# MonkeyUtils
-Utils bot for Ahh-Monkey
+# Utils
+General-purpose Utils bot for Discord
 
 I will be adding comments, promise!
 
