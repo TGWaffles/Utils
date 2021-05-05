@@ -192,7 +192,7 @@ class DBApiClient(commands.Cog):
                     field_value = ""
                     if edit_embed.title != last_edit_title and edit_embed.title != discord.Embed.Empty:
                         last_edit_title = edit_embed.title
-                        field_value += f"New Title: {last_edit_title}\n"
+                        field_value += f"New Title: **{last_edit_title}**\n"
                     if edit_embed.description != last_edit_description and \
                             edit_embed.description != discord.Embed.Empty:
                         last_edit_description = edit_embed.description
@@ -200,7 +200,7 @@ class DBApiClient(commands.Cog):
                     if edit_embed.fields != last_edit_fields:
                         for field_index, field in enumerate(edit_embed.fields):
                             if field != edit_embed.fields[field_index]:
-                                field_value += (f"Field {field_index} name: {field.name}, "
+                                field_value += (f"Field {field_index} name: **{field.name}**, "
                                                 f"value: {field.value}\n"[:1024 - len(field_value)])
                         last_edit_fields = edit_embed.fields
                     if len(field_value) == 1024:
