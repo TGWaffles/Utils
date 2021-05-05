@@ -12,6 +12,7 @@ from discord.ext import commands, tasks
 
 from main import UtilsBot
 from src.checks.role_check import is_high_staff, is_staff
+from src.checks.user_check import is_owner
 from src.helpers.api_helper import *
 from src.helpers.graph_helper import pie_chart_from_amount_and_labels, file_from_timestamps
 from src.helpers.storage_helper import DataHelper
@@ -111,6 +112,14 @@ class DBApiClient(commands.Cog):
                             inline=False)
         embed.timestamp = timestamp
         await sent.edit(embed=embed)
+
+    @commands.command()
+    @is_owner()
+    async def nostore(self, ctx, channel: Optional[discord.TextChannel]):
+        if channel is None:
+            channel = ctx.channel
+        await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id}, {"$set": {"nostore", True}})
+        await ctx.reply("nostore set.")
 
     @commands.command()
     async def edits(self, ctx, message_id: Optional[int]):

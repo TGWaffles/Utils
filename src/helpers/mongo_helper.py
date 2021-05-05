@@ -60,6 +60,9 @@ class MongoDB:
         channel_result = await self.discord_db.channels.find_one({"_id": message.channel.id})
         if channel_result is None:
             await self.insert_channel(message.channel)
+        else:
+            if channel_result.get("nostore", False):
+                return
         member_result = await self.discord_db.members.find_one({"_id": message.author.id})
         if member_result is None:
             await self.insert_member(message.author)
