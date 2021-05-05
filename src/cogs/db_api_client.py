@@ -200,7 +200,7 @@ class DBApiClient(commands.Cog):
                     if edit_embed.fields != last_edit_fields:
                         for field_index, field in enumerate(edit_embed.fields):
                             if field != edit_embed.fields[field_index]:
-                                field_value += (f"Field {field_index} name: {field.title}, "
+                                field_value += (f"Field {field_index} name: {field.name}, "
                                                 f"value: {field.value}\n"[:1024 - len(field_value)])
                         last_edit_fields = edit_embed.fields
                     if len(field_value) == 1024:
