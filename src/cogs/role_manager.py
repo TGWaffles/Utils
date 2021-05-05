@@ -61,7 +61,14 @@ class RoleManager(commands.Cog):
                 continue
             if check(role):
                 valid_roles.append(role)
-        await member.add_roles(*valid_roles)
+        try:
+            await member.add_roles(*valid_roles)
+        except discord.errors.Forbidden:
+            for role in valid_roles:
+                try:
+                    await member.add_roles(role)
+                except discord.errors.Forbidden:
+                    print(f"I am forbidden from adding role {role.name} in guild {member.guild.name} to {member.name}")
 
 
 def setup(bot):
