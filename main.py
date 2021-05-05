@@ -45,9 +45,9 @@ class UtilsBot(commands.Bot):
 
     async def determine_prefix(self, bot, message):
         if not hasattr(message, "guild") or message.guild is None:
-            return
+            return "u!noDmCommandsPlease"
         if self.mongo is None:
-            return
+            return f"u{config.bot_prefix}"
         guild_document = await self.mongo.find_by_id(self.mongo.discord_db.guilds, message.guild.id)
         if guild_document is None or guild_document.get("prefix") is None:
             music_cog: commands.Cog = self.get_cog("Music")
