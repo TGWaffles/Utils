@@ -42,6 +42,8 @@ class MongoDB:
         await self.force_insert(self.discord_db.users, user_document)
 
     async def insert_member(self, member: discord.Member):
+        if isinstance(member, discord.User):
+            return
         user_result = await self.discord_db.users.find_one({"_id": member.id})
         if user_result is None:
             # noinspection PyTypeChecker
