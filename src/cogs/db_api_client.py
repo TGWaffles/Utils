@@ -118,7 +118,7 @@ class DBApiClient(commands.Cog):
     async def nostore(self, ctx, channel: Optional[discord.TextChannel]):
         if channel is None:
             channel = ctx.channel
-        await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id}, {"$set": {"nostore", True}})
+        await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id}, {"$set": {"nostore": True}})
         await ctx.reply("nostore set.")
 
     @commands.command()
