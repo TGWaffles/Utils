@@ -137,28 +137,62 @@ class DBApiClient(commands.Cog):
             content = original_message.get("content")[:1021] + "..."
         else:
             content = original_message.get("content")
-        embed.add_field(name=f"Original Message ({original_timestamp_string})",
-                        value=content, inline=False)
         first_three = edits[:3]
         last_edits = edits[3:]
         last_edits = last_edits[::-1]
-        for index, edit in enumerate(first_three):
-            edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
-            if len(edit.get("content")) > 1024:
-                content = edit.get("content")[:1021] + "..."
-            else:
-                content = edit.get("content")
-            embed.add_field(name=f"Edit {index + 1} ({edited_timestamp_string})", value=content, inline=False)
-        for index, edit in enumerate(last_edits):
-            if len(embed) >= 5000 or len(embed.fields) > 24:
-                break
-            edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
-            if len(edit.get("content")) > 1024:
-                content = edit.get("content")[:1021] + "..."
-            else:
-                content = edit.get("content")
-            embed.insert_field_at(index=4, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
-                                  value=content, inline=False)
+        if content != "":
+            embed.add_field(name=f"Original Message ({original_timestamp_string})",
+                            value=content, inline=False)
+
+            for index, edit in enumerate(first_three):
+                edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
+                if len(edit.get("content")) > 1024:
+                    content = edit.get("content")[:1021] + "..."
+                else:
+                    content = edit.get("content")
+                embed.add_field(name=f"Edit {index + 1} ({edited_timestamp_string})", value=content, inline=False)
+            for index, edit in enumerate(last_edits):
+                if len(embed) >= 5000 or len(embed.fields) > 23:
+                    break
+                edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
+                if len(edit.get("content")) > 1024:
+                    content = edit.get("content")[:1021] + "..."
+                else:
+                    content = edit.get("content")
+                embed.insert_field_at(index=4, name=f"Edit {len(edits) - index} ({edited_timestamp_string})",
+                                      value=content, inline=False)
+        elif len(original_message.get("embeds", [])) != 0:
+            original_embed = discord.Embed.from_dict(original_message.get("embeds")[0])
+            embed.title = "Edits for Embed Message"
+            embed.description = f"Original Embed Title: {original_embed.title}\nOriginal Embed Description: "
+            embed.description += original_embed.description[:2048-len(embed.description)]
+            last_edit_title = embed.title
+            last_edit_description = embed.description
+            last_edit_fields = embed.fields
+            for index, edit in enumerate(edits):
+                if len(embed) >= 5000 or len(embed.fields) > 23:
+                    break
+                edited_timestamp_string = edit.get("timestamp").strftime("%Y-%m-%d %H:%M:%S")
+                field_title = f"Edit {index + 1} ({edited_timestamp_string})"
+                edit_embed = discord.Embed.from_dict(edit.get("embeds")[0])
+                field_value = ""
+                if edit_embed.title != last_edit_title:
+                    last_edit_title = edit_embed.title
+                    field_value += f"New Title: {last_edit_title}\n"
+                if edit_embed.description != last_edit_description:
+                    last_edit_description = edit_embed.description
+                    field_value += (last_edit_description + "\n")[:1024 - len(field_value)]
+                if edit_embed.fields != last_edit_fields:
+                    for field_index, field in enumerate(last_edit_fields):
+                        if field != edit_embed.fields[field_index]:
+                            field_value += (f"Field {field_index} name: {field.title}, "
+                                            f"value: {field.value}\n"[:1024 - len(field_value)])
+                    last_edit_fields = edit_embed.fields
+                if len(field_value) == 1024:
+                    field_value = field_value[:1021] + "..."
+                embed.add_field(name=field_title, value=field_value, inline=False)
+        else:
+            await ctx.reply(embed=self.bot.create_error_embed("No content or embed found!"))
         author = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.users, message.get("user_id"))
         discord_author = self.bot.get_user(author.get("_id"))
         embed.set_author(name=author.get("name"), url=discord_author.avatar_url)
