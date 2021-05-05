@@ -185,6 +185,8 @@ def get_bot():
 
     @bot.event
     async def on_command_error(ctx: commands.Context, error):
+        if ctx.kwargs.get("resolved", False):
+            return
         if isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, discord.errors.Forbidden):
                 await ctx.author.send(embed=bot.create_error_embed("You ran the command `{}`, but I don't "

@@ -57,6 +57,15 @@ class CommandManager(commands.Cog):
                                                                                  f"\"u!command\" "
                                                                                  f"always works)"))
 
+    @prefix.error
+    async def on_prefix_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.reply(embed=self.bot.create_error_embed("The command is formatted like `u!prefix new_prefix` "
+                                                              "where new_prefix is the new prefix you'd like, "
+                                                              "for example, `u!prefix $` would set the prefix to "
+                                                              "\"$\"."))
+            ctx.kwargs["resolved"] = True
+
 
 def setup(bot):
     cog = CommandManager(bot)
