@@ -15,7 +15,10 @@ class RoleManager(commands.Cog):
     @commands.command()
     @is_staff()
     async def set_role_reapply(self, ctx, max_role: Optional[discord.Role]):
-        guild_document = {"_id": ctx.guild.id, "max_role": max_role.id}
+        if max_role is not None:
+            guild_document = {"_id": ctx.guild.id, "max_role": max_role.id}
+        else:
+            guild_document = {"_id": ctx.guild.id, "max_role": None}
         await self.bot.mongo.force_insert(self.rejoin_guilds, guild_document)
         if max_role is None:
             await ctx.reply(embed=self.bot.create_completed_embed("Guild Added", "The guild has been set-up for role "
