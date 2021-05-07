@@ -46,6 +46,7 @@ class RoleManager(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("I couldn't find the message! Was it deleted?"))
             return
         await message.edit(embed=new_embed)
+        await ctx.reply(embed=self.bot.create_completed_embed("Edited Role Assign", "Role assign embed updated!"))
 
     @commands.command(aliases=["editassigndesc", "editassigndescription"])
     @is_staff()
