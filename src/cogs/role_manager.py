@@ -76,6 +76,9 @@ class RoleManager(commands.Cog):
         roles = assign_document.get("roles", [])
         roles[str(emoji)] = role.id
         await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
+        await ctx.reply(embed=self.bot.create_completed_embed("Set Reaction Role",
+                                                              f"Set emoji {str(emoji)} as the reaction for "
+                                                              f"{role.mention}"))
 
     @commands.command()
     async def remove_reaction_role(self, ctx, embed_message_id: int, emoji: discord.Emoji):
@@ -89,6 +92,9 @@ class RoleManager(commands.Cog):
         else:
             await ctx.reply(embed=self.bot.create_error_embed("That emoji was not set."))
         await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
+        await ctx.reply(embed=self.bot.create_completed_embed("Removed Reaction Role",
+                                                              f"Removed the reaction role "
+                                                              f"associated with {str(emoji)}"))
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
