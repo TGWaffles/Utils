@@ -11,6 +11,105 @@ class RoleManager(commands.Cog):
         self.bot = bot
         self.rejoin_guilds = self.bot.mongo.discord_db.rejoin_guilds
         self.rejoin_logs = self.bot.mongo.discord_db.rejoin_logs
+        self.role_assign = self.bot.mongo.discord_db.role_assign
+
+    @commands.command(aliases=["setroleassign"])
+    @is_staff()
+    async def set_role_assign(self, ctx):
+        if ctx.guild is None:
+            await ctx.reply(embed=self.bot.create_error_embed("This can only be used in a guild!"))
+            return
+        embed = self.bot.create_completed_embed("Role Assign", "This role assign has not been set up!")
+        message = await ctx.send(embed=embed)
+        assign_document = {"_id": message.id, "channel_id": ctx.channel.id, embed: embed.to_dict(), "roles": {}}
+        await self.bot.mongo.force_insert(self.role_assign, assign_document)
+
+    async def get_embed_and_doc(self, ctx, embed_message_id):
+        assign_document = await self.role_assign.find_one({"_id": embed_message_id})
+        if assign_document is None:
+            await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
+            return None, None
+        embed = discord.Embed.from_dict(assign_document.get("embed"))
+        return assign_document, embed
+
+    async def update_embed(self, ctx, doc, new_embed):
+        channel_id = doc.get("channel_id")
+        message_id = doc.get("_id")
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find the channel that was in! "
+                                                              "Was it deleted?"))
+            return
+        try:
+            message = await channel.fetch_message(message_id)
+        except discord.errors.NotFound:
+            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find the message! Was it deleted?"))
+            return
+        await message.edit(embed=new_embed)
+
+    @commands.command(aliases=["editassigndesc", "editassigndescription"])
+    @is_staff()
+    async def edit_assign_description(self, ctx, embed_message_id: int, *, new_description: str):
+        assign_document, embed = await self.get_embed_and_doc(ctx, embed_message_id)
+        if assign_document is None:
+            return
+        embed.description = new_description
+        await self.update_embed(ctx, assign_document, embed)
+
+    @commands.command(aliases=["editassigntitle", "editassigntitle"])
+    @is_staff()
+    async def edit_assign_title(self, ctx, embed_message_id: int, *, new_title: str):
+        assign_document, embed = await self.get_embed_and_doc(ctx, embed_message_id)
+        if assign_document is None:
+            return
+        embed.title = new_title
+        await self.update_embed(ctx, assign_document, embed)
+
+    @commands.command()
+    @is_staff()
+    async def add_reaction_role(self, ctx, embed_message_id: int, emoji: discord.Emoji, role: discord.Role):
+        assign_document = await self.role_assign.find_one({"_id": embed_message_id})
+        if assign_document is None:
+            await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
+            return
+        roles = assign_document.get("roles", [])
+        roles[str(emoji)] = role.id
+        await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
+
+    @commands.command()
+    async def remove_reaction_role(self, ctx, embed_message_id: int, emoji: discord.Emoji):
+        assign_document = await self.role_assign.find_one({"_id": embed_message_id})
+        if assign_document is None:
+            await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
+            return
+        roles = assign_document.get("roles", [])
+        if str(emoji) in roles:
+            del roles[str(emoji)]
+        else:
+            await ctx.reply(embed=self.bot.create_error_embed("That emoji was not set."))
+        await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+        message_id = payload.message_id
+        assign_document = await self.role_assign.find_one({"_id": message_id})
+        if assign_document is None:
+            return
+        guild = self.bot.get_guild(payload.guild_id)
+        roles = assign_document.get("roles")
+        if str(payload.emoji) not in roles:
+            return
+        role_id = roles.get(str(payload.emoji))
+        role = guild.get_role(role_id)
+        await payload.member.add_roles(role)
+
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        message_id = payload.message_id
+        assign_document = await self.role_assign.find_one({"_id": message_id})
+        if assign_document is None:
+            return
+        await self.role_assign.delete_one({"_id": message_id})
 
     @commands.command()
     @is_staff()
