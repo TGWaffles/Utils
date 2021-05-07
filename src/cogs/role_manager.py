@@ -56,7 +56,7 @@ class RoleManager(commands.Cog):
         embed.description = new_description
         await self.update_embed(ctx, assign_document, embed)
 
-    @commands.command(aliases=["editassigntitle", "editassigntitle"])
+    @commands.command(aliases=["editassigntitle"])
     @is_staff()
     async def edit_assign_title(self, ctx, embed_message_id: int, *, new_title: str):
         assign_document, embed = await self.get_embed_and_doc(ctx, embed_message_id)
