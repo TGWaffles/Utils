@@ -68,7 +68,7 @@ class RoleManager(commands.Cog):
 
     @commands.command()
     @is_staff()
-    async def add_reaction_role(self, ctx, embed_message_id: int, emoji: discord.Emoji, role: discord.Role):
+    async def add_reaction_role(self, ctx, embed_message_id: int, emoji: discord.PartialEmoji, role: discord.Role):
         assign_document = await self.role_assign.find_one({"_id": embed_message_id})
         if assign_document is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
@@ -76,12 +76,21 @@ class RoleManager(commands.Cog):
         roles = assign_document.get("roles", [])
         roles[str(emoji)] = role.id
         await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
+        message_id = assign_document.get("_id")
+        channel_id = assign_document.get("channel_id")
+        channel = self.bot.get_channel(channel_id)
+        try:
+            message: discord.Message = await channel.fetch_message(message_id)
+        except discord.errors.NotFound:
+            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find the message! Was it deleted?"))
+            return
+        await message.add_reaction(emoji)
         await ctx.reply(embed=self.bot.create_completed_embed("Set Reaction Role",
                                                               f"Set emoji {str(emoji)} as the reaction for "
                                                               f"{role.mention}"))
 
     @commands.command()
-    async def remove_reaction_role(self, ctx, embed_message_id: int, emoji: discord.Emoji):
+    async def remove_reaction_role(self, ctx, embed_message_id: int, emoji: discord.PartialEmoji):
         assign_document = await self.role_assign.find_one({"_id": embed_message_id})
         if assign_document is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
@@ -109,6 +118,21 @@ class RoleManager(commands.Cog):
         role_id = roles.get(str(payload.emoji))
         role = guild.get_role(role_id)
         await payload.member.add_roles(role)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        message_id = payload.message_id
+        assign_document = await self.role_assign.find_one({"_id": message_id})
+        if assign_document is None:
+            return
+        guild: discord.Guild = self.bot.get_guild(payload.guild_id)
+        roles = assign_document.get("roles")
+        if str(payload.emoji) not in roles:
+            return
+        role_id = roles.get(str(payload.emoji))
+        role = guild.get_role(role_id)
+        member = await guild.fetch_member(payload.user_id)
+        await member.remove_roles(role)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
