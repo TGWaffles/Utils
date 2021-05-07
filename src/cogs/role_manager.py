@@ -21,7 +21,7 @@ class RoleManager(commands.Cog):
             return
         embed = self.bot.create_completed_embed("Role Assign", "This role assign has not been set up!")
         message = await ctx.send(embed=embed)
-        assign_document = {"_id": message.id, "channel_id": ctx.channel.id, embed: embed.to_dict(), "roles": {}}
+        assign_document = {"_id": message.id, "channel_id": ctx.channel.id, "embed": embed.to_dict(), "roles": {}}
         await self.bot.mongo.force_insert(self.role_assign, assign_document)
 
     async def get_embed_and_doc(self, ctx, embed_message_id):
