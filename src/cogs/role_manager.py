@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 from discord.ext import commands, tasks
 
@@ -66,14 +68,29 @@ class RoleManager(commands.Cog):
         embed.title = new_title
         await self.update_embed(ctx, assign_document, embed)
 
+    async def get_emoji(self, ctx):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("React!", "React to this message with the "
+                                                                                "emoji."))
+
+        def check_reactor(temp_reaction: discord.Reaction, user: discord.User):
+            return user == ctx.author and temp_reaction.message.id == sent.id
+        try:
+            reaction, _ = await self.bot.wait_for("reaction_add", timeout=300.0, check=check_reactor)
+        except asyncio.TimeoutError:
+            await sent.edit(embed=self.bot.create_error_embed("Timed out."))
+            return
+        emoji = reaction.emoji
+        return emoji, sent
+
     @commands.command()
     @is_staff()
-    async def add_reaction_role(self, ctx, embed_message_id: int, emoji: discord.PartialEmoji, role: discord.Role):
+    async def add_reaction_role(self, ctx, embed_message_id: int, role: discord.Role):
         assign_document = await self.role_assign.find_one({"_id": embed_message_id})
         if assign_document is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
             return
         roles = assign_document.get("roles", [])
+        emoji, sent = await self.get_emoji(ctx)
         roles[str(emoji)] = role.id
         await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
         message_id = assign_document.get("_id")
@@ -82,26 +99,27 @@ class RoleManager(commands.Cog):
         try:
             message: discord.Message = await channel.fetch_message(message_id)
         except discord.errors.NotFound:
-            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find the message! Was it deleted?"))
+            await sent.edit(embed=self.bot.create_error_embed("I couldn't find the message! Was it deleted?"))
             return
         await message.add_reaction(emoji)
-        await ctx.reply(embed=self.bot.create_completed_embed("Set Reaction Role",
+        await sent.edit(embed=self.bot.create_completed_embed("Set Reaction Role",
                                                               f"Set emoji {str(emoji)} as the reaction for "
                                                               f"{role.mention}"))
 
     @commands.command()
-    async def remove_reaction_role(self, ctx, embed_message_id: int, emoji: discord.PartialEmoji):
+    async def remove_reaction_role(self, ctx, embed_message_id: int):
         assign_document = await self.role_assign.find_one({"_id": embed_message_id})
         if assign_document is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no known role assign embed!"))
             return
         roles = assign_document.get("roles", [])
+        emoji, sent = await self.get_emoji(ctx)
         if str(emoji) in roles:
             del roles[str(emoji)]
         else:
-            await ctx.reply(embed=self.bot.create_error_embed("That emoji was not set."))
+            await sent.edit(embed=self.bot.create_error_embed("That emoji was not set."))
         await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
-        await ctx.reply(embed=self.bot.create_completed_embed("Removed Reaction Role",
+        await sent.edi(embed=self.bot.create_completed_embed("Removed Reaction Role",
                                                               f"Removed the reaction role "
                                                               f"associated with {str(emoji)}"))
 
