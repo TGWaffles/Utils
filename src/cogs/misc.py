@@ -105,6 +105,7 @@ class Misc(commands.Cog):
                 await ctx.reply(embed=self.bot.create_error_embed("My role isn't high enough to edit your "
                                                                   "colour role."))
                 return
+        await ctx.author.add_roles(changing_role, reason="Added custom colour role.")
         user_doc["role_id"] = changing_role.id
         await self.bot.mongo.force_insert(self.colour_roles, user_doc)
         await ctx.reply(embed=self.bot.create_completed_embed("Added role!", "Added your colour role!"))
