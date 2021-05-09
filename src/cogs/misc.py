@@ -92,7 +92,7 @@ class Misc(commands.Cog):
                 for role in ctx.author.roles:
                     if role.colour != discord.Colour.default():
                         ideal_position = role.position + 1
-                if ideal_position > ctx.guild:
+                if ideal_position >= ctx.guild.me.top_role.position:
                     await ctx.reply("My role isn't high enough to make this role your top coloured role, "
                                     "so it may not instantly re-colour your name!")
                 changing_role = await ctx.guild.create_role(name=ctx.author.id, colour=new_colour,
