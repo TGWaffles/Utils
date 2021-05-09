@@ -47,7 +47,7 @@ class Misc(commands.Cog):
 
     @commands.command(aliases=["enable_color_change", "enablecolorchange", "enablecolourchange"])
     @is_staff()
-    async def enable_colour_change(self, ctx, minimum_role: discord.Role):
+    async def enable_colour_change(self, ctx, minimum_role: Optional[discord.Role]):
         if minimum_role is None:
             await self.bot.mongo.force_insert(self.colour_guilds, {"_id": ctx.guild.id})
         else:
