@@ -42,6 +42,80 @@ class Misc(commands.Cog):
         self.current_presence = 0
         self.update_status.start()
         self.data = DataHelper()
+        self.colour_guilds = self.bot.mongo.client.misc.colour_guilds
+        self.colour_roles = self.bot.mongo.client.misc.colour_roles
+
+    @commands.command(aliases=["enable_color_change", "enablecolorchange", "enablecolourchange"])
+    @is_staff()
+    async def enable_colour_change(self, ctx, minimum_role: discord.Role):
+        if minimum_role is None:
+            await self.bot.mongo.force_insert(self.colour_guilds, {"_id": ctx.guild.id})
+        else:
+            await self.bot.mongo.force_insert(self.colour_guilds, {"_id": ctx.guild.id,
+                                                                   "minimum_role_id": minimum_role.id})
+        await ctx.reply(embed=self.bot.create_completed_embed("Set Up Guild",
+                                                              f"{ctx.guild.name} now has self-colour change enabled! "
+                                                              f"Do !colour <colour> (eg !colour red or !colour #ff0000)"
+                                                              f" to change your colour!"))
+
+    @commands.command(aliases=["color"])
+    async def colour(self, ctx, new_colour: convert_colour):
+        guild_doc = await self.colour_guilds.find_one({"_id": ctx.guild.id})
+        if guild_doc is None:
+            await ctx.reply(embed=self.bot.create_error_embed("This guild does not have colour roles enabled! "
+                                                              "Get a staff member to do !enable_colour_change "
+                                                              "to enable it!"))
+            return
+        minimum_role_id = guild_doc.get("minimum_role_id", None)
+        if minimum_role_id is not None:
+            minimum_role = ctx.guild.get_role(minimum_role_id)
+            if minimum_role is None:
+                await ctx.reply(embed=self.bot.create_error_embed("This guild's minimum_role appears to have been "
+                                                                  "deleted. Get a staff member to run "
+                                                                  "!enable_colour_change"))
+                return
+            if ctx.author.top_role < minimum_role:
+                raise commands.MissingRole(minimum_role)
+        user_doc = await self.colour_roles.find_one({"_id": {"user_id": ctx.author.id, "guild_id": ctx.guild.id}})
+        changing_role = None
+        if user_doc is not None:
+            changing_role = ctx.guild.get_role(user_doc.get("role_id"))
+        else:
+            user_doc = {"_id": {"user_id": ctx.author.id, "guild_id": ctx.guild.id}}
+        done = False
+        if changing_role is None:
+            for role in ctx.guild.roles:
+                if role.name == ctx.author.id:
+                    changing_role = role
+            if changing_role is None:
+                ideal_position = 0
+                for role in ctx.author.roles:
+                    if role.colour != discord.Colour.default():
+                        ideal_position = role.position + 1
+                if ideal_position > ctx.guild:
+                    await ctx.reply("My role isn't high enough to make this role your top coloured role, "
+                                    "so it may not instantly re-colour your name!")
+                changing_role = await ctx.guild.create_role(name=ctx.author.id, colour=new_colour,
+                                                            reason=f"Custom colour role for {ctx.author.name}")
+                done = True
+        if not done:
+            try:
+                await changing_role.edit(colour=new_colour)
+            except discord.errors.Forbidden:
+                await ctx.reply(embed=self.bot.create_error_embed("My role isn't high enough to edit your "
+                                                                  "colour role."))
+                return
+        user_doc["role_id"] = changing_role.id
+        await self.bot.mongo.force_insert(self.colour_roles, user_doc)
+        await ctx.reply(embed=self.bot.create_completed_embed("Added role!", "Added your colour role!"))
+
+    @commands.command(aliases=["disable_color_change", "disablecolorchange", "disablecolourchange"])
+    @is_staff()
+    async def disable_colour_change(self, ctx):
+        await self.colour_guilds.delete_one({"_id": ctx.guild.id})
+        await ctx.reply(embed=self.bot.create_completed_embed("Disabled Guild",
+                                                              f"{ctx.guild.name} now has self-colour change disabled.\n"
+                                                              f"Any already created roles will remain."))
 
     @commands.command(pass_context=True)
     @is_staff()
