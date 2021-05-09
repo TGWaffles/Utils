@@ -85,7 +85,7 @@ class Misc(commands.Cog):
         done = False
         if changing_role is None:
             for role in ctx.guild.roles:
-                if role.name == ctx.author.id:
+                if role.name == str(ctx.author.id):
                     changing_role = role
             if changing_role is None:
                 ideal_position = 0
