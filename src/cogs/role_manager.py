@@ -48,6 +48,8 @@ class RoleManager(commands.Cog):
         except discord.errors.NotFound:
             await ctx.reply(embed=self.bot.create_error_embed("I couldn't find the message! Was it deleted?"))
             return
+        doc["embed"] = new_embed.to_dict()
+        await self.role_assign.update_one({"_id": message_id}, {"$set": {"embed": new_embed.to_dict()}})
         await message.edit(embed=new_embed)
         await ctx.reply(embed=self.bot.create_completed_embed("Edited Role Assign", "Role assign embed updated!"))
 
