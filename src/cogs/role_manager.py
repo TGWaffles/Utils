@@ -1,11 +1,12 @@
 import asyncio
+from typing import Optional
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-from typing import Optional
-from src.checks.role_check import is_staff
 from main import UtilsBot
+from src.checks.role_check import is_staff
+from src.helpers.colour_helper import convert_colour
 
 
 class RoleManager(commands.Cog):
@@ -66,6 +67,15 @@ class RoleManager(commands.Cog):
         if assign_document is None:
             return
         embed.title = new_title
+        await self.update_embed(ctx, assign_document, embed)
+
+    @commands.command(aliases=["editassigncolour", "editassigncolor", "edit_assign_color"])
+    @is_staff()
+    async def edit_assign_colour(self, ctx, embed_message_id: int, new_colour: convert_colour):
+        assign_document, embed = await self.get_embed_and_doc(ctx, embed_message_id)
+        if assign_document is None:
+            return
+        embed.colour = new_colour
         await self.update_embed(ctx, assign_document, embed)
 
     async def get_emoji(self, ctx):
