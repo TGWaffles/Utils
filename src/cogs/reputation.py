@@ -58,7 +58,7 @@ class Reputation(commands.Cog):
                 hours_since_last = seconds_since_last / 3600
                 if hours_since_last < 24:
                     time_to_wait = datetime.timedelta(hours=24) - delta_since_last
-                    time_to_wait.microseconds = 0
+                    time_to_wait = time_to_wait - datetime.timedelta(microseconds=time_to_wait.microseconds)
                     await ctx.reply(
                         embed=self.bot.create_error_embed(f"You have already given {user.name} rep in the last "
                                                           f"24 hours! \nPlease wait "
