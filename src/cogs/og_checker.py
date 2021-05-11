@@ -54,7 +54,9 @@ class OGCog(commands.Cog):
         embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
         embed.timestamp = member.joined_at
         if message_time is not None:
-            if message_time < member.joined_at:
+            # Check that message time is actually earlier than joined_at before replacing it.
+            if message_time.replace(tzinfo=datetime.timezone.utc) < member.joined_at.replace(
+                    tzinfo=datetime.timezone.utc):
                 embed.timestamp = message_time
             embed.add_field(name="First Message", value=message_time.strftime("%Y-%m-%d %H:%M"))
         if self.bot.latest_joins == {} or ctx.guild.id not in self.bot.latest_joins:
