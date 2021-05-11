@@ -549,7 +549,8 @@ class Games(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.guild is not None or message.author == self.bot.user:
+        if message.guild is not None or message.author == self.bot.user or message.content.startswith("!") \
+                or message.content.startswith("u!"):
             return
         else:
             chess_games = self.data.get("ongoing_games", {}).get("chess_games", {})

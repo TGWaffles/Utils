@@ -51,7 +51,7 @@ class UtilsBot(commands.Bot):
 
     async def determine_prefix(self, bot, message):
         if not hasattr(message, "guild") or message.guild is None:
-            return "u!noDmCommandsPlease"
+            return commands.when_mentioned_or(config.bot_prefix, "u" + config.bot_prefix)(bot, message)
         if self.mongo is None:
             return f"u{config.bot_prefix}"
         guild_document = await self.mongo.find_by_id(self.mongo.discord_db.guilds, message.guild.id)

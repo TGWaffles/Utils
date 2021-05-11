@@ -39,18 +39,18 @@ class Reputation(commands.Cog):
                     positive = False
                 else:
                     positive = True
-            elif reputation_type.lower() in ["neg", "negative", "remove", "n", "no", "take", "delete", "bad"]:
+            elif reputation_type.lower() in ["neg", "negative", "remove", "r", "n", "no", "take", "delete", "bad"]:
                 positive = False
-            elif reputation_type.lower() in ["pos", "positive", "add", "y", "yes", "give", "apply", "good"]:
+            elif reputation_type.lower() in ["pos", "positive", "add", "p", "y", "yes", "give", "apply", "good"]:
                 positive = True
             else:
                 await ctx.reply(
                     embed=self.bot.create_error_embed("Unknown reputation type. "
                                                       "Please use positive/negative.\n"
-                                                      f"Usage: \"{await self.bot.get_guild_prefix(ctx.guild)}rep "
+                                                      f"`Usage: \"{await self.bot.get_guild_prefix(ctx.guild)}rep "
                                                       f"<user> [positive/negative] [reason]\" (no need for <> "
                                                       f"or [], they represent compulsory or optional arguments,"
-                                                      f" respectively)\n"
+                                                      f" respectively)`\n\n"
                                                       "For example, **!rep @Test positive For helping me learn!**"))
                 return
             given_count = await self.count_given(ctx.author, datetime.timedelta(days=config.limit_period_days))
@@ -110,6 +110,8 @@ class Reputation(commands.Cog):
             if reputations is None:
                 reputations = []
             async for reputation in reputations:
+                if len(embed) > 5000:
+                    break
                 try:
                     user = await self.bot.fetch_user(reputation.get("sender_id"))
                     username = user.name
