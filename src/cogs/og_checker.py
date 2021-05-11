@@ -53,7 +53,9 @@ class OGCog(commands.Cog):
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
         embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
+        await ctx.send(member.joined_at)
         embed.timestamp = member.joined_at
+        await ctx.send(embed.timestamp)
         if message_time is not None:
             embed.timestamp = message_time
             embed.add_field(name="First Message", value=message_time.strftime("%Y-%m-%d %H:%M"))
