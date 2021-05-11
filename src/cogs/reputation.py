@@ -28,7 +28,7 @@ class Reputation(commands.Cog):
 
     @commands.command(name="Rep", description="Add positive/negative rep to a user!",
                       aliases=["reputation", "add_rep", "unrep", "remove_rep", "derep", "addrep", "removerep"])
-    async def rep(self, ctx, user: discord.User, reputation_type: Optional[str], reason: Optional[str] = ""):
+    async def rep(self, ctx, user: discord.User, reputation_type: Optional[str], *, reason: Optional[str] = ""):
         async with ctx.typing():
             if reputation_type is None:
                 positive = True
@@ -108,7 +108,7 @@ class Reputation(commands.Cog):
                 reason = reputation.get("reason")
                 if reason == "":
                     reason = "No Reason"
-                embed.add_field(name=field_name, value=reason)
+                embed.add_field(name=field_name, value=reason, inline=False)
             await ctx.reply(embed=embed)
 
 
