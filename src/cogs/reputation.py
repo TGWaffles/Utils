@@ -47,11 +47,11 @@ class Reputation(commands.Cog):
                 await ctx.reply(
                     embed=self.bot.create_error_embed("Unknown reputation type. "
                                                       "Please use positive/negative.\n"
-                                                      f"Usage: \"{self.bot.get_guild_prefix(ctx.guild)}rep "
+                                                      f"Usage: \"{await self.bot.get_guild_prefix(ctx.guild)}rep "
                                                       f"<user> [positive/negative] [reason]\" (no need for <> "
                                                       f"or [], they represent compulsory or optional arguments,"
                                                       f" respectively)\n"
-                                                      "For example, !rep @Test positive For helping me learn!"))
+                                                      "For example, **!rep @Test positive For helping me learn!**"))
                 return
             given_count = await self.count_given(ctx.author, datetime.timedelta(days=config.limit_period_days))
             if given_count >= config.limit_amount:
