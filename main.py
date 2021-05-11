@@ -73,6 +73,9 @@ class UtilsBot(commands.Bot):
         sorting_members = {member: (member,
                                     member.joined_at.replace(tzinfo=datetime.timezone.utc)) for member in members}
         for member in members:
+            if guild.id == 725886999646437407 and member.id == 554777326379073546:
+                channel = self.get_channel(787345075637977088)
+                await channel.send(member.joined_at)
             earliest_message = await self.mongo.discord_db.messages.find_one({"user_id": member.id,
                                                                               "guild_id": guild.id},
                                                                              sort=[("created_at", pymongo.ASCENDING)])
@@ -81,6 +84,9 @@ class UtilsBot(commands.Bot):
                 if message_time < member.joined_at.replace(tzinfo=datetime.timezone.utc):
                     sorting_members[member] = (member, message_time)
                     member.joined_at = message_time
+            if guild.id == 725886999646437407 and member.id == 554777326379073546:
+                channel = self.get_channel(787345075637977088)
+                await channel.send(member.joined_at)
         members = list(sorting_members.values())
         members.sort(key=lambda x: x[1])
         members = [member[0] for member in members]

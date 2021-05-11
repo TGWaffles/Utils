@@ -36,6 +36,7 @@ class OGCog(commands.Cog):
     async def check_og(self, ctx, member: discord.Member = None):
         if member is None:
             member = ctx.message.author
+        await ctx.send(member.joined_at)
         guild_document = await self.og_coll.find_one({"_id": member.guild.id})
         if guild_document is None or guild_document.get("date", None) is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no defined OG date in this guild!"))
@@ -43,7 +44,8 @@ class OGCog(commands.Cog):
         is_og = await self.is_og(member)
         message_time = None
         earliest_message = await self.bot.mongo.discord_db.messages.find_one({"user_id": member.id,
-                                                                              "guild_id": ctx.guild.id},
+                                                                              "guild_id": ctx.guild.id,
+                                                                              "deleted": False},
                                                                              sort=[("created_at", pymongo.ASCENDING)])
         if earliest_message is not None:
             message_time = earliest_message.get("created_at").replace(tzinfo=datetime.timezone.utc)
