@@ -214,8 +214,8 @@ class Hypixel(commands.Cog):
         # Closes connection.
         return response
 
-    @commands.command(aliases=["hinfo"])
-    async def info(self, ctx, username: str):
+    @commands.command(aliases=["hinfo", "hypixelinfo"])
+    async def hypixel_info(self, ctx, username: str):
         """Runs the hinfo command.
 
         Essentially, just sends the bedwars image as a file independent of the webhost."""

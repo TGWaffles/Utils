@@ -43,6 +43,12 @@ class UtilsBot(commands.Bot):
         self.restart_waiter_lock = asyncio.Lock()
         self.restart_waiters = 0
 
+    async def get_guild_prefix(self, guild):
+        if self.mongo is None:
+            return ""
+        guild_document = await self.mongo.find_by_id(self.mongo.discord_db.guilds, guild.id)
+        return guild_document.get("prefix", "")
+
     async def determine_prefix(self, bot, message):
         if not hasattr(message, "guild") or message.guild is None:
             return "u!noDmCommandsPlease"
