@@ -104,7 +104,7 @@ class Reputation(commands.Cog):
                 except discord.errors.Forbidden:
                     username = f"Unknown User ({reputation.get('sender_id')})"
                 field_name = "{} - {} - {}".format(username, reputation.get("timestamp").strftime("%Y-%m-%d %H:%M:%S"),
-                                                   ("-1", "+1")[int(reputation.get("positive"))])
+                                                   ("❌", "✅")[int(reputation.get("positive"))])
                 reason = reputation.get("reason")
                 if reason == "":
                     reason = "No Reason"
