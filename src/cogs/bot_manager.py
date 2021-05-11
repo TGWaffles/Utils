@@ -47,7 +47,7 @@ class CommandManager(commands.Cog):
 
     @commands.command()
     @is_high_staff()
-    async def prefix(self, ctx, new_prefix):
+    async def prefix(self, ctx, *, new_prefix):
         guild_document = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.guilds, ctx.guild.id)
         if guild_document is None:
             await self.bot.mongo.insert_guild(ctx.guild)
