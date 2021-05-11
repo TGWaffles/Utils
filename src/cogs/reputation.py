@@ -26,12 +26,19 @@ class Reputation(commands.Cog):
                                                        sort=[("timestamp", pymongo.ASCENDING)])
         return last_rep
 
-    @commands.command(name="Rep", description="Add positive/negative rep to a user!",
+    @commands.command(name="rep", description="Add positive/negative rep to a user!",
                       aliases=["reputation", "add_rep", "unrep", "remove_rep", "derep", "addrep", "removerep"])
-    async def rep(self, ctx, user: discord.User, reputation_type: Optional[str], *, reason: Optional[str] = ""):
+    async def rep(self, ctx: commands.Context, user: discord.User, reputation_type: Optional[str], *,
+                  reason: Optional[str] = ""):
         async with ctx.typing():
+            if ctx.author == user:
+                await ctx.reply(embed=self.bot.create_error_embed("You can't give yourself reputation!"))
+                return
             if reputation_type is None:
-                positive = True
+                if ctx.invoked_with in ["unrep", "remove_rep", "derep", "removerep"]:
+                    positive = False
+                else:
+                    positive = True
             elif reputation_type.lower() in ["neg", "negative", "remove", "n", "no", "take", "delete", "bad"]:
                 positive = False
             elif reputation_type.lower() in ["pos", "positive", "add", "y", "yes", "give", "apply", "good"]:
@@ -73,7 +80,8 @@ class Reputation(commands.Cog):
             embed = self.bot.create_completed_embed("Reputation Added!", "")
             embed.description = (
                 f"Reputation added to {user.name}.\nYou have {config.limit_amount - (given_count + 1)} "
-                f"reputation left to give this week.\n\n**New Rep For {user.name}**")
+                f"reputation left to give this week.\n\n**New Rep For {user.name}**: "
+                f"{user_rep_positive - user_rep_negative}")
             embed.add_field(name="✅", value=user_rep_positive, inline=True)
             embed.add_field(name="❌", value=user_rep_negative, inline=True)
             embed.set_author(name=user.name, icon_url=user.avatar_url)
@@ -94,6 +102,7 @@ class Reputation(commands.Cog):
                 embed.colour = discord.Colour.orange()
             else:
                 embed.colour = discord.Colour.red()
+            embed.description = f"Overall reputation: {user_rep_positive - user_rep_negative}"
             embed.add_field(name="✅", value=user_rep_positive, inline=True)
             embed.add_field(name="❌", value=user_rep_negative, inline=True)
             embed.set_author(name=user.name, icon_url=user.avatar_url)
