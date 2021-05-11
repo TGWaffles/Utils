@@ -36,7 +36,6 @@ class OGCog(commands.Cog):
     async def check_og(self, ctx, member: discord.Member = None):
         if member is None:
             member = ctx.message.author
-        await ctx.send(member.joined_at)
         guild_document = await self.og_coll.find_one({"_id": member.guild.id})
         if guild_document is None or guild_document.get("date", None) is None:
             await ctx.reply(embed=self.bot.create_error_embed("There is no defined OG date in this guild!"))
@@ -53,11 +52,10 @@ class OGCog(commands.Cog):
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
         embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
-        await ctx.send(member.joined_at)
         embed.timestamp = member.joined_at
-        await ctx.send(embed.timestamp)
         if message_time is not None:
-            embed.timestamp = message_time
+            if message_time < member.joined_at:
+                embed.timestamp = message_time
             embed.add_field(name="First Message", value=message_time.strftime("%Y-%m-%d %H:%M"))
         if self.bot.latest_joins == {} or ctx.guild.id not in self.bot.latest_joins:
             await self.bot.get_latest_joins()
