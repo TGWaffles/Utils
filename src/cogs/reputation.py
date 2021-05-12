@@ -23,8 +23,16 @@ class Reputation(commands.Cog):
 
     async def get_last_rep(self, user_from: discord.User, user_to: discord.User):
         last_rep = await self.reputation_coll.find_one({"sender_id": user_from.id, "user_id": user_to.id},
-                                                       sort=[("timestamp", pymongo.ASCENDING)])
+                                                       sort=[("timestamp", pymongo.DESCENDING)])
         return last_rep
+
+    async def get_next_rep_time(self, user: discord.User, timeframe: Optional[datetime.timedelta]):
+        if timeframe is None:
+            timeframe = datetime.timedelta(days=7)
+        after = datetime.datetime.now() - timeframe
+        last_rep = await self.reputation_coll.find_one({"sender_id": user.id, "timestamp": {"$gt": after}},
+                                                       sort=[("timestamp", pymongo.ASCENDING)])
+        return last_rep.get("timestamp")
 
     @commands.command(name="rep", description="Add positive/negative rep to a user!",
                       aliases=["reputation", "add_rep", "unrep", "remove_rep", "derep", "addrep", "removerep"])
@@ -53,10 +61,15 @@ class Reputation(commands.Cog):
                                                       f" respectively)`\n\n"
                                                       "For example, **!rep @Test positive For helping me learn!**"))
                 return
-            given_count = await self.count_given(ctx.author, datetime.timedelta(days=config.limit_period_days))
+            seven_days = datetime.timedelta(days=config.limit_period_days)
+            given_count = await self.count_given(ctx.author, seven_days)
             if given_count >= config.limit_amount:
+                earliest_last_week: datetime.datetime = await self.get_next_rep_time(ctx.author, seven_days)
+                next_release = earliest_last_week + seven_days
+                delta_until_then = next_release - datetime.datetime.now()
                 await ctx.reply(embed=self.bot.create_error_embed(f"You have already given your maximum of "
-                                                                  f"{config.limit_amount} reputation this week!"))
+                                                                  f"{config.limit_amount} reputation this week!\n"
+                                                                  f"You can give another in {delta_until_then}."))
                 return
             last_rep = await self.get_last_rep(ctx.author, user)
             if last_rep is not None:
