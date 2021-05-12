@@ -67,6 +67,7 @@ class Reputation(commands.Cog):
                 earliest_last_week: datetime.datetime = await self.get_next_rep_time(ctx.author, seven_days)
                 next_release = earliest_last_week + seven_days
                 delta_until_then = next_release - datetime.datetime.now()
+                delta_until_then = delta_until_then - datetime.timedelta(microseconds=delta_until_then.microseconds)
                 await ctx.reply(embed=self.bot.create_error_embed(f"You have already given your maximum of "
                                                                   f"{config.limit_amount} reputation this week!\n"
                                                                   f"You can give another in {delta_until_then}."))
