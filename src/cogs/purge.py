@@ -17,7 +17,7 @@ class Purge(commands.Cog):
     @is_staff()
     async def purge(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.invoke(self.purge_internal.callback)
+            await ctx.invoke(self.purge_internal)
 
     @commands.command()
     @is_staff()
