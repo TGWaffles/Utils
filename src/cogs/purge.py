@@ -17,11 +17,13 @@ class Purge(commands.Cog):
     @is_staff()
     async def purge(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.invoke(self.purge_internal)
+            message = ctx.message
+            message.content = "u!purge_internal " + message.content.partition(" ")[2]
+            await self.bot.process_commands(message)
 
     @commands.command()
     @is_staff()
-    async def purge_internal(self, ctx, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
+    async def purge_internal(self, ctx, test, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
         bulk = True
         check = check_pinned
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
