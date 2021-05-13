@@ -23,9 +23,12 @@ class Purge(commands.Cog):
 
     @commands.command()
     @is_staff()
-    async def purge_internal(self, ctx, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
+    async def purge_internal(self, ctx, amount: int = None, disable_bulk: bool = False,
+                             member: Optional[discord.Member] = None):
         guild_doc = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.guilds, ctx.guild.id)
+        print(guild_doc)
         purge_max = guild_doc.get("purge_max", 40)
+        print(purge_max)
         bulk = True
         check = check_pinned
         if not ctx.author.guild_permissions.administrator and not (config.purge_max > amount > 0):
