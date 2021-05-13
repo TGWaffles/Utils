@@ -17,12 +17,8 @@ class Purge(commands.Cog):
     @is_staff()
     async def purge(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            print(ctx.args)
             message: discord.Message = ctx.message
-            if len(message.mentions) > 0:
-                message.content = "u!purge_internal " + message.content.partition(" ")[2].partition(" ")[2]
-            else:
-                message.content = "u!purge_internal " + message.content.partition(" ")[2]
+            message.content = "u!purge_internal " + message.content.partition(f"{ctx.invoked_subcommand} ")[2]
             await self.bot.process_commands(message)
 
     @commands.command()
