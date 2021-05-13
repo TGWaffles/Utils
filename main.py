@@ -151,7 +151,6 @@ class UtilsBot(commands.Bot):
 
 def get_bot():
     bot = UtilsBot()
-    data = DataHelper()
 
     @bot.event
     async def on_ready():
