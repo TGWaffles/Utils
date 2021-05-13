@@ -13,7 +13,7 @@ id_not_found = "I couldn't find a message with the specified id."
 bot_not_author = "I didn't send that message."
 no_embed = "No embed was found in that message. That's odd."
 
-purge_limit = ("I have a limit of {0} imposed on this command to prevent accidents. "
+purge_limit = ("I have a limit of {0} imposed on this command to prevent accidents. \n"
                "Do an amount <= {0}, or ask an admin to do \"!purge maximum <new_max>\"")
 
 no_purge_amount = "You included no amount. I am not allowing this so I can prevent accidents."
