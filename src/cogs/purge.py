@@ -15,15 +15,19 @@ class Purge(commands.Cog):
 
     @commands.group(pass_context=True, aliases=["clear", "clean", "wipe", "delete"])
     @is_staff()
-    async def purge(self, ctx):
+    async def purge(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            message = ctx.message
-            message.content = "u!purge_internal " + message.content.partition(" ")[2]
+            print(ctx.args)
+            message: discord.Message = ctx.message
+            if len(message.mentions) > 0:
+                message.content = "u!purge_internal " + message.content.partition(" ")[2].partition(" ")[2]
+            else:
+                message.content = "u!purge_internal " + message.content.partition(" ")[2]
             await self.bot.process_commands(message)
 
     @commands.command()
     @is_staff()
-    async def purge_internal(self, ctx, test, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
+    async def purge_internal(self, ctx, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
         bulk = True
         check = check_pinned
         if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
