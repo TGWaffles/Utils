@@ -18,21 +18,20 @@ class Purge(commands.Cog):
     async def purge(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             message: discord.Message = ctx.message
-            print(ctx.invoked_with)
-            print(message.content)
             message.content = "u!purge_internal " + message.content.partition(f"{ctx.invoked_with} ")[2]
-            print(message.content)
             await self.bot.process_commands(message)
 
     @commands.command()
     @is_staff()
     async def purge_internal(self, ctx, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
+        guild_doc = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.guilds, ctx.guild.id)
+        purge_max = guild_doc.get("purge_max", 40)
         bulk = True
         check = check_pinned
-        if ctx.message.author.id != config.owner_id and not (config.purge_max > amount > 0):
-            await ctx.reply(embed=self.bot.create_error_embed(messages.purge_limit))
+        if not ctx.message.author.author.guild_permissions.administrator and not (config.purge_max > amount > 0):
+            await ctx.reply(embed=self.bot.create_error_embed(messages.purge_limit.format(purge_max)))
             return
-        if ctx.message.author.id == config.owner_id and disable_bulk:
+        if ctx.message.author.author.guild_permissions.administrator and disable_bulk:
             bulk = False
             check = lambda x: True
         if member is not None:
