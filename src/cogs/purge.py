@@ -28,10 +28,10 @@ class Purge(commands.Cog):
         purge_max = guild_doc.get("purge_max", 40)
         bulk = True
         check = check_pinned
-        if not ctx.message.author.author.guild_permissions.administrator and not (config.purge_max > amount > 0):
+        if not ctx.author.guild_permissions.administrator and not (config.purge_max > amount > 0):
             await ctx.reply(embed=self.bot.create_error_embed(messages.purge_limit.format(purge_max)))
             return
-        if ctx.message.author.author.guild_permissions.administrator and disable_bulk:
+        if ctx.author.guild_permissions.administrator and disable_bulk:
             bulk = False
             check = lambda x: True
         if member is not None:
@@ -73,7 +73,7 @@ class Purge(commands.Cog):
                     except discord.NotFound:
                         pass
 
-    @purge.command()
+    @purge.command(aliases=["max"])
     async def maximum(self, ctx, maximum: int):
         await self.bot.mongo.discord_db.guilds.update_one({"_id": ctx.guild.id}, {"$set": {"purge_max": maximum}})
         await ctx.reply(embed=self.bot.create_completed_embed("Set Purge Maximum", f"New purge maximum is {maximum}!"))
