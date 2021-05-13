@@ -13,7 +13,7 @@ class Purge(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
 
-    @commands.Group(pass_context=True, aliases=["clear", "clean", "wipe", "delete"])
+    @commands.group(pass_context=True, aliases=["clear", "clean", "wipe", "delete"])
     @is_staff()
     async def purge(self, ctx, amount: int = None, disable_bulk: bool = False, member: Optional[discord.Member] = None):
         if ctx.invoked_subcommand is None:
