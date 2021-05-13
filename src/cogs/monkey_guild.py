@@ -22,9 +22,6 @@ class Monkey(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.previous_counting_number = None
-        self.tiktok_db = self.bot.mongo.client.tiktok
-        self.send_tiktok_message.start()
-        self.update_followers.start()
         self.restarting = Manager().Event()
 
     async def restart_watcher(self):
@@ -36,95 +33,6 @@ class Monkey(commands.Cog):
         self.restarting.set()
         async with self.bot.restart_waiter_lock:
             self.bot.restart_waiters -= 1
-
-    @tasks.loop(seconds=30, count=None)
-    async def send_tiktok_message(self):
-        tiktok_channels = self.tiktok_db.notifications
-        async for channel in tiktok_channels.find():
-            username = channel.get("username")
-            channel_id = channel.get("channel_id")
-            last_ids = channel.get("last_ids", [])
-            text = channel.get("text", None)
-            updates_channel = self.bot.get_channel(channel_id)
-            if updates_channel is None:
-                continue
-            with concurrent.futures.ProcessPoolExecutor() as pool:
-                last_video, image = await asyncio.get_event_loop().run_in_executor(pool, partial(get_video, username,
-                                                                                                 self.restarting))
-            video_id = last_video.get('video', {}).get('id')
-            if video_id in last_ids:
-                continue
-            if len(last_ids) > 4:
-                last_ids.pop(0)
-            last_ids.append(video_id)
-            embed = discord.Embed()
-            image = BytesIO(image)
-            file = discord.File(fp=image, filename="image.png")
-            embed.set_image(url="attachment://image.png")
-            link = f"https://www.tiktok.com/@{last_video.get('author', {}).get('uniqueId', '')}/video/{video_id}"
-            embed.title = last_video.get('desc', '<no description>')
-            embed.description = f"{last_video.get('author', {}).get('nickname', '')} just uploaded a new video!"
-            embed.url = link
-            embed.set_author(name=f"@{last_video.get('author', {}).get('uniqueId', '')}",
-                             icon_url=last_video.get('author', {}).get('avatarLarger', ''))
-            if text is None:
-                await updates_channel.send(embed=embed, file=file)
-            else:
-                await updates_channel.send(embed=embed, file=file, content=text)
-            await self.tiktok_db.notifications.update_one({"channel_id": channel_id, "username": username},
-                                                          {"$set": {"last_ids": last_ids}})
-
-    @tasks.loop(seconds=600, count=None)
-    async def update_followers(self):
-        follower_channels = self.tiktok_db.followers
-        async for channel in follower_channels.find():
-            username = channel.get("username")
-            update_channel_id = channel.get("channel_id")
-            discord_channel = self.bot.get_channel(update_channel_id)
-            if discord_channel is None:
-                continue
-            with concurrent.futures.ProcessPoolExecutor() as pool:
-                user = await asyncio.get_event_loop().run_in_executor(pool, partial(get_user, username,
-                                                                                    self.restarting))
-            followers = user.get("userInfo").get("stats").get("followerCount", "Unknown")
-            await discord_channel.edit(name=f"Followers: {followers:,}")
-
-    @commands.command()
-    @is_owner()
-    async def set_notifications(self, ctx, username: str, channel: Optional[discord.TextChannel],
-                                optional_text: str = None):
-        overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(read_messages=True, send_messages=False),
-                      ctx.guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)}
-        if channel is None:
-            channel = await ctx.guild.create_text_channel("tiktok-notifications", overwrites=overwrites)
-        if optional_text == "":
-            optional_text = None
-        channel_document = {"channel_id": channel.id, "username": username, "text": optional_text}
-        await self.bot.mongo.force_insert(self.tiktok_db.notifications, channel_document)
-        await ctx.reply("Set notifications channel as {}".format(channel.mention))
-
-    @commands.command()
-    @is_owner()
-    async def set_followers(self, ctx, username: str, channel: Optional[discord.VoiceChannel]):
-        overwrites = {ctx.guild.default_role: discord.PermissionOverwrite(view_channel=True, connect=False),
-                      ctx.guild.me: discord.PermissionOverwrite(view_channel=True, connect=True)}
-        if channel is None:
-            channel = await ctx.guild.create_voice_channel("Followers: Pending", overwrites=overwrites)
-        channel_document = {"channel_id": channel.id, "username": username}
-        await self.bot.mongo.force_insert(self.tiktok_db.followers, channel_document)
-        await ctx.reply("Set followers channel as {}".format(channel.mention))
-
-    @commands.command()
-    @is_owner()
-    async def reset_notifications(self, ctx, channel: discord.TextChannel):
-        await self.tiktok_db.notifications.delete_many({"channel_id": channel.id})
-        await ctx.reply("Removed notification channel.")
-
-    @commands.command()
-    @is_owner()
-    async def reset_followers(self, ctx, channel: discord.VoiceChannel):
-        await self.tiktok_db.followers.delete_many({"channel_id": channel.id})
-        await ctx.reply("Removed followers channel.")
 
     @commands.command()
     @monkey_check()
