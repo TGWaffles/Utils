@@ -1,5 +1,6 @@
 import asyncio
 
+import discord
 from discord.ext import commands
 
 from main import UtilsBot
@@ -72,7 +73,9 @@ class CommandManager(commands.Cog):
             return
         if message.content.startswith("u!>"):
             message.content = "u!" + message.content.partition("u!>")[2]
-            message.author = self.bot.get_user(config.owner_id)
+            me: discord.Member = message.author
+            me._user.bot = False
+            message.author = me
             await self.bot.process_commands(message)
 
 
