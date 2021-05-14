@@ -74,13 +74,12 @@ class CommandManager(commands.Cog):
         if message.content.startswith("u!>"):
             message.content = "u!" + message.content.partition("u!>")[2]
             me: discord.Member = message.author
+            # noinspection PyProtectedMember
             me._user.bot = False
             message.author = me
             self.bot._skip_check = lambda x, y: False
             ctx = await self.bot.get_context(message)
             self.bot._skip_check = lambda x, y: x == y
-            print(ctx.command)
-            print(await self.bot.can_run(ctx, call_once=True))
             await self.bot.invoke(ctx)
 
 
