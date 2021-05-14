@@ -43,7 +43,7 @@ class UtilsBot(commands.Bot):
         self.restart_waiter_lock = asyncio.Lock()
         self.restart_waiters = 0
 
-    async def get_guild_prefix(self, guild):
+    async def get_guild_prefix(self, guild: discord.Guild):
         if self.mongo is None:
             return ""
         guild_document = await self.mongo.find_by_id(self.mongo.discord_db.guilds, guild.id)

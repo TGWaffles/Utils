@@ -34,22 +34,27 @@ class Hypixel(commands.Cog):
         self.latest_tokens = []
         self.head_images = {}
         self.external_ip = None
-        app = web.Application()
-        app.add_routes([web.get('/{user}-{uid}.png', self.request_image), web.get('/{user}.png', self.request_image),
-                        web.get('/{user}', self.request_image), web.get('/{user}-{uid}', self.request_image)])
-        self.bot.loop.create_task(self.setup_website(app))
+        self.app = web.Application()
+        self.app.add_routes(
+            [web.get('/{user}-{uid}.png', self.request_image), web.get('/{user}.png', self.request_image),
+             web.get('/{user}', self.request_image), web.get('/{user}-{uid}', self.request_image)])
+        self.bot.loop.create_task(self.setup_website())
         self.bot.loop.create_task(self.hypixel_api.queue_loop())
 
-    async def setup_website(self, app):
+    async def setup_website(self):
         """Sets up the website in the bot's loop.
         It would be simpler to do web.run(app), but that creates a new event loop and asyncio hates that
         """
-        runner = web.AppRunner(app)
+        runner = web.AppRunner(self.app)
         await runner.setup()
         # Internally it is port 2052, but my reverse proxy proxies this to hypixel.thom.club port 80
-        site = web.TCPSite(runner, "0.0.0.0", 2052)
-        self.bot.loop.create_task(site.start())
+        self.site = web.TCPSite(runner, "0.0.0.0", 2052)
+        self.bot.loop.create_task(self.site.start())
         return  # literally useless return but has previously been useful
+
+    async def shutdown_website(self):
+        """Useful for when updating this cog - otherwise the port gets stuck open"""
+        await self.site.stop()
 
     @staticmethod
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
@@ -503,3 +508,8 @@ class Hypixel(commands.Cog):
 def setup(bot):
     cog = Hypixel(bot)
     bot.add_cog(cog)
+
+
+def teardown(bot):
+    cog = bot.get_cog("Hypixel")
+    bot.loop.create_task(cog.shutdown_website())
