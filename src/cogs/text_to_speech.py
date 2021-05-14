@@ -158,7 +158,7 @@ class TTS(commands.Cog):
     @commands.command(pass_context=True)
     @is_high_staff()
     async def reset_speakers(self, ctx):
-        await self.tts_db.speakers.delete_many({"_id": {"guild_id": ctx.guild.id}})
+        await self.tts_db.speakers.delete_many({"_id.guild_id": ctx.guild.id})
         await ctx.reply(embed=self.bot.create_completed_embed("Reset All Speakers", "Removed all speakers. \n\n"
                                                                                     "Some people may still have perms "
                                                                                     "to add themselves back to the "
