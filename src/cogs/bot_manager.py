@@ -76,7 +76,9 @@ class CommandManager(commands.Cog):
             me: discord.Member = message.author
             me._user.bot = False
             message.author = me
+            self.bot._skip_check = lambda x, y: False
             ctx = await self.bot.get_context(message)
+            self.bot._skip_check = lambda x, y: x == y
             print(ctx.command)
             print(await self.bot.can_run(ctx, call_once=True))
             await self.bot.invoke(ctx)
