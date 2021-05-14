@@ -137,6 +137,15 @@ class Music(commands.Cog):
         self.url_to_title_cache = {}
         self.bot.loop.create_task(self.restart_watcher())
 
+    async def save_all_tracks(self):
+        for voice_client in self.bot.voice_clients:
+            if not isinstance(voice_client, discord.VoiceClient):
+                continue
+            if not isinstance(voice_client.source, YTDLSource):
+                continue
+            await self.pause_voice_client(voice_client)
+            await self.bot.mongo.force_insert(self.music_db.restart_resume, {"_id": voice_client.channel.id})
+
     async def restart_watcher(self):
         if self.bot.restart_event is None:
             self.bot.restart_event = asyncio.Event()
@@ -147,13 +156,7 @@ class Music(commands.Cog):
                 await self.bot.restart_event.wait()
                 async with self.bot.restart_waiter_lock:
                     self.bot.restart_waiters += 1
-                for voice_client in self.bot.voice_clients:
-                    if not isinstance(voice_client, discord.VoiceClient):
-                        continue
-                    if not isinstance(voice_client.source, YTDLSource):
-                        continue
-                    await self.pause_voice_client(voice_client)
-                    await self.bot.mongo.force_insert(self.music_db.restart_resume, {"_id": voice_client.channel.id})
+                await self.save_all_tracks()
                 async with self.bot.restart_waiter_lock:
                     self.bot.restart_waiters -= 1
                 return
@@ -518,3 +521,8 @@ class Music(commands.Cog):
 def setup(bot: UtilsBot):
     cog = Music(bot)
     bot.add_cog(cog)
+
+
+def teardown(bot: UtilsBot):
+    cog = bot.get_cog("Music")
+    bot.loop.create_task(cog.save_all_tracks())

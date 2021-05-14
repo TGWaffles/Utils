@@ -69,7 +69,8 @@ class Restart(commands.Cog):
             await reply_message.edit(embed=self.bot.create_error_embed("You tried to load a fresh extension but it was"
                                                                        "already loaded!"))
             return
-        await ctx.reply(embed=self.bot.create_completed_embed("Finished Update", f"Updated cog `{extension_name}`."))
+        await reply_message.edit(embed=self.bot.create_completed_embed(
+            "Finished Update", f"Updated cog `{extension_name}`."))
 
     @commands.command(pass_context=True)
     @restart_check()
