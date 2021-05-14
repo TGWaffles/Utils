@@ -65,6 +65,15 @@ class CommandManager(commands.Cog):
                                                               "\"$\"."))
             ctx.kwargs["resolved"] = True
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author != self.bot.user:
+            return
+        if message.content.startswith("u!>"):
+            message.content = "u!" + message.content.partition("u!>")[2]
+            message.author.bot = False
+            await self.bot.process_commands(message)
+
 
 def setup(bot):
     cog = CommandManager(bot)
