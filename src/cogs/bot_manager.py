@@ -5,6 +5,7 @@ from discord.ext import commands
 from main import UtilsBot
 from src.checks.user_check import is_owner
 from src.checks.role_check import is_high_staff
+from src.storage import config
 
 
 class CommandManager(commands.Cog):
@@ -71,7 +72,7 @@ class CommandManager(commands.Cog):
             return
         if message.content.startswith("u!>"):
             message.content = "u!" + message.content.partition("u!>")[2]
-            message.author.bot = False
+            message.author = self.bot.get_user(config.owner_id)
             await self.bot.process_commands(message)
 
 
