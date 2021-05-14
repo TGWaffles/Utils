@@ -51,6 +51,7 @@ class OGCog(commands.Cog):
         embed = discord.Embed(title="OG Check")
         embed.set_author(name=member.name, icon_url=member.avatar_url)
         embed.description = "{} Member {} OG".format(("❌", "✅")[int(is_og)], ("is not", "is")[int(is_og)])
+        embed.description += "\nLatest (re)join date: {}".format(member.joined_at.strftime("%Y-%m-%d %H:%M"))
         embed.colour = (discord.Colour.red(), discord.Colour.green())[int(is_og)]
         embed.timestamp = member.joined_at
         if message_time is not None:
