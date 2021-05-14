@@ -1,6 +1,7 @@
 import asyncio
 import discord
 from subprocess import Popen, check_output
+from typing import Optional
 
 from discord.ext import commands
 
@@ -15,9 +16,7 @@ class Restart(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
 
-    @commands.command(pass_context=True)
-    @is_owner()
-    async def update(self, ctx: commands.Context):
+    async def get_update(self, ctx):
         reply_message = await ctx.reply(embed=self.bot.create_processing_embed("Updating", "Downloading update..."))
         git_pull = Popen(["git", "pull"])
         waited = 0
@@ -27,6 +26,14 @@ class Restart(commands.Cog):
             if waited > 5.0:
                 await reply_message.edit(embed=self.bot.create_error_embed("Update download failed."))
                 return
+        return reply_message
+
+    @commands.group()
+    @is_owner()
+    async def update(self, ctx: commands.Context):
+        reply_message = await self.get_update(ctx)
+        if reply_message is None:
+            return
         await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
                                                                                       "Restarting database..."))
         self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Update Complete!",
@@ -34,6 +41,33 @@ class Restart(commands.Cog):
         await self.wait_on_events(reply_message)
         self.bot.restart()
         await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
+
+    @update.command()
+    async def extension(self, ctx, extension_name: str):
+        reply_message = await self.get_update(ctx)
+        if reply_message is None:
+            return
+        await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
+                                                                                      f"Reloading `{extension_name}`."))
+        try:
+            try:
+                self.bot.reload_extension(extension_name)
+            except commands.errors.ExtensionNotLoaded:
+                self.bot.load_extension(extension_name)
+        except commands.errors.ExtensionNotFound:
+            await reply_message.edit(embed=self.bot.create_error_embed("That extension could not be found."))
+            return
+        except commands.errors.NoEntryPointError:
+            await reply_message.edit(embed=self.bot.create_error_embed("That extension appears to be missing "
+                                                                       "a setup function."))
+            return
+        except commands.errors.ExtensionFailed:
+            await reply_message.edit(embed=self.bot.create_error_embed("That extension had an error loading."))
+            return
+        except commands.errors.ExtensionAlreadyLoaded:
+            await reply_message.edit(embed=self.bot.create_error_embed("You tried to load a fresh extension but it was"
+                                                                       "already loaded!"))
+            return
 
     @commands.command(pass_context=True)
     @restart_check()
