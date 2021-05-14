@@ -76,6 +76,10 @@ class CommandManager(commands.Cog):
             me: discord.Member = message.author
             me._user.bot = False
             message.author = me
+            print(me)
+            print(me.bot)
+            print(message.author)
+            print(message.author.bot)
             await self.bot.process_commands(message)
 
 
