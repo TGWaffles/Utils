@@ -64,7 +64,10 @@ class OGCog(commands.Cog):
             await self.bot.get_latest_joins()
         members = self.bot.latest_joins[ctx.guild.id]
         members = [user.id for user in members]
-        embed.add_field(name="Position", value="#{}".format(str(members.index(member.id) + 1)))
+        try:
+            embed.add_field(name="Position", value="#{}".format(str(members.index(member.id) + 1)))
+        except ValueError:
+            pass
         await ctx.reply(embed=embed)
 
     # noinspection DuplicatedCode
