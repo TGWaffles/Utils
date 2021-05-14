@@ -77,9 +77,8 @@ class CommandManager(commands.Cog):
             me._user.bot = False
             message.author = me
             ctx = await self.bot.get_context(message)
-            print(ctx)
-            print(ctx.author)
-            print(ctx.author.bot)
+            print(ctx.command)
+            print(await self.bot.can_run(ctx, call_once=True))
             await self.bot.invoke(ctx)
 
 
