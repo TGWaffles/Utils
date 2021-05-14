@@ -76,11 +76,11 @@ class CommandManager(commands.Cog):
             me: discord.Member = message.author
             me._user.bot = False
             message.author = me
-            print(me)
-            print(me.bot)
-            print(message.author)
-            print(message.author.bot)
-            await self.bot.process_commands(message)
+            ctx = await self.bot.get_context(message)
+            print(ctx)
+            print(ctx.author)
+            print(ctx.author.bot)
+            await self.bot.invoke(ctx)
 
 
 def setup(bot):
