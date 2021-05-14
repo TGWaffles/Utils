@@ -31,16 +31,17 @@ class Restart(commands.Cog):
     @commands.group()
     @is_owner()
     async def update(self, ctx: commands.Context):
-        reply_message = await self.get_update(ctx)
-        if reply_message is None:
-            return
-        await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
-                                                                                      "Restarting database..."))
-        self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Update Complete!",
-                                         "Updated and Restarted successfully!")
-        await self.wait_on_events(reply_message)
-        self.bot.restart()
-        await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
+        if ctx.invoked_subcommand is None:
+            reply_message = await self.get_update(ctx)
+            if reply_message is None:
+                return
+            await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
+                                                                                          "Restarting database..."))
+            self.bot.completed_restart_write(ctx.channel.id, reply_message.id, "Update Complete!",
+                                             "Updated and Restarted successfully!")
+            await self.wait_on_events(reply_message)
+            self.bot.restart()
+            await reply_message.edit(embed=self.bot.create_error_embed("Apparently the restart failed. What?"))
 
     @update.command()
     async def extension(self, ctx, extension_name: str):
