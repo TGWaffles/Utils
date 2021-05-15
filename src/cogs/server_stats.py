@@ -62,17 +62,20 @@ class Statistics(commands.Cog):
         aggregation = self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
         unique_guild_ids = set(x.get("_id") for x in await aggregation.to_list(length=None))
         done_guild_ids = []
+        print(unique_guild_ids)
         if len(unique_guild_ids) == 0:
             self.running = False
             return
         while True:
             for guild_id in unique_guild_ids:
+                print(guild_id)
                 lowest_percent = 100
                 sent_message_id = None
                 sent_message_channel_id = None
                 query = self.bot.mongo.discord_db.loading_stats.find({"guild_id": guild_id})
                 channel_documents = await query.to_list(length=None)
                 for channel_document in channel_documents:
+                    print(channel_document.get("_id"))
                     possible_sent = channel_document.get("sent_message_id", None)
                     if possible_sent is not None:
                         sent_message_id = possible_sent
