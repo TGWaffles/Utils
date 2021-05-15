@@ -62,7 +62,6 @@ class Statistics(commands.Cog):
         aggregation = self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
         unique_guild_ids = set(x.get("_id") for x in await aggregation.to_list(length=None))
         done_guild_ids = []
-        print(unique_guild_ids)
         if len(unique_guild_ids) == 0:
             self.running = False
             return
@@ -89,20 +88,16 @@ class Statistics(commands.Cog):
                     percent = percent * 100
                     if percent < lowest_percent:
                         lowest_percent = percent
-                print(sent_message_channel_id)
-                print(sent_message_id)
                 if sent_message_id is None or sent_message_channel_id is None:
                     continue
                 if lowest_percent == 100:
                     done_guild_ids.append(guild_id)
                 update_channel = self.bot.get_channel(sent_message_channel_id)
                 update_message = await update_channel.fetch_message(sent_message_id)
-                print(update_message)
                 stars = int(round(lowest_percent / 10))
                 stars_string = "\\*" * stars
                 dashes = 10 - stars
                 if lowest_percent != 100:
-                    print("editing...")
                     await update_message.edit(embed=self.bot.create_processing_embed(
                                                     "Back-Dating Statistics",
                                                     f"Progress: {stars_string}{'-' * dashes} ({lowest_percent:.2f}%)"))

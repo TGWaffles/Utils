@@ -15,6 +15,7 @@ def file_from_timestamps(times, group):
     series = series.groupby(level=0).size()
     series = series.reindex(pandas.period_range(series.index.min(), series.index.max(), freq=group), fill_value=0)
     bar_chart = series.plot(subplots=False)
+    bar_chart.spines['bottom'].set_position('zero')
     figure = bar_chart.get_figure()
     figure.tight_layout()
     figure.savefig(file)
