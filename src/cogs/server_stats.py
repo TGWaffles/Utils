@@ -60,7 +60,7 @@ class Statistics(commands.Cog):
             }
         ]
         aggregation = self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
-        unique_guild_ids = [x.get("_id") for x in await aggregation.to_list(length=None)]
+        unique_guild_ids = set(x.get("_id") for x in await aggregation.to_list(length=None))
         print(unique_guild_ids)
         done_guild_ids = []
         if len(unique_guild_ids) == 0:
@@ -83,6 +83,7 @@ class Statistics(commands.Cog):
                     if not channel_document.get("active"):
                         continue
                     latest_time = channel_document.get("latest_time")
+                    print(latest_time)
                     percent = 1 - (
                             (latest_time - channel_document.get("message_time")).total_seconds()
                             /
@@ -127,7 +128,7 @@ class Statistics(commands.Cog):
         most_recent_message = channel.history(limit=1)
         most_recent_message = await most_recent_message.flatten()
         most_recent_message = most_recent_message[0]
-        earliest_message = channel.history(limit=1)
+        earliest_message = channel.history(oldest_first=True, limit=1)
         earliest_message = await earliest_message.flatten()
         earliest_message = earliest_message[0]
         stored_channel = await self.bot.mongo.discord_db.loading_stats.find_one({"_id": channel.id})
