@@ -66,12 +66,14 @@ class Statistics(commands.Cog):
             return
         while True:
             for guild_id in unique_guild_ids:
+                print(guild_id)
                 lowest_percent = 100
                 sent_message_id = None
                 sent_message_channel_id = None
                 query = self.bot.mongo.discord_db.loading_stats.find({"guild_id": guild_id})
                 channel_documents = await query.to_list(length=None)
                 for channel_document in channel_documents:
+                    print(channel_document)
                     possible_sent = channel_document.get("sent_message_id", None)
                     if possible_sent is not None:
                         sent_message_id = possible_sent
@@ -86,6 +88,7 @@ class Statistics(commands.Cog):
                     percent = percent * 100
                     if percent < lowest_percent:
                         lowest_percent = percent
+
                 if sent_message_id is None or sent_message_channel_id is None:
                     continue
                 if lowest_percent == 100:
@@ -94,8 +97,9 @@ class Statistics(commands.Cog):
                 update_message = await update_channel.fetch_message(sent_message_id)
                 stars = lowest_percent // 10
                 dashes = 10 - stars
-                await update_message.edit("Back-Dating Statistics",
-                                          f"Progress: {'*' * stars}{'-' * dashes} ({lowest_percent}%)")
+                await update_message.edit(embed=self.bot.create_processing_embed(
+                                                "Back-Dating Statistics",
+                                                f"Progress: {'*' * stars}{'-' * dashes} ({lowest_percent}%)"))
             for guild_id in done_guild_ids:
                 unique_guild_ids.remove(guild_id)
             if len(unique_guild_ids) == 0:
