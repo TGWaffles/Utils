@@ -133,10 +133,6 @@ class Statistics(commands.Cog):
             self.bot.loop.create_task(self.update_embeds())
 
     async def load_channel(self, channel: discord.TextChannel, sent_message_id=None):
-        if sent_message_id is not None:
-            loading_doc = {"_id": channel.id, "guild_id": channel.guild.id, "active": True,
-                           "sent_message_id": sent_message_id}
-            await self.bot.mongo.force_insert(self.bot.mongo.discord_db.loading_stats, loading_doc)
         after = datetime.datetime(2015, 1, 1)
         most_recent_message = channel.history(limit=1)
         most_recent_message = await most_recent_message.flatten()
@@ -145,6 +141,10 @@ class Statistics(commands.Cog):
         earliest_message = await earliest_message.flatten()
         earliest_message = earliest_message[0]
         stored_channel = await self.bot.mongo.discord_db.loading_stats.find_one({"_id": channel.id})
+        if sent_message_id is not None and stored_channel is None:
+            loading_doc = {"_id": channel.id, "guild_id": channel.guild.id, "active": True,
+                           "sent_message_id": sent_message_id}
+            await self.bot.mongo.force_insert(self.bot.mongo.discord_db.loading_stats, loading_doc)
         if stored_channel is not None:
             last_message_id = stored_channel.get("message_id")
             try:
