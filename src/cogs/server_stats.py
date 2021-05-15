@@ -78,10 +78,11 @@ class Statistics(commands.Cog):
                         sent_message_channel_id = channel_document.get("_id")
                     if not channel_document.get("active"):
                         continue
+                    latest_time = channel_document.get("latest_time")
                     percent = 1 - (
-                            (channel_document.get("latest_time") - channel_document.get("message_time")).total_seconds()
+                            (latest_time - channel_document.get("message_time")).total_seconds()
                             /
-                            (channel_document.get("latest_time") - channel_document.get("earliest_time")).total_seconds)
+                            (latest_time - channel_document.get("earliest_time")).total_seconds())
                     percent = percent * 100
                     if percent < lowest_percent:
                         lowest_percent = percent
