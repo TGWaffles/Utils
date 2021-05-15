@@ -58,7 +58,7 @@ class Statistics(commands.Cog):
                 "$project": {"_id": "$guild_id"}
             }
         ]
-        aggregation = await self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
+        aggregation = self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
         unique_guild_ids = [x.get("_id") for x in await aggregation.to_list(length=None)]
         done_guild_ids = []
         if len(unique_guild_ids) == 0:
