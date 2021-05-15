@@ -49,6 +49,7 @@ class Statistics(commands.Cog):
             self.bot.loop.create_task(self.update_embeds())
 
     async def update_embeds(self):
+        print("starting")
         self.running = True
         pipeline = [
             {
@@ -60,6 +61,7 @@ class Statistics(commands.Cog):
         ]
         aggregation = self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
         unique_guild_ids = [x.get("_id") for x in await aggregation.to_list(length=None)]
+        print(unique_guild_ids)
         done_guild_ids = []
         if len(unique_guild_ids) == 0:
             self.running = False
