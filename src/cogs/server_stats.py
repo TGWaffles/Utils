@@ -25,7 +25,7 @@ waiting_exceptions = (aiohttp.client_exceptions.ClientOSError, aiohttp.client_ex
 default_timeout = 45
 
 
-class DBApiClient(commands.Cog):
+class Statistics(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot = bot
         self.bot.database_handler = self
@@ -553,5 +553,5 @@ class DBApiClient(commands.Cog):
 
 
 def setup(bot: UtilsBot):
-    cog = DBApiClient(bot)
+    cog = Statistics(bot)
     bot.add_cog(cog)
