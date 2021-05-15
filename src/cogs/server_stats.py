@@ -50,7 +50,6 @@ class Statistics(commands.Cog):
             self.bot.loop.create_task(self.update_embeds())
 
     async def update_embeds(self):
-        print("starting")
         self.running = True
         pipeline = [
             {
@@ -62,21 +61,18 @@ class Statistics(commands.Cog):
         ]
         aggregation = self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
         unique_guild_ids = set(x.get("_id") for x in await aggregation.to_list(length=None))
-        print(unique_guild_ids)
         done_guild_ids = []
         if len(unique_guild_ids) == 0:
             self.running = False
             return
         while True:
             for guild_id in unique_guild_ids:
-                print(guild_id)
                 lowest_percent = 100
                 sent_message_id = None
                 sent_message_channel_id = None
                 query = self.bot.mongo.discord_db.loading_stats.find({"guild_id": guild_id})
                 channel_documents = await query.to_list(length=None)
                 for channel_document in channel_documents:
-                    print(channel_document)
                     possible_sent = channel_document.get("sent_message_id", None)
                     if possible_sent is not None:
                         sent_message_id = possible_sent
@@ -84,7 +80,6 @@ class Statistics(commands.Cog):
                     if not channel_document.get("active"):
                         continue
                     latest_time = channel_document.get("latest_time")
-                    print(latest_time)
                     percent = 1 - (
                             (latest_time - channel_document.get("message_time")).total_seconds()
                             /
@@ -111,6 +106,7 @@ class Statistics(commands.Cog):
                                                                                     "Finished back-dating statistics!"))
             for guild_id in done_guild_ids:
                 unique_guild_ids.remove(guild_id)
+            done_guild_ids = []
             if len(unique_guild_ids) == 0:
                 self.running = False
                 return
