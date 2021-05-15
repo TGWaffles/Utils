@@ -75,7 +75,6 @@ class Statistics(commands.Cog):
                 query = self.bot.mongo.discord_db.loading_stats.find({"guild_id": guild_id})
                 channel_documents = await query.to_list(length=None)
                 for channel_document in channel_documents:
-                    print(channel_document.get("_id"))
                     possible_sent = channel_document.get("sent_message_id", None)
                     if possible_sent is not None:
                         sent_message_id = possible_sent
@@ -124,6 +123,7 @@ class Statistics(commands.Cog):
         sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Back-dating Statistics",
                                                                               "Progress: Starting..."))
         for channel in ctx.guild.text_channels:
+            print(channel.id)
             if channel == ctx.channel:
                 self.bot.loop.create_task(self.load_channel(channel, sent_message.id))
             else:
@@ -133,6 +133,10 @@ class Statistics(commands.Cog):
             self.bot.loop.create_task(self.update_embeds())
 
     async def load_channel(self, channel: discord.TextChannel, sent_message_id=None):
+        if sent_message_id is not None:
+            loading_doc = {"_id": channel.id, "guild_id": channel.guild.id, "active": True,
+                           "sent_message_id": sent_message_id}
+            await self.bot.mongo.force_insert(self.bot.mongo.discord_db.loading_stats, loading_doc)
         after = datetime.datetime(2015, 1, 1)
         most_recent_message = channel.history(limit=1)
         most_recent_message = await most_recent_message.flatten()
