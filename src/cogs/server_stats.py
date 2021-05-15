@@ -38,6 +38,7 @@ class Statistics(commands.Cog):
         self.running = False
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
+        self.bot.loop.create_task(self.startup_check())
 
     async def startup_check(self):
         query = self.bot.mongo.discord_db.loading_stats.find({"active": True})
