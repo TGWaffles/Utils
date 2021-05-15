@@ -98,7 +98,7 @@ class Statistics(commands.Cog):
                     done_guild_ids.append(guild_id)
                 update_channel = self.bot.get_channel(sent_message_channel_id)
                 update_message = await update_channel.fetch_message(sent_message_id)
-                stars = lowest_percent // 10
+                stars = int(round(lowest_percent / 10))
                 dashes = 10 - stars
                 await update_message.edit(embed=self.bot.create_processing_embed(
                                                 "Back-Dating Statistics",
