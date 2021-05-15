@@ -35,9 +35,126 @@ class Statistics(commands.Cog):
         self.last_update = self.bot.create_processing_embed("Working...", "Starting processing!")
         self.last_ping = datetime.datetime.now()
         self.active_channel_ids = []
-        self.dynamic_channels = self.bot.mongo.discord_db.dynamic_channels
+        self.running = False
         self.channel_lock = asyncio.Lock()
         self.update_motw.start()
+
+    async def startup_check(self):
+        query = self.bot.mongo.discord_db.loading_stats.find({"active": True})
+        async for channel_document in query:
+            channel = self.bot.get_channel(channel_document.get("_id"))
+            sent_message_id = channel_document.get("sent_message_id", None)
+            self.bot.loop.create_task(self.load_channel(channel, sent_message_id))
+        if not self.running:
+            self.bot.loop.create_task(self.update_embeds())
+
+    async def update_embeds(self):
+        self.running = True
+        pipeline = [
+            {
+                "$match": {"active": True}
+            },
+            {
+                "$project": {"_id": "$guild_id"}
+            }
+        ]
+        aggregation = await self.bot.mongo.discord_db.loading_stats.aggregate(pipeline=pipeline)
+        unique_guild_ids = [x.get("_id") for x in await aggregation.to_list(length=None)]
+        done_guild_ids = []
+        if len(unique_guild_ids) == 0:
+            self.running = False
+            return
+        while True:
+            for guild_id in unique_guild_ids:
+                lowest_percent = 100
+                sent_message_id = None
+                sent_message_channel_id = None
+                query = self.bot.mongo.discord_db.loading_stats.find({"guild_id": guild_id})
+                channel_documents = await query.to_list(length=None)
+                for channel_document in channel_documents:
+                    possible_sent = channel_document.get("sent_message_id", None)
+                    if possible_sent is not None:
+                        sent_message_id = possible_sent
+                        sent_message_channel_id = channel_document.get("_id")
+                    if not channel_document.get("active"):
+                        continue
+                    percent = 1 - (
+                            (channel_document.get("latest_time") - channel_document.get("message_time")).total_seconds()
+                            /
+                            (channel_document.get("latest_time") - channel_document.get("earliest_time")).total_seconds)
+                    percent = percent * 100
+                    if percent < lowest_percent:
+                        lowest_percent = percent
+                if sent_message_id is None or sent_message_channel_id is None:
+                    continue
+                if lowest_percent == 100:
+                    done_guild_ids.append(guild_id)
+                update_channel = self.bot.get_channel(sent_message_channel_id)
+                update_message = await update_channel.fetch_message(sent_message_id)
+                stars = lowest_percent // 10
+                dashes = 10 - stars
+                await update_message.edit("Back-Dating Statistics",
+                                          f"Progress: {'*' * stars}{'-' * dashes} ({lowest_percent}%)")
+            for guild_id in done_guild_ids:
+                unique_guild_ids.remove(guild_id)
+            if len(unique_guild_ids) == 0:
+                self.running = False
+                return
+
+    @commands.command()
+    @is_staff()
+    async def load_stats(self, ctx):
+        sent_message = await ctx.reply(embed=self.bot.create_processing_embed("Back-dating Statistics",
+                                                                              "Progress: Starting..."))
+        for channel in ctx.guild.text_channels:
+            if channel == ctx.channel:
+                self.bot.loop.create_task(self.load_channel(channel, sent_message.id))
+            else:
+                self.bot.loop.create_task(self.load_channel(channel))
+        await asyncio.sleep(1)
+        if not self.running:
+            self.bot.loop.create_task(self.update_embeds())
+
+    async def load_channel(self, channel: discord.TextChannel, sent_message_id=None):
+        after = datetime.datetime(2015, 1, 1)
+        most_recent_message = channel.history(limit=1)
+        most_recent_message = await most_recent_message.flatten()
+        most_recent_message = most_recent_message[0]
+        earliest_message = channel.history(limit=1)
+        earliest_message = await earliest_message.flatten()
+        earliest_message = earliest_message[0]
+        stored_channel = await self.bot.mongo.discord_db.loading_stats.find_one({"_id": channel.id})
+        if stored_channel is not None:
+            last_message_id = stored_channel.get("message_id")
+            try:
+                last_message = await channel.fetch_message(last_message_id)
+                after = last_message
+            except discord.errors.NotFound:
+                after = stored_channel.get("message_time")
+        history_iterator = channel.history(after=after, limit=None)
+        while True:
+            if history_iterator.messages.empty():
+                await history_iterator.fill_messages()
+            if history_iterator.messages.empty():
+                break
+            last_message = await self.add_messages_to_db(history_iterator.messages)
+            if last_message is not None:
+                if last_message == most_recent_message:
+                    await self.bot.mongo.discord_db.loading_stats.update_one({"_id": channel.id},
+                                                                             {"$set": {"active": False}})
+                    return True
+                loading_doc = {"_id": channel.id, "message_id": last_message.id,
+                               "message_time": last_message.created_at, "guild_id": channel.guild.id, "active": True,
+                               "sent_message_id": sent_message_id, "latest_time": most_recent_message.created_at,
+                               "earliest_time": earliest_message.created_at}
+                await self.bot.mongo.force_insert(self.bot.mongo.discord_db.loading_stats, loading_doc)
+
+    async def add_messages_to_db(self, message_queue: asyncio.Queue):
+        this_batch = []
+        while not message_queue.empty():
+            this_batch.append(message_queue.get_nowait())
+        await self.bot.mongo.insert_channel_messages(this_batch)
+        return this_batch[-1] if len(this_batch) != 0 else None
 
     @tasks.loop(seconds=1800, count=None)
     async def update_motw(self):

@@ -1,9 +1,11 @@
 import asyncio
 import datetime
 
-from src.storage import config
 import discord
 import motor.motor_asyncio
+from pymongo.errors import BulkWriteError
+
+from src.storage import config
 
 
 class MongoDB:
@@ -71,6 +73,41 @@ class MongoDB:
                             "embeds": [embed.to_dict() for embed in message.embeds if embed is not None],
                             "deleted": False, "edits": []}
         await self.force_insert(self.discord_db.messages, message_document)
+
+    async def insert_channel_messages(self, list_of_messages):
+        """Requires that all messages be from the same channel"""
+        if len(list_of_messages) == 0:
+            return
+        all_users = set()
+        all_channels = set()
+        message_documents = []
+        for message in list_of_messages:
+            all_users.add(message.author)
+            all_channels.add(message.channel)
+            message_documents.append({"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
+                                      "content": message.content, "created_at": message.created_at,
+                                      "guild_id": message.guild.id,
+                                      "embeds": [embed.to_dict() for embed in message.embeds if embed is not None],
+                                      "deleted": False, "edits": []})
+        user_documents = []
+        channel_documents = []
+        for user in all_users:
+            user_documents.append({"_id": user.id, "name": user.name, "bot": user.bot})
+        try:
+            await self.discord_db.users.insert_many(user_documents, ordered=False)
+        except BulkWriteError:
+            pass
+        for channel in all_channels:
+            channel_documents.append({"_id": channel.id, "name": channel.name, "guild_id": channel.guild.id,
+                                      "deleted": False, "excluded": False})
+        try:
+            await self.discord_db.channels.insert_many(channel_documents, ordered=False)
+        except BulkWriteError:
+            pass
+        try:
+            await self.discord_db.messages.insert_many(message_documents, ordered=False)
+        except BulkWriteError:
+            pass
 
     async def message_edit(self, payload: discord.RawMessageUpdateEvent):
         is_bot = payload.data.get("author", {}).get("bot", False)
