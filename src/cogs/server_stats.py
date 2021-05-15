@@ -105,7 +105,7 @@ class Statistics(commands.Cog):
                 if lowest_percent != 100:
                     await update_message.edit(embed=self.bot.create_processing_embed(
                                                     "Back-Dating Statistics",
-                                                    f"Progress: {stars_string}{'-' * dashes} ({lowest_percent}%)"))
+                                                    f"Progress: {stars_string}{'-' * dashes} ({lowest_percent:.2f}%)"))
                 else:
                     await update_message.edit(embed=self.bot.create_completed_embed("Back-Dated Statistics!",
                                                                                     "Finished back-dating statistics!"))
@@ -114,6 +114,7 @@ class Statistics(commands.Cog):
             if len(unique_guild_ids) == 0:
                 self.running = False
                 return
+            await asyncio.sleep(1)
 
     @commands.command()
     @is_staff()
