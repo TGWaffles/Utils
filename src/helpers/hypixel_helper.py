@@ -5,6 +5,7 @@ import PIL.ImageFont
 import PIL.ImageChops
 import aiohttp
 import asyncio
+import aiohttp.client_exceptions
 import collections
 import datetime
 from io import BytesIO
@@ -16,6 +17,10 @@ XP_PER_PRESTIGE = 96 * 5000 + EASY_LEVELS_XP
 LEVELS_PER_PRESTIGE = 100
 HIGHEST_PRESTIGE = 10
 API_URL = "https://api.hypixel.net/"
+
+exceptions = (asyncio.exceptions.TimeoutError, aiohttp.client_exceptions.ServerDisconnectedError,
+              aiohttp.client_exceptions.ClientConnectorError, aiohttp.client_exceptions.ClientPayloadError)
+waiting_exceptions = (aiohttp.client_exceptions.ClientOSError, aiohttp.client_exceptions.ContentTypeError)
 
 
 class CustomAsyncDeque(asyncio.Queue):
@@ -71,6 +76,9 @@ class HypixelAPI:
                     self.ratelimit_remaining = 0
                     self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
                 return
+            except (exceptions, waiting_exceptions):
+                await self.request_queue.put(waited_event)
+                return
             if response.status == 429:
                 sleep_time = int(response.headers.getone("retry-after"))
                 await self.request_queue.put(waited_event)
@@ -103,7 +111,10 @@ class HypixelAPI:
             for i in range(self.ratelimit_remaining):
                 waited_event = await self.request_queue.get()
                 this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
-            await asyncio.gather(*this_loop_tasks)
+            try:
+                await asyncio.gather(*this_loop_tasks)
+            except (exceptions, waiting_exceptions):
+                continue
 
     async def get_player(self, uuid, prioritize=False):
         uuid = uuid.replace("-", "")
