@@ -36,7 +36,8 @@ class Hypixel(commands.Cog):
         self.external_ip = None
         self.app = web.Application()
         self.app.add_routes(
-            [web.get('/{user}-{uid}.png', self.request_image), web.get('/{user}.png', self.request_image),
+            [web.get("/ping", self.website_ping),
+             web.get('/{user}-{uid}.png', self.request_image), web.get('/{user}.png', self.request_image),
              web.get('/{user}', self.request_image), web.get('/{user}-{uid}', self.request_image)])
         self.bot.loop.create_task(self.setup_website())
         self.bot.loop.create_task(self.hypixel_api.queue_loop())
@@ -55,6 +56,12 @@ class Hypixel(commands.Cog):
     async def shutdown_website(self):
         """Useful for when updating this cog - otherwise the port gets stuck open"""
         await self.site.stop()
+
+    @staticmethod
+    async def website_ping(_):
+        """Responds to a ping regardless of whether the hypixel part of the API is working - signifies whether the
+        bot is actually running."""
+        return web.Response(text="Pong!", status=200)
 
     @staticmethod
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
