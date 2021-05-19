@@ -492,7 +492,7 @@ class Hypixel(commands.Cog):
             except KeyError:
                 print(f"Stats attempted to add for player {player_data.get('name')} but there were none.")
                 return player_data
-            last_document_query = self.hypixel_db.stats.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
+            last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
             last_document_list = await last_document_query.to_list(length=1)
             if len(last_document_list) != 0:
                 last_document = last_document_list[0]
@@ -502,7 +502,7 @@ class Hypixel(commands.Cog):
                     return player_data
             player_document = {"uuid": uuid, "stats": hypixel_stats.to_dict(),
                                "timestamp": datetime.datetime.now()}
-            await self.hypixel_db.stats.insert_one(player_document)
+            await self.hypixel_db.statistics.insert_one(player_document)
         return player_data
 
     @commands.command()
