@@ -249,7 +249,8 @@ class Hypixel(commands.Cog):
                     return
                 valid = await self.check_valid_player(uuid)
                 if not valid:
-                    await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played enough bedwars."))
+                    await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played on hypixel. Get them to"
+                                                                      "log in (and out!) at least once."))
                     return
                 with concurrent.futures.ProcessPoolExecutor() as pool:
                     player = await self.get_expanded_player(uuid, pool, True)
@@ -382,8 +383,8 @@ class Hypixel(commands.Cog):
                 return
             valid = await self.check_valid_player(uuid, prioritize=True)
             if not valid:
-                await ctx.reply(embed=self.bot.create_error_embed("That user is not a valid hypixel bedwars player. "
-                                                                  "Get them to play some games first!"))
+                await ctx.reply(embed=self.bot.create_error_embed("That user is not a valid hypixel player. "
+                                                                  "Get them to log in (and out!) first!"))
                 return
             channel_collection = self.hypixel_db.channels
             async for channel in channel_collection.find({"guild_id": ctx.guild.id}):
@@ -517,9 +518,12 @@ class Hypixel(commands.Cog):
             tracked_player = await self.hypixel_db.players.find_one({"_id": uuid})
             if tracked_player is None or not tracked_player.get("tracked", False):
                 if not await self.check_valid_player(uuid, True):
-                    await ctx.reply(embed=self.bot.create_error_embed("That player cannot be tracked (possibly no "
-                                                                      "stats)"))
-                player = {"_id": uuid, "tracked": False}
+                    await ctx.reply(embed=self.bot.create_error_embed("That player has never played on Hypixel. "
+                                                                      "Get them to log in and out at least once!"))
+                    return
+            await self.hypixel_db.players.update_one({"_id": uuid}, {"$set": {"tracked": True}}, upsert=True)
+            await ctx.reply(embed=self.bot.create_completed_embed("Tracking Player!",
+                                                                  "Added player to tracking."))
 
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
