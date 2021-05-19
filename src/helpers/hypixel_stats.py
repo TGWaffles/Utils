@@ -10,13 +10,13 @@ class GameModeStats:
 
     @classmethod
     def from_stats(cls, bedwars_stats, identifier: str):
-        deaths = bedwars_stats[f"{identifier}_final_deaths_bedwars"]
-        kills = bedwars_stats[f"{identifier}_final_kills_bedwars"]
-        beds_lost = bedwars_stats[f"{identifier}_beds_lost_bedwars"]
-        beds_broken = bedwars_stats[f"{identifier}_beds_broken_bedwars"]
-        wins = bedwars_stats[f"{identifier}_wins_bedwars"]
-        losses = bedwars_stats[f"{identifier}_losses_bedwars"]
-        games_played = bedwars_stats[f"{identifier}_games_played_bedwars"]
+        deaths = bedwars_stats.get(f"{identifier}_final_deaths_bedwars", 0)
+        kills = bedwars_stats.get(f"{identifier}_final_kills_bedwars", 0)
+        beds_lost = bedwars_stats.get(f"{identifier}_beds_lost_bedwars", 0)
+        beds_broken = bedwars_stats.get(f"{identifier}_beds_broken_bedwars", 0)
+        wins = bedwars_stats.get(f"{identifier}_wins_bedwars", 0)
+        losses = bedwars_stats.get(f"{identifier}_losses_bedwars", 0)
+        games_played = bedwars_stats.get(f"{identifier}_games_played_bedwars", 0)
         return cls(deaths, kills, beds_lost, beds_broken, wins, losses, games_played)
 
     @property

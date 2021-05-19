@@ -14,6 +14,7 @@ from src.helpers.hypixel_stats import HypixelStats
 from src.storage.token import hypixel_token
 
 from src.checks.role_check import is_staff
+from src.checks.user_check import is_owner
 from src.helpers.hypixel_helper import *
 
 
@@ -74,8 +75,8 @@ class Hypixel(commands.Cog):
                                                                datetime.timezone.utc),
                 "online": False,
                 "bedwars_level": get_level_from_xp(experience),
-                "bedwars_winstreak": player.get("stats")["Bedwars"]["winstreak"], "uuid": user_uuid,
-                "threat_index": threat_index, "fkdr": fkdr, "stats": player.get("stats")}
+                "bedwars_winstreak": player.get("stats").get("Bedwars", {}).get("winstreak", 0), "uuid": user_uuid,
+                "threat_index": threat_index, "fkdr": fkdr, "stats": player["stats"]}
 
     async def online_player(self, player, experience, user_uuid, threat_index, fkdr):
         """Same as offline_player, but also returns their game, mode and map."""
@@ -88,10 +89,10 @@ class Hypixel(commands.Cog):
                                                                datetime.timezone.utc),
                 "online": True,
                 "bedwars_level": get_level_from_xp(experience),
-                "bedwars_winstreak": player.get("stats")["Bedwars"]["winstreak"],
+                "bedwars_winstreak": player.get("stats").get("Bedwars", {}).get("winstreak", 0),
                 "game": status.get("gameType"),
                 "mode": status.get("mode"), "map": status.get("map"), "uuid": user_uuid, "threat_index": threat_index,
-                "fkdr": fkdr, "stats": player.get("stats")}
+                "fkdr": fkdr, "stats": player["stats"]}
 
     async def get_user_stats(self, user_uuid, prioritize=False):
         """Gets the actual information from hypixel, determines whether the member is online or not, and also fetches
@@ -104,7 +105,7 @@ class Hypixel(commands.Cog):
         player = await self.hypixel_api.get_player(user_uuid, prioritize)
         # They are online if they last logged in after they last logged out
         member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
-        experience = player.get("stats")["Bedwars"]["Experience"]
+        experience = player.get("stats").get("Bedwars", {}).get("Experience", 0)
         try:
             # fkdr = bedwars final kills over bedwars final deaths
             fkdr = player.get("stats")['Bedwars']['final_kills_bedwars'] / player.get("stats")['Bedwars'][
@@ -503,14 +504,30 @@ class Hypixel(commands.Cog):
             await self.hypixel_db.stats.insert_one(player_document)
         return player_data
 
+    @commands.command()
+    @is_owner()
+    async def track_player(self, ctx, username: str):
+        async with ctx.typing():
+            uuid = await self.uuid_from_identifier(username)
+            if uuid is None:
+                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                                delete_after=10)
+                await ctx.message.delete()
+                return
+            tracked_player = await self.hypixel_db.players.find_one({"_id": uuid})
+            if tracked_player is None or not tracked_player.get("tracked", False):
+                if not await self.check_valid_player(uuid, True):
+                    await ctx.reply(embed=self.bot.create_error_embed("That player cannot be tracked (possibly no "
+                                                                      "stats)"))
+                player = {"_id": uuid, "tracked": False}
+
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
         """Constant task loop that updates all the hypixel channels with the new member info."""
         try:
+            # Gets a list of players.
             players_query = self.hypixel_db.players.find()
             all_players = await players_query.to_list(length=None)
-            # Creates a set of unique player uuids, so a player in two channels isn't fetched twice.
-            # member_uuids = await self.hypixel_db.channels.distinct("players")
             now = datetime.datetime.now()
             # Completely refresh the embeds every 3 minutes. Just so last update time isn't more than 3 mins ago.
             reset = (now - self.last_reset).total_seconds() > 180
