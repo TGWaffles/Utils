@@ -11,6 +11,7 @@ from aiohttp import web
 from discord.ext import commands, tasks
 
 from src.helpers.hypixel_stats import HypixelStats
+from src.helpers.paginator import EmbedPaginator
 from src.storage.token import hypixel_token
 
 from src.checks.role_check import is_staff
@@ -585,6 +586,54 @@ class Hypixel(commands.Cog):
             return
         if message.channel.id in await self.hypixel_db.players.distinct("channels"):
             await message.delete()
+
+    @commands.group(aliases=["hstats"])
+    async def hypixel_stats(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
+                                                              "Please specify a date or statistic."))
+
+    async def get_stats_from_before(self, uuid, timedelta: datetime.timedelta):
+        before = datetime.datetime.now() - timedelta
+        earlier_document_query = self.hypixel_db.statistics.find({"uuid": uuid,
+                                                                  "timestamp": {"$lt": before}}).sort(
+            "timestamp", -1).limit(1)
+        earlier_document_list = await earlier_document_query.to_list(length=1)
+        return earlier_document_list[0] if len(earlier_document_list) != 0 else None
+
+    async def get_most_recent_stats(self, uuid):
+        last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
+        last_document_list = await last_document_query.to_list(length=None)
+        return last_document_list[0] if len(last_document_list) != 0 else None
+
+    @hypixel_stats.command()
+    async def daily(self, ctx, username: str):
+        async with ctx.typing():
+            uuid = await self.uuid_from_identifier(username)
+            if uuid is None:
+                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                                delete_after=10)
+                await ctx.message.delete()
+                return
+            yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+            last_document = await self.get_most_recent_stats(uuid)
+            if last_document is None:
+                await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+                return
+            if last_document.get("timestamp") < yesterday:
+                await ctx.reply(embed=self.bot.create_error_embed(f"{username} has not played Bedwars today."))
+                return
+            earlier_document = await self.get_stats_from_before(uuid, datetime.timedelta(hours=24))
+            if earlier_document is None:
+                await ctx.reply(embed=self.bot.create_error_embed("I don't have statistics for that player from before "
+                                                                  "today!"))
+                return
+            today_stats = HypixelStats.from_dict(last_document["stats"])
+            yesterday_stats = HypixelStats.from_dict(earlier_document["stats"])
+            todays_date_string = datetime.datetime.now().strftime("%A, %B %d %Y")
+            all_embeds = create_delta_embeds(f"{username}'s Stats - {todays_date_string}", yesterday_stats, today_stats)
+            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
+            await paginator.start()
 
 
 def setup(bot):

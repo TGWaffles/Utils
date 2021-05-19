@@ -45,12 +45,13 @@ class GameModeStats:
 
 
 class HypixelStats:
-    def __init__(self, solos, doubles, trios, fours, two_four):
+    def __init__(self, solos, doubles, trios, fours, two_four, experience):
         self.solos: GameModeStats = solos
         self.doubles: GameModeStats = doubles
         self.trios: GameModeStats = trios
         self.fours: GameModeStats = fours
         self.two_four: GameModeStats = two_four
+        self.experience = experience
 
     @property
     def fkdr(self) -> float:
@@ -77,6 +78,16 @@ class HypixelStats:
     def losses(self) -> int:
         return self.solos.losses + self.doubles.losses + self.trios.losses + self.fours.losses + self.two_four.losses
 
+    @property
+    def beds_broken(self) -> int:
+        return (self.solos.beds_broken + self.doubles.beds_broken + self.trios.beds_broken +
+                self.fours.beds_broken + self.two_four.beds_broken)
+
+    @property
+    def beds_lost(self) -> int:
+        return (self.solos.beds_lost + self.doubles.beds_lost + self.trios.beds_lost +
+                self.fours.beds_lost + self.two_four.beds_lost)
+
     @classmethod
     def from_stats(cls, bedwars_stats: dict):
         solos = GameModeStats.from_stats(bedwars_stats, "eight_one")
@@ -84,12 +95,13 @@ class HypixelStats:
         trios = GameModeStats.from_stats(bedwars_stats, "four_three")
         fours = GameModeStats.from_stats(bedwars_stats, "four_four")
         two_four = GameModeStats.from_stats(bedwars_stats, "two_four")
-        return cls(solos, doubles, trios, fours, two_four)
+        experience = bedwars_stats.get("Experience", 0)
+        return cls(solos, doubles, trios, fours, two_four, experience)
 
     def to_dict(self):
         return {"solos": self.solos.to_dict(), "doubles": self.doubles.to_dict(),
                 "trios": self.trios.to_dict(), "fours": self.fours.to_dict(),
-                "two_four": self.two_four.to_dict()}
+                "two_four": self.two_four.to_dict(), "experience": self.experience}
 
     @classmethod
     def from_dict(cls, store_dict):
@@ -98,4 +110,5 @@ class HypixelStats:
         trios = GameModeStats.from_dict(store_dict["trios"])
         fours = GameModeStats.from_dict(store_dict["fours"])
         two_four = GameModeStats.from_dict(store_dict["two_four"])
-        return cls(solos, doubles, trios, fours, two_four)
+        experience = GameModeStats.from_dict(store_dict["experience"])
+        return cls(solos, doubles, trios, fours, two_four, experience)

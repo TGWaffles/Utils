@@ -8,8 +8,10 @@ import asyncio
 import aiohttp.client_exceptions
 import collections
 import datetime
+from discord import Embed, Colour
 from io import BytesIO
 from main import UtilsBot
+from src.helpers.hypixel_stats import HypixelStats
 
 EASY_LEVELS = 4
 EASY_LEVELS_XP = 7000
@@ -290,3 +292,38 @@ def get_file_for_member(member):
     image.save(fp=final_file, format="png")
     final_file.seek(0)
     return final_file
+
+
+def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats) -> list[Embed]:
+    all_embeds = []
+    categories = [("Overall Daily Statistics", (today, yesterday)), ("Solos", (today.solos, yesterday.solos)),
+                  ("Doubles", (today.doubles, yesterday.doubles)), ("Trios", (today.trios, yesterday.trios)),
+                  ("Fours", (today.fours, yesterday.fours)), ("Two_Fours", (today.two_four, yesterday.two_four))]
+    for category in categories:
+        subtitle = category[0]
+        today, yesterday = category[1]
+        embed = Embed(title=title, colour=Colour.blue(), description=subtitle)
+
+        final_kills = today.total_kills - yesterday.total_kills
+        embed.add_field(name="Final Kills", value=str(final_kills), inline=True)
+        final_deaths = today.total_deaths - yesterday.total_deaths
+        embed.add_field(name="Final Deaths", value=str(final_deaths), inline=True)
+        final_fkdr = str(round(final_kills / final_deaths, 2)) if final_deaths != 0 else "Infinite"
+        embed.add_field(name="FKDR", value=final_fkdr, inline=True)
+
+        beds_broken = today.beds_broken - yesterday.beds_broken
+        embed.add_field(name="Beds Broken", value=str(beds_broken))
+        beds_lost = today.beds_lost - yesterday.beds_lost
+        embed.add_field(name="Beds Lost", value=str(beds_lost))
+        bblr = str(round(beds_broken / beds_lost, 2)) if beds_lost != 0 else "Infinite"
+        embed.add_field(name="BBLR", value=bblr)
+
+        games_won = today.wins - yesterday.wins
+        embed.add_field(name="Games Won", value=str(games_won))
+        games_lost = today.games_lost - yesterday.games_lost
+        embed.add_field(name="Games Lost", value=str(games_lost))
+        win_rate = str(round(games_won / games_lost, 2)) if games_lost != 0 else "Infinite"
+        embed.add_field(name="Winrate", value=win_rate)
+        all_embeds.append(embed)
+
+    return all_embeds

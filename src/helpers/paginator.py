@@ -4,24 +4,19 @@ import discord
 
 from main import UtilsBot
 from src.storage import config
+from typing import Optional
 
 
-class Paginator:
-    def __init__(self, bot: UtilsBot, channel: discord.TextChannel, title=None, full_text=None, max_length=2000,
-                 reply_message=None):
-        self.bot = bot
+class BasePaginator:
+    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], reply_message: discord.Message):
         self.reply_message = reply_message
         self.channel = channel
-        self.title = title
-        self.full_text = full_text
-        self.remaining_text = self.full_text
-        self.length = max_length
         self.page_index = 0
-        self.pages = []
+        self.bot = bot
         self.message = None
+        self.pages = []
 
     async def start(self):
-        self.fill_pages()
         if self.reply_message is None:
             self.message = await self.channel.send(embed=self.create_page())
         else:
@@ -44,6 +39,29 @@ class Paginator:
                 return
             self.page_index -= 1
         await self.update_message()
+
+    def create_page(self):
+        raise NotImplementedError()
+
+    async def update_message(self):
+        raise NotImplementedError()
+
+
+class Paginator(BasePaginator):
+    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], title=None, full_text=None,
+                 max_length=2000, reply_message=None):
+        super().__init__(bot, channel, reply_message)
+        self.title = title
+        self.full_text = full_text
+        self.remaining_text = self.full_text
+        self.length = max_length
+        self.page_index = 0
+        self.pages = []
+        self.message = None
+
+    async def start(self):
+        self.fill_pages()
+        await super().start()
 
     def fill_pages(self):
         while len(self.remaining_text) > self.length:
@@ -70,4 +88,20 @@ class Paginator:
     def create_page(self):
         embed = discord.Embed(title=self.title, colour=discord.Colour.orange())
         embed.description = self.pages[self.page_index]
+        return embed
+
+
+class EmbedPaginator(BasePaginator):
+    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], embeds: list[discord.Embed],
+                 reply_message=None):
+        super().__init__(bot, channel, reply_message)
+        self.page_index = 0
+        self.pages: list[discord.Embed] = embeds
+        self.message = None
+
+    async def update_message(self):
+        await self.message.edit(embed=self.create_page())
+
+    def create_page(self):
+        embed = self.pages[self.page_index]
         return embed
