@@ -431,7 +431,7 @@ class Hypixel(commands.Cog):
                     await ctx.reply(embed=self.bot.create_error_embed("That player is not in your hypixel channel!"))
                     return
                 channels = player.get("channels")
-                if channel.get("_id") not in channel:
+                if channel.get("_id") not in channels:
                     await ctx.reply(embed=self.bot.create_error_embed("That player is not in your hypixel channel!"))
                     return
                 channels.remove(channel.get("_id"))
