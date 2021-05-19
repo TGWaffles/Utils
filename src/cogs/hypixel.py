@@ -397,7 +397,7 @@ class Hypixel(commands.Cog):
                     player = {"_id": uuid, "tracked": False}
                 channels = player.get("channels", [])
                 channels.append(channel.get("_id"))
-                player[channels] = channels
+                player["channels"] = channels
                 await self.bot.mongo.force_insert(self.hypixel_db.players, player)
                 await ctx.reply(embed=self.bot.create_completed_embed("User Added!",
                                                                       "User {} has been added to {}.".format(
