@@ -110,5 +110,5 @@ class HypixelStats:
         trios = GameModeStats.from_dict(store_dict["trios"])
         fours = GameModeStats.from_dict(store_dict["fours"])
         two_four = GameModeStats.from_dict(store_dict["two_four"])
-        experience = GameModeStats.from_dict(store_dict["experience"])
+        experience = store_dict["experience"]
         return cls(solos, doubles, trios, fours, two_four, experience)
