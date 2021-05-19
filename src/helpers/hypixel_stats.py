@@ -93,9 +93,9 @@ class HypixelStats:
 
     @classmethod
     def from_dict(cls, store_dict):
-        solos = store_dict["solos"]
-        doubles = store_dict["doubles"]
-        trios = store_dict["trios"]
-        fours = store_dict["fours"]
-        two_four = store_dict["two_four"]
+        solos = GameModeStats.from_dict(store_dict["solos"])
+        doubles = GameModeStats.from_dict(store_dict["doubles"])
+        trios = GameModeStats.from_dict(store_dict["trios"])
+        fours = GameModeStats.from_dict(store_dict["fours"])
+        two_four = GameModeStats.from_dict(store_dict["two_four"])
         return cls(solos, doubles, trios, fours, two_four)
