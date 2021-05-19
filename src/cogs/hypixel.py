@@ -521,9 +521,13 @@ class Hypixel(commands.Cog):
                     await ctx.reply(embed=self.bot.create_error_embed("That player has never played on Hypixel. "
                                                                       "Get them to log in and out at least once!"))
                     return
-            await self.hypixel_db.players.update_one({"_id": uuid}, {"$set": {"tracked": True}}, upsert=True)
-            await ctx.reply(embed=self.bot.create_completed_embed("Tracking Player!",
-                                                                  "Added player to tracking."))
+                await self.hypixel_db.players.update_one({"_id": uuid}, {"$set": {"tracked": True}}, upsert=True)
+                await ctx.reply(embed=self.bot.create_completed_embed("Tracking Player!",
+                                                                      "Added player to tracking."))
+            else:
+                await self.hypixel_db.players.update_one({"_id": uuid}, {"$set": {"tracked": False}}, upsert=True)
+                await ctx.reply(embed=self.bot.create_completed_embed("Not Tracking Player!",
+                                                                      "Removed player from tracking."))
 
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
