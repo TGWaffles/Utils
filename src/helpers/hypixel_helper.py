@@ -318,6 +318,8 @@ def extrapolate_threat_index(input_threat_indexes: list[int], amount):
             return c
 
     guess_a, guess_b = func_in_terms_of_y(amount)
+    print(guess_a)
+    print(guess_b)
     if guess_a > len(input_threat_indexes):
         return guess_a - (len(input_threat_indexes) - 1)
     elif guess_b > len(input_threat_indexes):
