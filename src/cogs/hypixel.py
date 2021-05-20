@@ -707,12 +707,14 @@ class Hypixel(commands.Cog):
         average_change_per_game = (last - first) / len(all_important)
         change_required = amount - last
         games_estimated = str(
-            round(change_required / average_change_per_game, 2)) if average_change_per_game != 0 else "Infinite"
+            round(change_required / average_change_per_game, 2)) if average_change_per_game != 0 else "inf"
         await ctx.reply(embed=self.bot.create_completed_embed("Estimated Games Remaining",
+                                                              f"Based on your last {len(all_important)} games, "
                                                               f"I predict it will take roughly `{games_estimated}` "
-                                                              f"games for your {attribute_name} to be {amount}!\n"
+                                                              f"games for your {attribute_name} to be {amount}!\n\n" +
                                                               f"(if the estimate is negative, I predict you will "
-                                                              f"never get there!)"))
+                                                              f"never get there!)" if float(games_estimated) < 0
+                                                              else ""))
 
     @predict.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
