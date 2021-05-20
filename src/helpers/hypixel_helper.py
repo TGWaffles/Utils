@@ -294,36 +294,14 @@ def get_file_for_member(member):
 
 
 def extrapolate_threat_index(input_threat_indexes: list[int], amount):
-    def quadratic_fit(x, input_a, input_b, input_c):
-        return (input_a * x ** 2) + input_b * x + input_c
+    def quadratic_fit(x, input_a, input_b):
+        return input_a ** (x * input_b)
 
     params, _ = curve_fit(quadratic_fit, list(range(len(input_threat_indexes))), input_threat_indexes)
-    a, b, c = params
-    print(params)
+    a, b = params
     a = float(a)
     b = float(b)
-    c = float(c)
-    print(a)
-    print(b)
-    print(c)
-    if a != 0:
-        def func_in_terms_of_y(y):
-            return ((-b + (((b ** 2) - (4 * a * c) + (4 * a * y)) ** (1 / 2))) / (2 * a),
-                    (-b - (((b ** 2) - (4 * a * c) + (4 * a * y)) ** (1 / 2))) / (2 * a))
-    elif b != 0:
-        def func_in_terms_of_y(y):
-            return (y - c) / b
+    if a > 0 and b != 0:
+        return math.log(amount) / (b * math.log(a))
     else:
-        def func_in_terms_of_y(_):
-            return c
-
-    guess_a, guess_b = func_in_terms_of_y(amount)
-    print(guess_a)
-    print(guess_b)
-    if guess_a > len(input_threat_indexes):
-        return guess_a - (len(input_threat_indexes) - 1)
-    elif guess_b > len(input_threat_indexes):
-        return guess_b - (len(input_threat_indexes) - 1)
-    else:
-        return max(guess_a, guess_b) - (len(input_threat_indexes) - 1)
-
+        return float("inf")
