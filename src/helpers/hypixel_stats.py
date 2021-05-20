@@ -161,7 +161,7 @@ def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats) -> 
 
         games_won = today.wins - yesterday.wins
         embed.add_field(name="Games Won", value=str(games_won))
-        games_lost = today.games_lost - yesterday.games_lost
+        games_lost = today.losses - yesterday.losses
         embed.add_field(name="Games Lost", value=str(games_lost))
         win_rate = str(round(games_won / games_lost, 2)) if games_lost != 0 else "Infinite"
         embed.add_field(name="Winrate", value=win_rate)
