@@ -56,7 +56,7 @@ def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_la
     x_values = np.arange(-len(input_data) + 1, 1, 1)
     new_values = np.arange(-len(input_data) + 1, 5, 1)
     plt.plot(x_values, input_data, 'b-', label='True Data')
-    plt.plot(new_values, extrapolated_values(new_values), 'r--', label="Extrapolated Data")
+    plt.plot(new_values, extrapolated_values, 'r--', label="Extrapolated Data")
     if x_label is not None:
         plt.xlabel(x_label)
     if y_label is not None:
