@@ -11,7 +11,7 @@ from aiohttp import web
 from discord.ext import commands, tasks
 
 from src.helpers.graph_helper import plot_stats
-from src.helpers.hypixel_stats import HypixelStats
+from src.helpers.hypixel_stats import HypixelStats, create_delta_embeds
 from src.helpers.paginator import EmbedPaginator
 from src.storage.token import hypixel_token
 
