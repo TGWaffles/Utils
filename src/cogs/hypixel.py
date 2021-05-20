@@ -588,7 +588,7 @@ class Hypixel(commands.Cog):
         if message.channel.id in await self.hypixel_db.players.distinct("channels"):
             await message.delete()
 
-    @commands.group(aliases=["hstats"])
+    @commands.group(aliases=["hstats", "hs"])
     async def hypixel_stats(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
