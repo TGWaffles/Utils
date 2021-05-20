@@ -51,12 +51,12 @@ def plot_stats(data, *_, x_label=None, y_label=None):
     return file.read()
 
 
-def plot_and_extrapolate(input_data, y_from_x_func, *_, x_label=None, y_label=None):
+def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_label=None):
     file = BytesIO()
     x_values = np.arange(-len(input_data) + 1, 1, 1)
-    new_values = x_values + np.arange(0, 5, 1)
+    new_values = np.arange(-len(input_data) + 1, 5, 1)
     plt.plot(x_values, input_data, 'b-', label='True Data')
-    plt.plot(new_values, y_from_x_func(new_values), 'r--', label="Extrapolated Data")
+    plt.plot(new_values, extrapolated_values(new_values), 'r--', label="Extrapolated Data")
     if x_label is not None:
         plt.xlabel(x_label)
     if y_label is not None:

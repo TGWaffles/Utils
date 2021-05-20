@@ -7,6 +7,7 @@ from typing import Optional
 import discord
 import mcuuid.api
 import mcuuid.tools
+import numpy
 from aiohttp import web
 from discord.ext import commands, tasks
 
@@ -752,7 +753,9 @@ class Hypixel(commands.Cog):
 
                 def y_func(x):
                     return last + x * average_change_per_game
-            file = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important, y_func,
+            values = numpy.arange(-len(all_important) + 1, 5, 1)
+            file = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
+                                                                     y_func(values),
                                                                      x_label="Games", y_label=pretty_name))
         discord_file = discord.File(file, "image.png")
         embed = discord.Embed(title=f"Future Prediction for {username}'s {pretty_name}")
