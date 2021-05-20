@@ -299,8 +299,11 @@ def extrapolate_threat_index(input_threat_indexes: list[int], amount):
 
     params, _ = curve_fit(quadratic_fit, list(range(len(input_threat_indexes))), input_threat_indexes)
     a, b = params
+    print(params)
     a = float(a)
     b = float(b)
+    print(a)
+    print(b)
     if a > 0 and b != 0:
         return math.log(amount) / (b * math.log(a))
     else:
