@@ -729,7 +729,7 @@ class Hypixel(commands.Cog):
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex"])
-    async def predict_statistic(self, ctx, username: str, amount: int):
+    async def predict_statistic(self, ctx, username: str, amount: float):
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
