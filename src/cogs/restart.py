@@ -87,10 +87,13 @@ class Restart(commands.Cog):
         await message.edit(embed=self.bot.create_processing_embed("Waiting on restart tasks...",
                                                                   "Waiting on restart tasks to finish up then "
                                                                   "restarting..."))
-        self.bot.restart_event.set()
-        await asyncio.sleep(0.5)
-        while self.bot.restart_waiters != 0:
-            await asyncio.sleep(0.05)
+        try:
+            self.bot.restart_event.set()
+            await asyncio.sleep(0.5)
+            while self.bot.restart_waiters != 0:
+                await asyncio.sleep(0.05)
+        except AttributeError:
+            pass
 
     @commands.command()
     @is_owner()

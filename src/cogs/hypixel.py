@@ -714,7 +714,7 @@ class Hypixel(commands.Cog):
     @hypixel_stats.command(aliases=["winrate", "wr"])
     async def win_rate(self, ctx, username: str, num_games: int = 25):
         async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "total_kills", "Finals")
+            await self.graph_stats(ctx, username, num_games, "win_rate", "Win Rate")
 
 
 def setup(bot):
