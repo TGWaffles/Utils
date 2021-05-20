@@ -657,7 +657,7 @@ class Hypixel(commands.Cog):
                 data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_fkdrs))
             file = BytesIO(data)
             discord_file = discord.File(file, filename="image.png")
-            embed = discord.Embed(title=f"{username}'s FKDR over the last {num_games} games")
+            embed = discord.Embed(title=f"{username}'s FKDR over the last {len(all_fkdrs)} games")
             embed.set_image(url="attachment://image.png")
             await ctx.reply(embed=embed, file=discord_file)
 
