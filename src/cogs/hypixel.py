@@ -697,11 +697,6 @@ class Hypixel(commands.Cog):
             await self.graph_stats(ctx, username, num_games, "bblr", "Bed Break/Loss Ratio")
 
     @hypixel_stats.command()
-    async def finals(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "total_kills", "Finals")
-
-    @hypixel_stats.command()
     async def level(self, ctx, username: str, num_games: int = 25):
         async with ctx.typing():
             await self.graph_stats(ctx, username, num_games, "level", "Level")
