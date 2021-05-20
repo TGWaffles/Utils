@@ -10,6 +10,7 @@ import mcuuid.tools
 from aiohttp import web
 from discord.ext import commands, tasks
 
+from src.helpers.graph_helper import plot_stats
 from src.helpers.hypixel_stats import HypixelStats
 from src.helpers.paginator import EmbedPaginator
 from src.storage.token import hypixel_token
@@ -634,6 +635,31 @@ class Hypixel(commands.Cog):
             all_embeds = create_delta_embeds(f"{username}'s Stats - {todays_date_string}", yesterday_stats, today_stats)
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
+
+    @hypixel_stats.command()
+    async def fkdr(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            uuid = await self.uuid_from_identifier(username)
+            if uuid is None:
+                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                                delete_after=10)
+                await ctx.message.delete()
+                return
+            document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(num_games)
+            all_documents = await document_query.to_list(length=None)
+            if len(all_documents) == 0:
+                await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+                return
+            # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
+            all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
+            all_fkdrs = [x.fkdr for x in all_stats]
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_fkdrs))
+            file = BytesIO(data)
+            discord_file = discord.File(file, filename="image.png")
+            embed = discord.Embed(title=f"{username}'s FKDR over the last {num_games} games")
+            embed.set_image(url="attachment://image.png")
+            await ctx.reply(embed=embed, file=discord_file)
 
 
 def setup(bot):
