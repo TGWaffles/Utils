@@ -243,12 +243,13 @@ class Hypixel(commands.Cog):
             
             Read request_image() for more detailed comments. This is essentially that function but as a 
             discord command rather than a webpage."""
+            uuid = await self.uuid_from_identifier(username)
+            if uuid is None:
+                await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
+                return
+            username = await self.username_from_uuid(uuid)
             data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
             if data is None or (now - last_timestamp).total_seconds() > 300:
-                uuid = await self.uuid_from_identifier(username)
-                if uuid is None:
-                    await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
-                    return
                 valid = await self.check_valid_player(uuid)
                 if not valid:
                     await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played on hypixel. Get them to "
