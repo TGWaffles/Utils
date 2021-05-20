@@ -67,6 +67,14 @@ class HypixelStats:
         return self.solos.kills + self.doubles.kills + self.trios.kills + self.fours.kills + self.two_four.kills
 
     @property
+    def kills(self) -> int:
+        return self.total_kills
+
+    @property
+    def deaths(self) -> int:
+        return self.total_deaths
+
+    @property
     def total_deaths(self) -> int:
         return self.solos.deaths + self.doubles.deaths + self.trios.deaths + self.fours.deaths + self.two_four.deaths
 
@@ -145,9 +153,9 @@ def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats) -> 
         today, yesterday = category[1]
         embed = Embed(title=title, colour=Colour.blue(), description=subtitle)
 
-        final_kills = today.total_kills - yesterday.total_kills
+        final_kills = today.kills - yesterday.kills
         embed.add_field(name="Final Kills", value=str(final_kills), inline=True)
-        final_deaths = today.total_deaths - yesterday.total_deaths
+        final_deaths = today.deaths - yesterday.deaths
         embed.add_field(name="Final Deaths", value=str(final_deaths), inline=True)
         final_fkdr = str(round(final_kills / final_deaths, 2)) if final_deaths != 0 else "Infinite"
         embed.add_field(name="FKDR", value=final_fkdr, inline=True)
