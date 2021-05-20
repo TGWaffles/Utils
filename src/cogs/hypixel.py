@@ -676,7 +676,8 @@ class Hypixel(commands.Cog):
                     await self.graph_stats(ctx, username, num_games, self.possible_attr[0], self.possible_attr[1])
 
             setattr(cls, possible_attr[2], func)
-            command = commands.Command(getattr(cls, possible_attr[2]), name=possible_attr[2])
+            command = commands.Command(getattr(cls, possible_attr[2]), name=possible_attr[2],
+                                       parent=cls.hypixel_stats)
             cls.hypixel_stats.add_command(command)
         return cls
 
