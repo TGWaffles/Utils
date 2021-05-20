@@ -10,14 +10,13 @@ import mcuuid.tools
 from aiohttp import web
 from discord.ext import commands, tasks
 
+from src.checks.role_check import is_staff
+from src.checks.user_check import is_owner
 from src.helpers.graph_helper import plot_stats
+from src.helpers.hypixel_helper import *
 from src.helpers.hypixel_stats import HypixelStats, create_delta_embeds
 from src.helpers.paginator import EmbedPaginator
 from src.storage.token import hypixel_token
-
-from src.checks.role_check import is_staff
-from src.checks.user_check import is_owner
-from src.helpers.hypixel_helper import *
 
 
 def equate_uuids(uuid, other_uuid):
@@ -251,7 +250,7 @@ class Hypixel(commands.Cog):
                     return
                 valid = await self.check_valid_player(uuid)
                 if not valid:
-                    await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played on hypixel. Get them to"
+                    await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played on hypixel. Get them to "
                                                                       "log in (and out!) at least once."))
                     return
                 with concurrent.futures.ProcessPoolExecutor() as pool:
@@ -720,6 +719,38 @@ class Hypixel(commands.Cog):
     async def threat_index(self, ctx, username: str, num_games: int = 25):
         async with ctx.typing():
             await self.graph_stats(ctx, username, num_games, "threat_index", "Threat Index")
+
+    @hypixel_stats.group()
+    async def predict(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
+                                                              "Please specify a stat to predict!"))
+
+    async def predict_games(self, ctx, username, amount, attribute, attribute_name):
+        all_stats = await self.get_game_stats(ctx, username, 100)
+        if all_stats is None:
+            return
+        elif len(all_stats) == 1:
+            await ctx.reply(embed=self.bot.create_error_embed("I can't extrapolate your data. I have only tracked "
+                                                              "one game!"))
+            return
+        all_important = [getattr(x, attribute) for x in all_stats]
+        first = all_important[0]
+        last = all_important[-1]
+        average_change_per_game = (last - first) / len(all_important)
+        change_required = amount - last
+        games_estimated = str(
+            round(change_required / average_change_per_game, 2)) if average_change_per_game != 0 else "Infinite"
+        await ctx.reply(embed=self.bot.create_completed_embed("Estimated Games Remaining",
+                                                              f"I predict it will take roughly `{games_estimated}` "
+                                                              f"games for your {attribute_name} to be {amount}!\n"
+                                                              f"(if the estimate is negative, I predict you will "
+                                                              f"never get there!)"))
+
+    @predict.command()
+    async def threat_index(self, ctx, username: str, amount: int):
+        async with ctx.typing():
+            await self.predict_games(ctx, username, amount, "threat_index", "Threat Index")
 
 
 def setup(bot):
