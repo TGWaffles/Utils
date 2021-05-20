@@ -8,6 +8,7 @@ import asyncio
 import aiohttp.client_exceptions
 import collections
 import datetime
+from scipy.optimize import curve_fit
 from io import BytesIO
 from main import UtilsBot
 
@@ -290,3 +291,24 @@ def get_file_for_member(member):
     image.save(fp=final_file, format="png")
     final_file.seek(0)
     return final_file
+
+
+def extrapolate_threat_index(input_threat_indexes: list[int]):
+    def quadratic_fit(x, input_a, input_b, input_c):
+        return (input_a * x ** 2) + input_b * x + input_c
+
+    params, _ = curve_fit(quadratic_fit, list(range(len(input_threat_indexes))), input_threat_indexes)
+    a, b, c = params
+    if a != 0:
+        def func_in_terms_of_y(y):
+            return ((-b + (((b ** 2) - (4 * a * c) + (4 * a * y)) ** (1 / 2))) / (2 * a),
+                    (-b - (((b ** 2) - (4 * a * c) + (4 * a * y)) ** (1 / 2))) / (2 * a))
+    elif b != 0:
+        def func_in_terms_of_y(y):
+            return (y - c) / b
+    else:
+        def func_in_terms_of_y(_):
+            return c
+
+    return func_in_terms_of_y
+
