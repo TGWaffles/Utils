@@ -305,6 +305,10 @@ def extrapolate_threat_index(input_threat_indexes: list[int], amount):
     b = float(b)
     c = float(c)
     d = float(d)
+    print(a)
+    print(b)
+    print(c)
+    print(d)
     if a > 0 and b != 0 and amount > d:
         return round((math.log(amount - d) - c * math.log(a)) / (b * math.log(a)), 2)
     else:
