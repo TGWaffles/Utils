@@ -754,9 +754,10 @@ class Hypixel(commands.Cog):
                 def y_func(x):
                     return last + (x * average_change_per_game)
             values = numpy.arange(-len(all_important) + 1, 5, 1)
-            file = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
+            data = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
                                                                      y_func(values),
                                                                      x_label="Games", y_label=pretty_name))
+        file = BytesIO(data)
         discord_file = discord.File(file, "image.png")
         embed = discord.Embed(title=f"Future Prediction for {username}'s {pretty_name}")
         embed.set_image(url="attachment://image.png")
