@@ -12,7 +12,7 @@ from discord.ext import commands, tasks
 
 from src.checks.role_check import is_staff
 from src.checks.user_check import is_owner
-from src.helpers.graph_helper import plot_stats
+from src.helpers.graph_helper import plot_stats, plot_and_extrapolate
 from src.helpers.hypixel_helper import *
 from src.helpers.hypixel_stats import HypixelStats, create_delta_embeds
 from src.helpers.paginator import EmbedPaginator
@@ -693,7 +693,7 @@ class Hypixel(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a stat to predict!"))
 
-    async def predict_games(self, ctx, username, amount, attribute, attribute_name):
+    async def predict_games(self, ctx, username, amount, attribute, pretty_name):
         all_stats = await self.get_game_stats(ctx, username, 100)
         if all_stats is None:
             return
@@ -722,19 +722,56 @@ class Hypixel(commands.Cog):
         await ctx.reply(embed=self.bot.create_completed_embed(f"{games_estimated} Games Remaining",
                                                               f"Based on your last {len(all_important)} games, \n"
                                                               f"I predict it will take roughly **{games_estimated}** "
-                                                              f"games for your {attribute_name} to be {amount}!\n\n" +
+                                                              f"games for your {pretty_name} to be {amount}!\n\n" +
                                                               append))
+
+    async def get_y_function(self, pool, input_threat_indexes: list[int]):
+        a, b, c, d = await self.bot.loop.run_in_executor(pool, partial(run_curve_fit, input_threat_indexes))
+
+        def fit_function(x):
+            return (a ** (x * b + c)) + d
+
+        return fit_function
+
+    async def create_prediction_graph(self, ctx, username, attribute, pretty_name):
+        all_stats = await self.get_game_stats(ctx, username, 100)
+        if all_stats is None:
+            return
+        elif len(all_stats) == 1:
+            await ctx.reply(embed=self.bot.create_error_embed("I can't extrapolate your data. I have only tracked "
+                                                              "one game!"))
+            return
+        all_important = [getattr(x, attribute) for x in all_stats]
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            if attribute == "threat_index":
+                y_func = await self.get_y_function(pool, all_important)
+            else:
+                first = all_important[0]
+                last = all_important[-1]
+                average_change_per_game = (last - first) / len(all_important)
+
+                def y_func(x):
+                    return last + x * average_change_per_game
+            file = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important, y_func,
+                                                                     x_label="Games", y_label=pretty_name))
+        discord_file = discord.File(file, "image.png")
+        embed = discord.Embed(title=f"Future Prediction for {username}'s {pretty_name}")
+        embed.set_image(url="attachment://image.png")
+        await ctx.reply(embed=embed, file=discord_file)
 
     @predict.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex"])
-    async def predict_statistic(self, ctx, username: str, amount: float):
+    async def predict_statistic(self, ctx, username: str, amount: Optional[float]):
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
         async with ctx.typing():
-            await self.predict_games(ctx, username, amount, attribute_name, pretty_name)
+            if amount is None:
+                await self.create_prediction_graph(ctx, username, attribute_name, pretty_name)
+            else:
+                await self.predict_games(ctx, username, amount, attribute_name, pretty_name)
 
 
 def setup(bot):

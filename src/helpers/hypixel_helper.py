@@ -294,6 +294,18 @@ def get_file_for_member(member):
 
 
 def extrapolate_threat_index(input_threat_indexes: list[int], amount):
+    a, b, c, d = run_curve_fit(input_threat_indexes)
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    if a > 0 and b != 0 and amount > d:
+        return round((math.log(amount - d) - c * math.log(a)) / (b * math.log(a)), 2)
+    else:
+        return float("inf")
+
+
+def run_curve_fit(input_threat_indexes):
     def quadratic_fit(x, input_a, input_b, input_c, input_d):
         return (input_a ** (x * input_b + input_c)) + input_d
 
@@ -306,11 +318,4 @@ def extrapolate_threat_index(input_threat_indexes: list[int], amount):
     b = float(b)
     c = float(c)
     d = float(d)
-    print(a)
-    print(b)
-    print(c)
-    print(d)
-    if a > 0 and b != 0 and amount > d:
-        return round((math.log(amount - d) - c * math.log(a)) / (b * math.log(a)), 2)
-    else:
-        return float("inf")
+    return a, b, c, d
