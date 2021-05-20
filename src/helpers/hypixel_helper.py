@@ -299,6 +299,7 @@ def extrapolate_threat_index(input_threat_indexes: list[int], amount):
 
     params, _ = curve_fit(quadratic_fit, list(range(len(input_threat_indexes))), input_threat_indexes)
     a, b, c = params
+    print(params)
     if a != 0:
         def func_in_terms_of_y(y):
             return ((-b + (((b ** 2) - (4 * a * c) + (4 * a * y)) ** (1 / 2))) / (2 * a),
