@@ -671,7 +671,8 @@ class Hypixel(commands.Cog):
                       "beds_destroyed": "beds_broken", "beds_lost": "beds_lost", "bedslost": "beds_lost",
                       "bblr": "bblr", "level": "level", "xp": "level", "wins": "wins", "losses": "losses",
                       "fails": "losses", "winrate": "win_rate", "win_rate": "win_rate", "wr": "win_rate",
-                      "ti": "threat_index", "threat_index": "threat_index", "threatindex": "threat_index"}
+                      "ti": "threat_index", "threat_index": "threat_index", "threatindex": "threat_index",
+                      "lvl": "level"}
     pretty_names = {"fkdr": "FKDR", "total_kills": "Final Kills", "total_deaths": "Final Deaths",
                     "beds_broken": "Beds Broken", "beds_lost": "Beds Lost", "bblr": "Bed Break/Loss Ratio",
                     "level": "Level", "wins": "Wins", "losses": "Losses", "win_rate": "Win Rate",
@@ -680,7 +681,7 @@ class Hypixel(commands.Cog):
     @hypixel_stats.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
-                                                 "threat_index", "threatindex"])
+                                                 "threat_index", "threatindex", "lvl"])
     async def graph_statistic_command(self, ctx, username: str, num_games: int = 25):
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
@@ -688,7 +689,7 @@ class Hypixel(commands.Cog):
         async with ctx.typing():
             await self.graph_stats(ctx, username, num_games, attribute_name, pretty_name)
 
-    @hypixel_stats.group()
+    @hypixel_stats.group(aliases=["p"])
     async def predict(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
@@ -767,7 +768,7 @@ class Hypixel(commands.Cog):
     @predict.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
-                                           "threat_index", "threatindex"])
+                                           "threat_index", "threatindex", "lvl"])
     async def predict_statistic(self, ctx, username: str, amount: Optional[float]):
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
