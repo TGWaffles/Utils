@@ -311,7 +311,7 @@ def run_curve_fit(input_threat_indexes):
 
     params, _ = curve_fit(quadratic_fit, list(range(len(input_threat_indexes))), input_threat_indexes, [1.03, 0.03,
                                                                                                         -173, 46],
-                          bounds=([1.0, -0.1, -2000, -1000000000], [1.1, 0.1, 2000, 1000000000]), max_nfev=1000000)
+                          bounds=([1.0, -0.1, -200, -1000000000], [1.1, 0.1, 200, 1000000000]), max_nfev=1000000)
     a, b, c, d = params
     print(params)
     a = float(a)

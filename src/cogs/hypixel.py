@@ -752,8 +752,8 @@ class Hypixel(commands.Cog):
                 average_change_per_game = (last - first) / len(all_important)
 
                 def y_func(x):
-                    return last + (x * average_change_per_game)
-            values = numpy.arange(-len(all_important) + 1, 5, 1)
+                    return first + (x * average_change_per_game)
+            values = numpy.arange(0, len(all_important) + 5, 1)
             data = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
                                                                      y_func(values),
                                                                      x_label="Games", y_label=pretty_name))
