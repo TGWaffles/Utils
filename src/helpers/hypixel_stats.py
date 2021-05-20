@@ -1,3 +1,6 @@
+from src.helpers.hypixel_helper import get_level_from_xp
+
+
 class GameModeStats:
     def __init__(self, deaths, kills, beds_lost, beds_broken, wins, losses, games_played):
         self.deaths = deaths
@@ -69,6 +72,18 @@ class HypixelStats:
     def games_played(self) -> int:
         return (self.solos.games_played + self.doubles.games_played + self.trios.games_played +
                 self.fours.games_played + self.two_four.games_played)
+
+    @property
+    def level(self) -> float:
+        return get_level_from_xp(self.experience)
+
+    @property
+    def bblr(self) -> float:
+        return self.beds_broken / self.beds_lost
+
+    @property
+    def win_rate(self) -> float:
+        return self.wins / self.losses
 
     @property
     def wins(self) -> int:

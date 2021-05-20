@@ -44,6 +44,7 @@ def plot_stats(data, *_, x_label=None, y_label=None):
     if y_label is not None:
         plt.ylabel(y_label)
     plt.xticks(x_values)
+    plt.grid()
     plt.savefig(file)
     file.seek(0)
     return file.read()

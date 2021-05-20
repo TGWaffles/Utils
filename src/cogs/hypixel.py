@@ -636,31 +636,90 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
 
+    async def get_game_stats(self, ctx, username, num_games):
+        uuid = await self.uuid_from_identifier(username)
+        if uuid is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                            delete_after=10)
+            await ctx.message.delete()
+            return
+        document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(num_games)
+        all_documents = await document_query.to_list(length=None)
+        if len(all_documents) == 0:
+            await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+            return
+        # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
+        all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
+        return all_stats
+
+    async def graph_stats(self, ctx, username, num_games, attribute, nice_name):
+        all_stats = await self.get_game_stats(ctx, username, num_games)
+        if all_stats is None:
+            return
+        all_important = [getattr(x, attribute) for x in all_stats]
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_important, x_label="Games",
+                                                                     y_label=nice_name))
+        file = BytesIO(data)
+        discord_file = discord.File(file, filename="image.png")
+        embed = discord.Embed(title=f"{username}'s {nice_name} over the last {len(all_important)} games")
+        embed.set_image(url="attachment://image.png")
+        await ctx.reply(embed=embed, file=discord_file)
+
     @hypixel_stats.command()
     async def fkdr(self, ctx, username: str, num_games: int = 25):
         async with ctx.typing():
-            uuid = await self.uuid_from_identifier(username)
-            if uuid is None:
-                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
-                                delete_after=10)
-                await ctx.message.delete()
-                return
-            document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(num_games)
-            all_documents = await document_query.to_list(length=None)
-            if len(all_documents) == 0:
-                await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
-                return
-            # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
-            all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
-            all_fkdrs = [x.fkdr for x in all_stats]
-            with concurrent.futures.ProcessPoolExecutor() as pool:
-                data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_fkdrs, x_label="Games",
-                                                                         y_label="FKDR"))
-            file = BytesIO(data)
-            discord_file = discord.File(file, filename="image.png")
-            embed = discord.Embed(title=f"{username}'s FKDR over the last {len(all_fkdrs)} games")
-            embed.set_image(url="attachment://image.png")
-            await ctx.reply(embed=embed, file=discord_file)
+            await self.graph_stats(ctx, username, num_games, "fkdr", "FKDR")
+
+    @hypixel_stats.command()
+    async def finals(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "total_kills", "Finals")
+
+    @hypixel_stats.command()
+    async def deaths(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "total_deaths", "Deaths")
+
+    @hypixel_stats.command(aliases=["bedsbroken", "brokenbeds", "bedsdestroyed", "beds_destroyed"])
+    async def beds_broken(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "beds_broken", "Beds Broken")
+
+    @hypixel_stats.command()
+    async def beds_lost(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "beds_lost", "Beds Lost")
+
+    @hypixel_stats.command()
+    async def bblr(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "bblr", "Bed Break/Loss Ratio")
+
+    @hypixel_stats.command()
+    async def finals(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "total_kills", "Finals")
+
+    @hypixel_stats.command()
+    async def level(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "level", "Level")
+
+    @hypixel_stats.command()
+    async def wins(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "wins", "Wins")
+
+    @hypixel_stats.command(aliases=["fails"])
+    async def losses(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "losses", "Losses")
+
+    @hypixel_stats.command(aliases=["winrate", "wr"])
+    async def win_rate(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "total_kills", "Finals")
 
 
 def setup(bot):
