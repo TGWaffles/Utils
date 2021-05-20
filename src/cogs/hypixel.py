@@ -665,76 +665,27 @@ class Hypixel(commands.Cog):
         embed.set_image(url="attachment://image.png")
         await ctx.reply(embed=embed, file=discord_file)
 
-    @classmethod
-    def set_generics(cls):
-        attributes_list = [("fkdr", "FKDR", "fkdr"), ("total_kills", "Finals", "finals"),
-                           ("total_deaths", "Deaths", "deaths")]
+    internal_names = {"fkdr": "fkdr", "finals": "total_kills", "kills": "total_kills", "deaths": "total_deaths",
+                      "beds_broken": "beds_broken", "brokenbeds": "beds_broken", "bedsdestroyed": "beds_broken",
+                      "beds_destroyed": "beds_broken", "beds_lost": "beds_lost", "bedslost": "beds_lost",
+                      "bblr": "bblr", "level": "level", "xp": "level", "wins": "wins", "losses": "losses",
+                      "fails": "losses", "winrate": "win_rate", "win_rate": "win_rate", "wr": "win_rate",
+                      "ti": "threat_index", "threat_index": "threat_index", "threatindex": "threat_index"}
+    pretty_names = {"fkdr": "FKDR", "total_kills": "Final Kills", "total_deaths": "Final Deaths",
+                    "beds_broken": "Beds Broken", "beds_lost": "Beds Lost", "bblr": "Bed Break/Loss Ratio",
+                    "level": "Level", "wins": "Wins", "losses": "Losses", "win_rate": "Win Rate",
+                    "threat_index": "Threat Index"}
 
-        for possible_attr in attributes_list:
-            async def func(self, ctx, username: str, num_games: int = 25):
-                async with ctx.typing():
-                    await self.graph_stats(ctx, username, num_games, self.possible_attr[0], self.possible_attr[1])
-
-            setattr(cls, possible_attr[2], func)
-            command = commands.Command(getattr(cls, possible_attr[2]), name=possible_attr[2],
-                                       parent=cls.hypixel_stats)
-            cls.hypixel_stats.add_command(command)
-        return cls
-
-    # @hypixel_stats.command()
-    # async def fkdr(self, ctx, username: str, num_games: int = 25):
-    #     async with ctx.typing():
-    #         await self.graph_stats(ctx, username, num_games, "fkdr", "FKDR")
-    #
-    # @hypixel_stats.command()
-    # async def finals(self, ctx, username: str, num_games: int = 25):
-    #     async with ctx.typing():
-    #         await self.graph_stats(ctx, username, num_games, "total_kills", "Finals")
-    #
-    # @hypixel_stats.command()
-    # async def deaths(self, ctx, username: str, num_games: int = 25):
-    #     async with ctx.typing():
-    #         await self.graph_stats(ctx, username, num_games, "total_deaths", "Deaths")
-
-    @hypixel_stats.command(aliases=["bedsbroken", "brokenbeds", "bedsdestroyed", "beds_destroyed"])
-    async def beds_broken(self, ctx, username: str, num_games: int = 25):
+    @hypixel_stats.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
+                                                 "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
+                                                 "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
+                                                 "threat_index", "threatindex"])
+    async def graph_statistic_command(self, ctx, username: str, num_games: int = 25):
+        invoking_name = ctx.invoked_with
+        attribute_name = self.internal_names[invoking_name]
+        pretty_name = self.pretty_names[attribute_name]
         async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "beds_broken", "Beds Broken")
-
-    @hypixel_stats.command()
-    async def beds_lost(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "beds_lost", "Beds Lost")
-
-    @hypixel_stats.command()
-    async def bblr(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "bblr", "Bed Break/Loss Ratio")
-
-    @hypixel_stats.command()
-    async def level(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "level", "Level")
-
-    @hypixel_stats.command()
-    async def wins(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "wins", "Wins")
-
-    @hypixel_stats.command(aliases=["fails"])
-    async def losses(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "losses", "Losses")
-
-    @hypixel_stats.command(aliases=["winrate", "wr"])
-    async def win_rate(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "win_rate", "Win Rate")
-
-    @hypixel_stats.command(aliases=["threatindex", "ti"])
-    async def threat_index(self, ctx, username: str, num_games: int = 25):
-        async with ctx.typing():
-            await self.graph_stats(ctx, username, num_games, "threat_index", "Threat Index")
+            await self.graph_stats(ctx, username, num_games, attribute_name, pretty_name)
 
     @hypixel_stats.group()
     async def predict(self, ctx):
@@ -763,15 +714,20 @@ class Hypixel(commands.Cog):
                                                               f"(if the estimate is negative, I predict you will "
                                                               f"never get there!)"))
 
-    @predict.command(aliases=["ti", "threatindex"], name="threat_index")
-    async def predict_threat_index(self, ctx, username: str, amount: int):
+    @predict.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
+                                           "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
+                                           "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
+                                           "threat_index", "threatindex"])
+    async def predict_statistic(self, ctx, username: str, amount: int):
+        invoking_name = ctx.invoked_with
+        attribute_name = self.internal_names[invoking_name]
+        pretty_name = self.pretty_names[attribute_name]
         async with ctx.typing():
-            await self.predict_games(ctx, username, amount, "threat_index", "Threat Index")
+            await self.predict_games(ctx, username, amount, attribute_name, pretty_name)
 
 
 def setup(bot):
-    generics = Hypixel.set_generics()
-    cog = generics(bot)
+    cog = Hypixel(bot)
     bot.add_cog(cog)
 
 
