@@ -693,17 +693,6 @@ class Hypixel(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a stat to predict!"))
 
-    async def predict_threat_index(self, threat_indexes, amount):
-        with concurrent.futures.ProcessPoolExecutor() as pool:
-            func = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index, threat_indexes))
-        guess_a, guess_b = func(amount)
-        if guess_a > len(threat_indexes):
-            return guess_a - (len(threat_indexes) - 1)
-        elif guess_b > len(threat_indexes):
-            return guess_b - (len(threat_indexes) - 1)
-        else:
-            return max(guess_a, guess_b) - (len(threat_indexes) - 1)
-
     async def predict_games(self, ctx, username, amount, attribute, attribute_name):
         all_stats = await self.get_game_stats(ctx, username, 100)
         if all_stats is None:
@@ -714,7 +703,9 @@ class Hypixel(commands.Cog):
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         if attribute == "threat_index":
-            games_estimated = await self.predict_threat_index(all_important, amount)
+            with concurrent.futures.ProcessPoolExecutor() as pool:
+                games_estimated = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index,
+                                                                                    all_important, amount))
         else:
             first = all_important[0]
             last = all_important[-1]

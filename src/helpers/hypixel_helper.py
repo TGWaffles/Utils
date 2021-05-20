@@ -293,7 +293,7 @@ def get_file_for_member(member):
     return final_file
 
 
-def extrapolate_threat_index(input_threat_indexes: list[int]):
+def extrapolate_threat_index(input_threat_indexes: list[int], amount):
     def quadratic_fit(x, input_a, input_b, input_c):
         return (input_a * x ** 2) + input_b * x + input_c
 
@@ -310,5 +310,11 @@ def extrapolate_threat_index(input_threat_indexes: list[int]):
         def func_in_terms_of_y(_):
             return c
 
-    return func_in_terms_of_y
+    guess_a, guess_b = func_in_terms_of_y(amount)
+    if guess_a > len(input_threat_indexes):
+        return guess_a - (len(input_threat_indexes) - 1)
+    elif guess_b > len(input_threat_indexes):
+        return guess_b - (len(input_threat_indexes) - 1)
+    else:
+        return max(guess_a, guess_b) - (len(input_threat_indexes) - 1)
 
