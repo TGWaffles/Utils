@@ -398,7 +398,7 @@ class Hypixel(commands.Cog):
                                                                       "longer :)"))
                     return
                 if player is None:
-                    player = {"_id": uuid, "tracked": False}
+                    player = {"_id": uuid}
                 channels = player.get("channels", [])
                 channels.append(channel.get("_id"))
                 player["channels"] = channels
@@ -485,30 +485,27 @@ class Hypixel(commands.Cog):
 
     async def get_with_storage(self, player_dictionary, pool, reset):
         player_data = await self.get_expanded_player(player_dictionary.get("_id"), pool, reset)
-        if player_dictionary.get("tracked", False):
-            stats = player_data.get("stats")
-            bedwars = stats.get("Bedwars")
-            uuid = player_data.get("uuid")
-            try:
-                hypixel_stats = HypixelStats.from_stats(bedwars)
-            except KeyError:
-                print(f"Stats attempted to add for player {player_data.get('name')} but there were none.")
+        stats = player_data.get("stats")
+        bedwars = stats.get("Bedwars")
+        uuid = player_data.get("uuid")
+        try:
+            hypixel_stats = HypixelStats.from_stats(bedwars)
+        except KeyError:
+            return player_data
+        last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
+        last_document_list = await last_document_query.to_list(length=1)
+        if len(last_document_list) != 0:
+            last_document = last_document_list[0]
+            last_stats_dict = last_document["stats"]
+            last_stats = HypixelStats.from_dict(last_stats_dict)
+            if last_stats.games_played == hypixel_stats.games_played:
                 return player_data
-            last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
-            last_document_list = await last_document_query.to_list(length=1)
-            if len(last_document_list) != 0:
-                last_document = last_document_list[0]
-                last_stats_dict = last_document["stats"]
-                last_stats = HypixelStats.from_dict(last_stats_dict)
-                if last_stats.games_played == hypixel_stats.games_played:
-                    return player_data
-            player_document = {"uuid": uuid, "stats": hypixel_stats.to_dict(),
-                               "timestamp": datetime.datetime.now()}
-            await self.hypixel_db.statistics.insert_one(player_document)
+        player_document = {"uuid": uuid, "stats": hypixel_stats.to_dict(),
+                           "timestamp": datetime.datetime.now()}
+        await self.hypixel_db.statistics.insert_one(player_document)
         return player_data
 
     @commands.command()
-    @is_owner()
     async def track_player(self, ctx, username: str):
         async with ctx.typing():
             uuid = await self.uuid_from_identifier(username)
@@ -518,18 +515,17 @@ class Hypixel(commands.Cog):
                 await ctx.message.delete()
                 return
             tracked_player = await self.hypixel_db.players.find_one({"_id": uuid})
-            if tracked_player is None or not tracked_player.get("tracked", False):
+            if tracked_player is None:
                 if not await self.check_valid_player(uuid, True):
                     await ctx.reply(embed=self.bot.create_error_embed("That player has never played on Hypixel. "
                                                                       "Get them to log in and out at least once!"))
                     return
-                await self.hypixel_db.players.update_one({"_id": uuid}, {"$set": {"tracked": True}}, upsert=True)
+                await self.hypixel_db.players.insert_one({"_id": uuid})
                 await ctx.reply(embed=self.bot.create_completed_embed("Tracking Player!",
                                                                       "Added player to tracking."))
             else:
-                await self.hypixel_db.players.update_one({"_id": uuid}, {"$set": {"tracked": False}}, upsert=True)
-                await ctx.reply(embed=self.bot.create_completed_embed("Not Tracking Player!",
-                                                                      "Removed player from tracking."))
+                await ctx.reply(embed=self.bot.create_error_embed("That player is already being tracked!"))
+                return
 
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):
