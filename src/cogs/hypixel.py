@@ -761,7 +761,7 @@ class Hypixel(commands.Cog):
                                                               f"(if the estimate is negative, I predict you will "
                                                               f"never get there!)"))
 
-    @predict.command(aliases=["threat_index", "threatindex"], name="threat_index")
+    @predict.command(aliases=["ti", "threatindex"], name="threat_index")
     async def predict_threat_index(self, ctx, username: str, amount: int):
         async with ctx.typing():
             await self.predict_games(ctx, username, amount, "threat_index", "Threat Index")
