@@ -35,10 +35,14 @@ def pie_chart_from_amount_and_labels(labels, amounts):
     return file.read()
 
 
-def plot_stats(data):
+def plot_stats(data, *_, x_label=None, y_label=None):
     file = BytesIO()
     x_values = np.arange(-len(data) + 1, 1, 1)
     plt.plot(x_values, data)
+    if x_label is not None:
+        plt.xlabel(x_label)
+    if y_label is not None:
+        plt.ylabel(y_label)
     plt.xticks(x_values)
     plt.savefig(file)
     file.seek(0)

@@ -654,7 +654,8 @@ class Hypixel(commands.Cog):
             all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
             all_fkdrs = [x.fkdr for x in all_stats]
             with concurrent.futures.ProcessPoolExecutor() as pool:
-                data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_fkdrs))
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_fkdrs, x_label="Games",
+                                                                         y_label="FKDR"))
             file = BytesIO(data)
             discord_file = discord.File(file, filename="image.png")
             embed = discord.Embed(title=f"{username}'s FKDR over the last {len(all_fkdrs)} games")

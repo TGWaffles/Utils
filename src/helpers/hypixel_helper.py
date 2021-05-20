@@ -78,7 +78,7 @@ class HypixelAPI:
                     self.ratelimit_remaining = 0
                     self.ratelimit_reset_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
                 return
-            except (exceptions, waiting_exceptions):
+            except (*exceptions, *waiting_exceptions):
                 await self.request_queue.put(waited_event)
                 return
             if response.status == 429:
