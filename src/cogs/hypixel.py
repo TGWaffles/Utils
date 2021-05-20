@@ -653,6 +653,10 @@ class Hypixel(commands.Cog):
         if all_stats is None:
             return
         all_important = [getattr(x, attribute) for x in all_stats]
+        if len(all_important) == 1:
+            await ctx.reply(embed=self.bot.create_error_embed("I can't graph your data over time. I have only tracked "
+                                                              "one game!\n\nGo play some more bedwars!"))
+            return
         with concurrent.futures.ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_important, x_label="Games",
                                                                      y_label=nice_name))
@@ -697,7 +701,7 @@ class Hypixel(commands.Cog):
             return
         elif len(all_stats) == 1:
             await ctx.reply(embed=self.bot.create_error_embed("I can't extrapolate your data. I have only tracked "
-                                                              "one game!"))
+                                                              "one game! \nGo play some more bedwars!"))
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         if attribute == "threat_index":
@@ -737,7 +741,7 @@ class Hypixel(commands.Cog):
             return
         elif len(all_stats) == 1:
             await ctx.reply(embed=self.bot.create_error_embed("I can't extrapolate your data. I have only tracked "
-                                                              "one game!"))
+                                                              "one game!\n\nGo play some more bedwars!"))
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         with concurrent.futures.ProcessPoolExecutor() as pool:
