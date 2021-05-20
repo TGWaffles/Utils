@@ -54,14 +54,15 @@ def plot_stats(data, *_, x_label=None, y_label=None):
 def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_label=None):
     file = BytesIO()
     x_values = np.arange(-len(input_data) + 1, 1, 1)
-    new_values = np.arange(-len(input_data) + 1, 5, 1)
+    extrapolate_max = int(round(0.5 * len(input_data)))
+    new_values = np.arange(-len(input_data) + 1, extrapolate_max, 1)
     plt.plot(x_values, input_data, 'b-', label='True Data')
     plt.plot(new_values, extrapolated_values, 'r--', label="Extrapolated Data")
     if x_label is not None:
         plt.xlabel(x_label)
     if y_label is not None:
         plt.ylabel(y_label)
-    if len(x_values) < 10:
+    if len(new_values) < 10:
         plt.xticks(new_values)
     plt.grid()
     plt.savefig(file)
