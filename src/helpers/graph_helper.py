@@ -37,7 +37,7 @@ def pie_chart_from_amount_and_labels(labels, amounts):
 
 def plot_stats(data):
     file = BytesIO()
-    plt.plot(list(range(-len(data), 1)), data)
+    plt.plot(list(range(-len(data) + 1, 1)), data)
     plt.savefig(file)
     file.seek(0)
     return file.read()
