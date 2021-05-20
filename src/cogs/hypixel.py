@@ -716,6 +716,11 @@ class Hypixel(commands.Cog):
         async with ctx.typing():
             await self.graph_stats(ctx, username, num_games, "win_rate", "Win Rate")
 
+    @hypixel_stats.command(aliases=["threatindex", "ti"])
+    async def threat_index(self, ctx, username: str, num_games: int = 25):
+        async with ctx.typing():
+            await self.graph_stats(ctx, username, num_games, "threat_index", "Threat Index")
+
 
 def setup(bot):
     cog = Hypixel(bot)

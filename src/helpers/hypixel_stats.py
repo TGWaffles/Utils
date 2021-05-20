@@ -76,6 +76,10 @@ class HypixelStats:
                 self.fours.games_played + self.two_four.games_played)
 
     @property
+    def threat_index(self) -> float:
+        return ((self.fkdr ** 2) * self.level) / 10
+
+    @property
     def level(self) -> float:
         return get_level_from_xp(self.experience)
 
