@@ -298,7 +298,8 @@ def extrapolate_threat_index(input_threat_indexes: list[int], amount):
         return (input_a ** (x * input_b + input_c)) + input_d
 
     params, _ = curve_fit(quadratic_fit, list(range(len(input_threat_indexes))), input_threat_indexes, [1.03, 0.03,
-                                                                                                        -173, 46])
+                                                                                                        -173, 46],
+                          bounds=([1.0, -0.1, -200, -1000000000], [1.1, 0.1, 200, 1000000000]))
     a, b, c, d = params
     print(params)
     a = float(a)
