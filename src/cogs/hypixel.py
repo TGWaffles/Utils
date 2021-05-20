@@ -671,7 +671,7 @@ class Hypixel(commands.Cog):
                            ("total_deaths", "Deaths", "deaths")]
 
         for possible_attr in attributes_list:
-            @cls.hypixel_stats.command()
+            @cls.hypixel_stats.command(name=possible_attr[2])
             async def func(self, ctx, username: str, num_games: int = 25):
                 async with ctx.typing():
                     await self.graph_stats(ctx, username, num_games, self.possible_attr[0], self.possible_attr[1])
