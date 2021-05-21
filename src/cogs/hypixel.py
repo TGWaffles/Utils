@@ -705,17 +705,20 @@ class Hypixel(commands.Cog):
                                                               "one game! \nGo play some more bedwars!"))
             return
         all_important = [getattr(x, attribute) for x in all_stats]
-        if attribute == "threat_index":
-            with concurrent.futures.ProcessPoolExecutor() as pool:
-                games_estimated = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index,
-                                                                                    all_important, amount))
-        else:
-            first = all_important[0]
-            last = all_important[-1]
-            average_change_per_game = (last - first) / len(all_important)
-            change_required = amount - last
-            games_estimated = (round(change_required / average_change_per_game, 2) if average_change_per_game != 0 else
-                               float("inf"))
+        with concurrent.futures.ProcessPoolExecutor() as pool:
+            games_estimated = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index,
+                                                                                all_important, amount))
+        # if attribute == "threat_index":
+        #     with concurrent.futures.ProcessPoolExecutor() as pool:
+        #         games_estimated = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index,
+        #                                                                             all_important, amount))
+        # else:
+        #     first = all_important[0]
+        #     last = all_important[-1]
+        #     average_change_per_game = (last - first) / len(all_important)
+        #     change_required = amount - last
+        #     games_estimated = (round(change_required / average_change_per_game, 2) if average_change_per_game != 0 else
+        #                        float("inf"))
         append = ("(if the estimate is negative, I predict you will never get there!)" if games_estimated < 0
                   else "")
         if games_estimated == float("inf"):
