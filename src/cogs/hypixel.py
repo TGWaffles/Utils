@@ -746,15 +746,16 @@ class Hypixel(commands.Cog):
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         with concurrent.futures.ProcessPoolExecutor() as pool:
-            if attribute == "threat_index":
-                y_func = await self.get_y_function(pool, all_important)
-            else:
-                first = all_important[0]
-                last = all_important[-1]
-                average_change_per_game = (last - first) / len(all_important)
-
-                def y_func(x):
-                    return first + (x * average_change_per_game)
+            y_func = await self.get_y_function(pool, all_important)
+            # if attribute == "threat_index":
+            #     y_func = await self.get_y_function(pool, all_important)
+            # else:
+            #     first = all_important[0]
+            #     last = all_important[-1]
+            #     average_change_per_game = (last - first) / len(all_important)
+            #
+            #     def y_func(x):
+            #         return first + (x * average_change_per_game)
             extrapolate_max = int(round(0.5 * len(all_important))) - 1
             values = numpy.arange(0, len(all_important) + extrapolate_max, 1)
             data = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
