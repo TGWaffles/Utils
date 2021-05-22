@@ -106,11 +106,13 @@ class Hypixel(commands.Cog):
             name, discriminator = discord_name.split("#")
         except ValueError:
             return
-        users = [user for user in self.bot.users if user.name.lower() == name.lower() and
-                 user.discriminator == discriminator]
-        user = users[0] if len(users) != 0 else None
+        user = discord.utils.get(self.bot.users, name=name, discriminator=discriminator)
         if user is None:
-            return
+            users = [user for user in self.bot.users if user.name.lower() == name.lower() and
+                     user.discriminator == discriminator]
+            user = users[0] if len(users) != 0 else None
+            if user is None:
+                return
         await self.hypixel_db.players.update_one({"_id": player.get("uuid")}, {"$set": {"discord_id": user.id}})
 
     async def get_user_stats(self, user_uuid, prioritize=False):
