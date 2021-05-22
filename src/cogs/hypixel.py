@@ -638,23 +638,30 @@ class Hypixel(commands.Cog):
         earlier_document_list = await earlier_document_query.to_list(length=1)
         return earlier_document_list[0] if len(earlier_document_list) != 0 else None
 
-    async def get_most_recent_stats(self, uuid):
-        last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
+    async def get_player_stats(self, uuid, newest: bool = True):
+        last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort(
+            "timestamp", 1 * (-1 * int(newest))).limit(1)
         last_document_list = await last_document_query.to_list(length=None)
         return last_document_list[0] if len(last_document_list) != 0 else None
+
+    async def process_data_command(self, ctx, username):
+        if username is None:
+            username = await self.discord_to_hypixel(ctx.author)
+        username, uuid = await self.true_username_and_uuid(ctx, username)
+        if username is None or uuid is None:
+            return None, None
+        last_document = await self.get_player_stats(uuid)
+        if last_document is None:
+            await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+            return None, None
+        return last_document, username, uuid
 
     @hypixel_stats.command()
     async def daily(self, ctx, username: Optional[str]):
         async with ctx.typing():
-            if username is None:
-                username = await self.discord_to_hypixel(ctx.author)
-            username, uuid = await self.true_username_and_uuid(ctx, username)
-            if username is None or uuid is None:
-                return
             yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-            last_document = await self.get_most_recent_stats(uuid)
+            last_document, username, uuid = await self.process_data_command(ctx, username)
             if last_document is None:
-                await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
                 return
             if last_document.get("timestamp") < yesterday:
                 await ctx.reply(embed=self.bot.create_error_embed(f"{username} has not played Bedwars today."))
@@ -668,6 +675,20 @@ class Hypixel(commands.Cog):
             yesterday_stats = HypixelStats.from_dict(earlier_document["stats"])
             todays_date_string = datetime.datetime.now().strftime("%A, %B %d %Y")
             all_embeds = create_delta_embeds(f"{username}'s Stats - {todays_date_string}", yesterday_stats, today_stats)
+            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
+            await paginator.start()
+
+    @hypixel_stats.command()
+    async def total(self, ctx, username: Optional[str]):
+        async with ctx.typing():
+            last_document, username, uuid = await self.process_data_command(ctx, username)
+            first_document = await self.get_player_stats(uuid, False)
+            if first_document == last_document:
+                await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
+                return
+            latest_stats = HypixelStats.from_stats(last_document["stats"])
+            earliest_stats = HypixelStats.from_stats(first_document["stats"])
+            all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earliest_stats, latest_stats)
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
 
