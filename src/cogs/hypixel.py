@@ -247,10 +247,12 @@ class Hypixel(commands.Cog):
         return response
 
     @commands.command(aliases=["hinfo", "hypixelinfo"])
-    async def hypixel_info(self, ctx, username: str):
+    async def hypixel_info(self, ctx, username: Optional[str]):
         """Runs the hinfo command.
 
         Essentially, just sends the bedwars image as a file independent of the webhost."""
+        if username is None:
+            username = await self.check_registered(ctx)
         now = datetime.datetime.now()
         async with ctx.typing():
             """Checks cache for file. Can probably be extrapolated into a method, but this replies to the calling
@@ -388,10 +390,7 @@ class Hypixel(commands.Cog):
                       aliases=["hadd", "hypixel_add", "hypixeladd"])
     @is_staff()
     async def add(self, ctx, username: str):
-        """Adds a user to the server's hypixel info channel to be updated regularly.
-
-        This is currently a JSON file, but I'll move it to a DB when I get a database solution working
-        that doesn't freeze the whole python process even when it's in a different thread."""
+        """Adds a user to the server's hypixel info channel to be updated regularly."""
         async with ctx.typing():
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
@@ -433,10 +432,7 @@ class Hypixel(commands.Cog):
     @is_staff()
     async def remove(self, ctx, username: str):
         """Removes a user from the server's hypixel info channel so they won't be updated regularly, at least not
-        in that channel anymore.
-
-        This is currently a JSON file, but I'll move it to a DB when I get a database solution working
-        that doesn't freeze the whole python process even when it's in a different thread."""
+        in that channel anymore."""
         async with ctx.typing():
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
@@ -522,8 +518,10 @@ class Hypixel(commands.Cog):
         return player_data
 
     @commands.command()
-    async def track_player(self, ctx, username: str):
+    async def track_player(self, ctx, username: Optional[str]):
         async with ctx.typing():
+            if username is None:
+                username = await self.check_registered(ctx)
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
