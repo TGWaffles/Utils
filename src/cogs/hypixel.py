@@ -683,7 +683,9 @@ class Hypixel(commands.Cog):
     async def total(self, ctx, username: Optional[str]):
         async with ctx.typing():
             last_document, username, uuid = await self.process_data_command(ctx, username)
+            print(last_document.get("timestamp"))
             first_document = await self.get_player_stats(uuid, False)
+            print(first_document.get("timestamp"))
             if first_document == last_document:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
                 return
@@ -710,12 +712,12 @@ class Hypixel(commands.Cog):
     async def get_game_stats(self, ctx, username, num_games):
         username, uuid = await self.true_username_and_uuid(ctx, username)
         if username is None or uuid is None:
-            return
+            return None, None
         document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(num_games)
         all_documents = await document_query.to_list(length=None)
         if len(all_documents) == 0:
             await ctx.reply(embed=self.bot.create_error_embed(f"{username} is not being tracked."))
-            return
+            return None, None
         # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
         all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
         return all_stats, username
