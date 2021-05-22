@@ -273,7 +273,9 @@ class Hypixel(commands.Cog):
 
         Essentially, just sends the bedwars image as a file independent of the web host."""
         if username is None or isinstance(username, discord.User):
+            print(username)
             username = await self.discord_to_hypixel(ctx.author)
+            print(username)
         now = datetime.datetime.now()
         async with ctx.typing():
             """Checks cache for file. Can probably be extrapolated into a method, but this replies to the calling
