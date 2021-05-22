@@ -11,6 +11,7 @@ import mcuuid.tools
 import numpy
 from aiohttp import web
 from discord.ext import commands, tasks
+from discord.ext.commands import converter
 
 from src.checks.role_check import is_staff
 from src.helpers.graph_helper import plot_stats, plot_and_extrapolate
@@ -268,12 +269,12 @@ class Hypixel(commands.Cog):
         return response
 
     @commands.command(aliases=["hinfo", "hypixelinfo"])
-    async def hypixel_info(self, ctx, username: Optional[Union[discord.User, str]]):
+    async def hypixel_info(self, ctx, username: Optional[str]):
         """Runs the hinfo command.
 
         Essentially, just sends the bedwars image as a file independent of the web host."""
-        if username is None or isinstance(username, discord.User):
-            username = await self.discord_to_hypixel(username if username is not None else ctx.author)
+        if username is None:
+            username = await self.discord_to_hypixel(ctx.author)
         now = datetime.datetime.now()
         async with ctx.typing():
             """Checks cache for file. Can probably be extrapolated into a method, but this replies to the calling
@@ -281,9 +282,8 @@ class Hypixel(commands.Cog):
             
             Read request_image() for more detailed comments. This is essentially that function but as a 
             discord command rather than a webpage."""
-            uuid = await self.uuid_from_identifier(username)
-            if uuid is None:
-                await ctx.reply(embed=self.bot.create_error_embed("That Minecraft user doesn't exist."))
+            username, uuid = await self.true_username_and_uuid(ctx, username)
+            if username is None or uuid is None:
                 return
             username = await self.username_from_uuid(uuid)
             data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
@@ -539,15 +539,12 @@ class Hypixel(commands.Cog):
         return player_data
 
     @commands.command()
-    async def track_player(self, ctx, username: Optional[Union[discord.User, str]]):
+    async def track_player(self, ctx, username: Optional[str]):
         async with ctx.typing():
-            if username is None or isinstance(username, discord.User):
-                username = await self.discord_to_hypixel(username if username is not None else ctx.author)
-            uuid = await self.uuid_from_identifier(username)
-            if uuid is None:
-                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
-                                delete_after=10)
-                await ctx.message.delete()
+            if username is None:
+                username = await self.discord_to_hypixel(ctx.author)
+            username, uuid = await self.true_username_and_uuid(ctx, username)
+            if username is None or uuid is None:
                 return
             tracked_player = await self.hypixel_db.players.find_one({"_id": uuid})
             if tracked_player is None:
@@ -647,15 +644,12 @@ class Hypixel(commands.Cog):
         return last_document_list[0] if len(last_document_list) != 0 else None
 
     @hypixel_stats.command()
-    async def daily(self, ctx, username: Optional[Union[discord.User, str]]):
+    async def daily(self, ctx, username: Optional[str]):
         async with ctx.typing():
-            if username is None or isinstance(username, discord.User):
-                username = await self.discord_to_hypixel(username if username is not None else ctx.author)
-            uuid = await self.uuid_from_identifier(username)
-            if uuid is None:
-                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
-                                delete_after=10)
-                await ctx.message.delete()
+            if username is None:
+                username = await self.discord_to_hypixel(ctx.author)
+            username, uuid = await self.true_username_and_uuid(ctx, username)
+            if username is None or uuid is None:
                 return
             yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
             last_document = await self.get_most_recent_stats(uuid)
@@ -677,12 +671,23 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
 
-    async def get_game_stats(self, ctx, username, num_games):
+    async def true_username_and_uuid(self, ctx, username):
         uuid = await self.uuid_from_identifier(username)
         if uuid is None:
-            await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
-                            delete_after=10)
-            await ctx.message.delete()
+            try:
+                user = await converter.UserConverter().convert(ctx, username)
+            except commands.BadArgument:
+                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                                delete_after=10)
+                await ctx.message.delete()
+                return None, None
+            username = await self.discord_to_hypixel(user)
+            uuid = await self.uuid_from_identifier(username)
+        return username, uuid
+
+    async def get_game_stats(self, ctx, username, num_games):
+        username, uuid = await self.true_username_and_uuid(ctx, username)
+        if username is None or uuid is None:
             return
         document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(num_games)
         all_documents = await document_query.to_list(length=None)
@@ -727,8 +732,8 @@ class Hypixel(commands.Cog):
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
-    async def graph_statistic_command(self, ctx, username: Optional[Union[discord.User, str]], num_games: int = 25):
-        if username is None or isinstance(username, discord.User):
+    async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = 25):
+        if username is None:
             username = await self.discord_to_hypixel(username if username is not None else ctx.author)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
