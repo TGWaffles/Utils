@@ -609,7 +609,9 @@ class Hypixel(commands.Cog):
     async def check_registered(self, ctx):
         player = await self.hypixel_db.players.find_one({"discord_id": ctx.author.id})
         if player is not None:
-            return player.get("_id")
+            uuid = player.get("_id")
+            username = await self.username_from_uuid(uuid)
+            return username
         raise commands.MissingRequiredArgument("username")
 
     async def get_stats_from_before(self, uuid, timedelta: datetime.timedelta):
