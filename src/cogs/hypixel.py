@@ -3,7 +3,7 @@ import inspect
 import secrets
 import traceback
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 import mcuuid.api
@@ -98,6 +98,8 @@ class Hypixel(commands.Cog):
                 "fkdr": fkdr, "stats": player["stats"]}
 
     async def check_db_for_user(self, name, discriminator):
+        """Check if a name#discriminator is in the database of all known users. This will help when the bot gets
+         sharded."""
         user = await self.bot.mongo.discord_db.users.find_one({"name": name, "discriminator": discriminator})
         if user is not None:
             return user.get("_id")
@@ -105,17 +107,22 @@ class Hypixel(commands.Cog):
 
     async def store_discord_data(self, player):
         """Checks if the player has a valid discord name we know of, and if so, stores it."""
+        # DISCORD should be in the format of name#discrim from hypixel.
         discord_name = player.get("socialMedia", {}).get("links", {}).get("DISCORD", None)
         if discord_name is None:
             return
         try:
+            # Split by the hashtag, but if there is none (malformed name), return
             name, discriminator = discord_name.split("#")
         except ValueError:
             return
+        # Does a database lookup first in case we're sharded and it's not in the cache. Fastest.
         user_id = await self.check_db_for_user(name, discriminator)
         if user_id is None:
+            # Checks cache instead
             user = discord.utils.get(self.bot.users, name=name, discriminator=discriminator)
             if user is None:
+                # Checks cache but case-insensitive. Won't work after sharding.
                 users = [user for user in self.bot.users if user.name.lower() == name.lower() and
                          user.discriminator == discriminator]
                 user = users[0] if len(users) != 0 else None
@@ -261,12 +268,12 @@ class Hypixel(commands.Cog):
         return response
 
     @commands.command(aliases=["hinfo", "hypixelinfo"])
-    async def hypixel_info(self, ctx, username: Optional[str]):
+    async def hypixel_info(self, ctx, username: Optional[Union[str, discord.User]]):
         """Runs the hinfo command.
 
-        Essentially, just sends the bedwars image as a file independent of the webhost."""
-        if username is None:
-            username = await self.check_registered(ctx)
+        Essentially, just sends the bedwars image as a file independent of the web host."""
+        if username is None or isinstance(username, discord.User):
+            username = await self.discord_to_hypixel(ctx.author)
         now = datetime.datetime.now()
         async with ctx.typing():
             """Checks cache for file. Can probably be extrapolated into a method, but this replies to the calling
@@ -532,10 +539,10 @@ class Hypixel(commands.Cog):
         return player_data
 
     @commands.command()
-    async def track_player(self, ctx, username: Optional[str]):
+    async def track_player(self, ctx, username: Optional[Union[str, discord.User]]):
         async with ctx.typing():
-            if username is None:
-                username = await self.check_registered(ctx)
+            if username is None or isinstance(username, discord.User):
+                username = await self.discord_to_hypixel(ctx.author)
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
@@ -618,8 +625,8 @@ class Hypixel(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a date or statistic."))
 
-    async def check_registered(self, ctx):
-        player = await self.hypixel_db.players.find_one({"discord_id": ctx.author.id})
+    async def discord_to_hypixel(self, user: discord.User):
+        player = await self.hypixel_db.players.find_one({"discord_id": user.id})
         if player is not None:
             uuid = player.get("_id")
             username = await self.username_from_uuid(uuid)
@@ -640,10 +647,10 @@ class Hypixel(commands.Cog):
         return last_document_list[0] if len(last_document_list) != 0 else None
 
     @hypixel_stats.command()
-    async def daily(self, ctx, username: Optional[str]):
+    async def daily(self, ctx, username: Optional[Union[str, discord.User]]):
         async with ctx.typing():
-            if username is None:
-                username = await self.check_registered(ctx)
+            if username is None or isinstance(username, discord.User):
+                username = await self.discord_to_hypixel(ctx.author)
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
@@ -720,9 +727,9 @@ class Hypixel(commands.Cog):
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
-    async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = 25):
-        if username is None:
-            username = await self.check_registered(ctx)
+    async def graph_statistic_command(self, ctx, username: Optional[Union[str, discord.User]], num_games: int = 25):
+        if username is None or isinstance(username, discord.User):
+            username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
@@ -813,9 +820,9 @@ class Hypixel(commands.Cog):
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
-    async def predict_statistic(self, ctx, username: Optional[str], amount: Optional[float]):
-        if username is None:
-            username = await self.check_registered(ctx)
+    async def predict_statistic(self, ctx, username: Optional[Union[str, discord.User]], amount: Optional[float]):
+        if username is None or isinstance(username, discord.User):
+            username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
