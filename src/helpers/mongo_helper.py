@@ -45,7 +45,7 @@ class MongoDB:
         await self.force_insert(self.discord_db.channels, channel_document)
 
     async def insert_user(self, user: discord.User):
-        user_document = {"_id": user.id, "name": user.name, "bot": user.bot}
+        user_document = {"_id": user.id, "name": user.name, "discriminator": user.discriminator, "bot": user.bot}
         await self.force_insert(self.discord_db.users, user_document)
 
     async def insert_member(self, member: discord.Member):
