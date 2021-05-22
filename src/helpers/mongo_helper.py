@@ -9,8 +9,12 @@ from src.storage import config
 
 
 class MongoDB:
-    def __init__(self):
-        self.client = motor.motor_asyncio.AsyncIOMotorClient(config.mongo_connection_uri)
+    def __init__(self, read_only=False):
+        if read_only:
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(config.mongo_connection_uri +
+                                                                 "&readPreference=secondaryPreferred")
+        else:
+            self.client = motor.motor_asyncio.AsyncIOMotorClient(config.mongo_connection_uri)
         self.discord_db = self.client.discord
 
     @staticmethod

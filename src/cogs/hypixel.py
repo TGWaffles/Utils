@@ -12,10 +12,10 @@ from aiohttp import web
 from discord.ext import commands, tasks
 
 from src.checks.role_check import is_staff
-from src.checks.user_check import is_owner
 from src.helpers.graph_helper import plot_stats, plot_and_extrapolate
 from src.helpers.hypixel_helper import *
 from src.helpers.hypixel_stats import HypixelStats, create_delta_embeds
+from src.helpers.mongo_helper import MongoDB
 from src.helpers.paginator import EmbedPaginator
 from src.storage.token import hypixel_token
 
@@ -95,6 +95,20 @@ class Hypixel(commands.Cog):
                 "game": status.get("gameType"),
                 "mode": status.get("mode"), "map": status.get("map"), "uuid": user_uuid, "threat_index": threat_index,
                 "fkdr": fkdr, "stats": player["stats"]}
+
+    async def store_discord_data(self, player):
+        """Checks if the player has a valid discord name we know of, and if so, stores it."""
+        discord_name = player.get("socialMedia", {}).get("links", {}).get("DISCORD", None)
+        if discord_name is None:
+            return
+        try:
+            name, discriminator = discord_name.split("#")
+        except ValueError:
+            return
+        user = discord.utils.get(self.bot.users, name=name, discriminator=discriminator)
+        if user is None:
+            return
+        await self.hypixel_db.players.update_one({"_id": player.get("uuid")}, {"$set": {"discord_id": user.id}})
 
     async def get_user_stats(self, user_uuid, prioritize=False):
         """Gets the actual information from hypixel, determines whether the member is online or not, and also fetches
@@ -591,6 +605,16 @@ class Hypixel(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a date or statistic."))
 
+    class UsernameDefault(commands.Converter):
+        async def convert(self, ctx, argument):
+            if argument is not None:
+                return argument
+            mongo = MongoDB(read_only=True)
+            player = await mongo.client.hypixel.players.find_one({"discord_id": ctx.author.id})
+            if player is not None:
+                return player.get("_id")
+            raise commands.BadArgument()
+
     async def get_stats_from_before(self, uuid, timedelta: datetime.timedelta):
         before = datetime.datetime.now() - timedelta
         earlier_document_query = self.hypixel_db.statistics.find({"uuid": uuid,
@@ -605,7 +629,7 @@ class Hypixel(commands.Cog):
         return last_document_list[0] if len(last_document_list) != 0 else None
 
     @hypixel_stats.command()
-    async def daily(self, ctx, username: str):
+    async def daily(self, ctx, username: UsernameDefault):
         async with ctx.typing():
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
@@ -683,7 +707,7 @@ class Hypixel(commands.Cog):
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
-    async def graph_statistic_command(self, ctx, username: str, num_games: int = 25):
+    async def graph_statistic_command(self, ctx, username: UsernameDefault, num_games: int = 25):
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
@@ -697,7 +721,7 @@ class Hypixel(commands.Cog):
                                                               "Please specify a stat to predict!"))
 
     async def predict_games(self, ctx, username, amount, attribute, pretty_name):
-        all_stats = await self.get_game_stats(ctx, username, 100)
+        all_stats = await self.get_game_stats(ctx, username, 1000)
         if all_stats is None:
             return
         elif len(all_stats) == 1:
@@ -717,8 +741,8 @@ class Hypixel(commands.Cog):
         #     last = all_important[-1]
         #     average_change_per_game = (last - first) / len(all_important)
         #     change_required = amount - last
-        #     games_estimated = (round(change_required / average_change_per_game, 2) if average_change_per_game != 0 else
-        #                        float("inf"))
+        #     games_estimated = (round(
+        #     change_required / average_change_per_game, 2) if average_change_per_game != 0 else float("inf"))
         append = ("(if the estimate is negative, I predict you will never get there!)" if games_estimated < 0
                   else "")
         if games_estimated == float("inf"):
@@ -740,7 +764,7 @@ class Hypixel(commands.Cog):
         return fit_function
 
     async def create_prediction_graph(self, ctx, username, attribute, pretty_name):
-        all_stats = await self.get_game_stats(ctx, username, 100)
+        all_stats = await self.get_game_stats(ctx, username, 1000)
         if all_stats is None:
             return
         elif len(all_stats) == 1:
@@ -774,7 +798,7 @@ class Hypixel(commands.Cog):
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
-    async def predict_statistic(self, ctx, username: str, amount: Optional[float]):
+    async def predict_statistic(self, ctx, username: UsernameDefault, amount: Optional[float]):
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
