@@ -1,4 +1,5 @@
 import concurrent.futures
+import inspect
 import secrets
 import traceback
 from functools import partial
@@ -105,7 +106,9 @@ class Hypixel(commands.Cog):
             name, discriminator = discord_name.split("#")
         except ValueError:
             return
-        user = discord.utils.get(self.bot.users, name=name, discriminator=discriminator)
+        users = [user for user in self.bot.users if user.name.lower() == name.lower() and
+                 user.discriminator == discriminator]
+        user = users[0] if len(users) != 0 else None
         if user is None:
             return
         await self.hypixel_db.players.update_one({"_id": player.get("uuid")}, {"$set": {"discord_id": user.id}})
@@ -610,7 +613,7 @@ class Hypixel(commands.Cog):
             uuid = player.get("_id")
             username = await self.username_from_uuid(uuid)
             return username
-        raise commands.MissingRequiredArgument("username")
+        raise commands.MissingRequiredArgument(inspect.Parameter("username", inspect.Parameter.POSITIONAL_OR_KEYWORD))
 
     async def get_stats_from_before(self, uuid, timedelta: datetime.timedelta):
         before = datetime.datetime.now() - timedelta
