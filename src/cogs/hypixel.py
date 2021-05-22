@@ -825,9 +825,9 @@ class Hypixel(commands.Cog):
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
-    async def predict_statistic(self, ctx, username: Optional[Union[discord.User, str]], amount: Optional[float]):
-        if username is None or isinstance(username, discord.User):
-            username = await self.discord_to_hypixel(username if username is not None else ctx.author)
+    async def predict_statistic(self, ctx, username: Optional[str], amount: Optional[float]):
+        if username is None:
+            username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
