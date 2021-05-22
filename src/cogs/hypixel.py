@@ -268,7 +268,7 @@ class Hypixel(commands.Cog):
         return response
 
     @commands.command(aliases=["hinfo", "hypixelinfo"])
-    async def hypixel_info(self, ctx, username: Optional[Union[str, discord.User]]):
+    async def hypixel_info(self, ctx, username: Optional[Union[discord.User, str]]):
         """Runs the hinfo command.
 
         Essentially, just sends the bedwars image as a file independent of the web host."""
@@ -539,7 +539,7 @@ class Hypixel(commands.Cog):
         return player_data
 
     @commands.command()
-    async def track_player(self, ctx, username: Optional[Union[str, discord.User]]):
+    async def track_player(self, ctx, username: Optional[Union[discord.User, str]]):
         async with ctx.typing():
             if username is None or isinstance(username, discord.User):
                 username = await self.discord_to_hypixel(ctx.author)
@@ -647,7 +647,7 @@ class Hypixel(commands.Cog):
         return last_document_list[0] if len(last_document_list) != 0 else None
 
     @hypixel_stats.command()
-    async def daily(self, ctx, username: Optional[Union[str, discord.User]]):
+    async def daily(self, ctx, username: Optional[Union[discord.User, str]]):
         async with ctx.typing():
             if username is None or isinstance(username, discord.User):
                 username = await self.discord_to_hypixel(ctx.author)
@@ -727,7 +727,7 @@ class Hypixel(commands.Cog):
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
-    async def graph_statistic_command(self, ctx, username: Optional[Union[str, discord.User]], num_games: int = 25):
+    async def graph_statistic_command(self, ctx, username: Optional[Union[discord.User, str]], num_games: int = 25):
         if username is None or isinstance(username, discord.User):
             username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with
@@ -820,7 +820,7 @@ class Hypixel(commands.Cog):
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
-    async def predict_statistic(self, ctx, username: Optional[Union[str, discord.User]], amount: Optional[float]):
+    async def predict_statistic(self, ctx, username: Optional[Union[discord.User, str]], amount: Optional[float]):
         if username is None or isinstance(username, discord.User):
             username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with
