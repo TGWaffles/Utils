@@ -119,6 +119,7 @@ class Hypixel(commands.Cog):
         """
         # Gets raw information from the API via my rate limit abiding queue in hypixel_helper
         player = await self.hypixel_api.get_player(user_uuid, prioritize)
+        await self.store_discord_data(player)
         # They are online if they last logged in after they last logged out
         member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
         experience = player.get("stats").get("Bedwars", {}).get("Experience", 0)
