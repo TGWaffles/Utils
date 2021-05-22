@@ -687,9 +687,12 @@ class Hypixel(commands.Cog):
             if first_document == last_document:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
                 return
+            print(first_document)
+            print(last_document)
             latest_stats = HypixelStats.from_stats(last_document["stats"])
             earliest_stats = HypixelStats.from_stats(first_document["stats"])
-            print(latest_stats.kills - earliest_stats.kills)
+            print(latest_stats.kills)
+            print(earliest_stats.kills)
             all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earliest_stats, latest_stats)
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
