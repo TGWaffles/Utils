@@ -606,15 +606,11 @@ class Hypixel(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a date or statistic."))
 
-    class UsernameDefault(commands.Converter):
-        async def convert(self, ctx, argument):
-            if argument is not None:
-                return argument
-            mongo = MongoDB(read_only=True)
-            player = await mongo.client.hypixel.players.find_one({"discord_id": ctx.author.id})
-            if player is not None:
-                return player.get("_id")
-            raise commands.BadArgument()
+    async def check_registered(self, ctx):
+        player = await self.hypixel_db.players.find_one({"discord_id": ctx.author.id})
+        if player is not None:
+            return player.get("_id")
+        raise commands.MissingRequiredArgument("username")
 
     async def get_stats_from_before(self, uuid, timedelta: datetime.timedelta):
         before = datetime.datetime.now() - timedelta
@@ -630,8 +626,10 @@ class Hypixel(commands.Cog):
         return last_document_list[0] if len(last_document_list) != 0 else None
 
     @hypixel_stats.command()
-    async def daily(self, ctx, username: UsernameDefault):
+    async def daily(self, ctx, username: Optional[str]):
         async with ctx.typing():
+            if username is None:
+                username = await self.check_registered(ctx)
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
@@ -708,7 +706,9 @@ class Hypixel(commands.Cog):
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
-    async def graph_statistic_command(self, ctx, username: UsernameDefault, num_games: int = 25):
+    async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = 25):
+        if username is None:
+            username = await self.check_registered(ctx)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
@@ -799,7 +799,9 @@ class Hypixel(commands.Cog):
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
-    async def predict_statistic(self, ctx, username: UsernameDefault, amount: Optional[float]):
+    async def predict_statistic(self, ctx, username: Optional[str], amount: Optional[float]):
+        if username is None:
+            username = await self.check_registered(ctx)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
