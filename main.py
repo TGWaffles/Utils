@@ -233,7 +233,8 @@ def get_bot():
             embed.add_field(name="Command passed error", value=str(error))
             embed.add_field(name="Context", value=ctx.message.content)
             print_tb(error.__traceback__)
-            print_tb(error.original.__traceback__)
+            if hasattr(error, "original"):
+                print_tb(error.original.__traceback__)
             guild_error_channel_id = await bot.mongo.discord_db.channels.find_one({"guild_id": ctx.guild.id,
                                                                                    "error_channel": True})
             if guild_error_channel_id is None:
