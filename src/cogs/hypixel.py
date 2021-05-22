@@ -549,14 +549,14 @@ class Hypixel(commands.Cog):
             tracked_player = await self.hypixel_db.players.find_one({"_id": uuid})
             if tracked_player is None:
                 if not await self.check_valid_player(uuid, True):
-                    await ctx.reply(embed=self.bot.create_error_embed("That player has never played on Hypixel. "
+                    await ctx.reply(embed=self.bot.create_error_embed(f"{username} has never played on Hypixel. "
                                                                       "Get them to log in and out at least once!"))
                     return
                 await self.hypixel_db.players.insert_one({"_id": uuid})
                 await ctx.reply(embed=self.bot.create_completed_embed("Tracking Player!",
-                                                                      "Added player to tracking."))
+                                                                      f"Added {username} to tracking."))
             else:
-                await ctx.reply(embed=self.bot.create_error_embed("That player is already being tracked!"))
+                await ctx.reply(embed=self.bot.create_error_embed(f"{username} is already being tracked!"))
                 return
 
     @tasks.loop(seconds=45, count=None)
@@ -661,7 +661,7 @@ class Hypixel(commands.Cog):
                 return
             earlier_document = await self.get_stats_from_before(uuid, datetime.timedelta(hours=24))
             if earlier_document is None:
-                await ctx.reply(embed=self.bot.create_error_embed("I don't have statistics for that player from before "
+                await ctx.reply(embed=self.bot.create_error_embed(f"I don't have statistics for {username} from before "
                                                                   "today!"))
                 return
             today_stats = HypixelStats.from_dict(last_document["stats"])
@@ -692,20 +692,20 @@ class Hypixel(commands.Cog):
         document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(num_games)
         all_documents = await document_query.to_list(length=None)
         if len(all_documents) == 0:
-            await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+            await ctx.reply(embed=self.bot.create_error_embed(f"{username} is not being tracked."))
             return
         # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
         all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
-        return all_stats
+        return all_stats, username
 
     async def graph_stats(self, ctx, username, num_games, attribute, nice_name):
-        all_stats = await self.get_game_stats(ctx, username, num_games)
+        all_stats, username = await self.get_game_stats(ctx, username, num_games)
         if all_stats is None:
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         if len(all_important) == 1:
-            await ctx.reply(embed=self.bot.create_error_embed("I can't graph your data over time. I have only tracked "
-                                                              "one game!\n\nGo play some more bedwars!"))
+            await ctx.reply(embed=self.bot.create_error_embed(f"I can't graph {username}'s data over time. I have "
+                                                              f"only tracked one game!\n\nGo play some more bedwars!"))
             return
         with concurrent.futures.ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_important, x_label="Games",
@@ -748,12 +748,12 @@ class Hypixel(commands.Cog):
                                                               "Please specify a stat to predict!"))
 
     async def predict_games(self, ctx, username, amount, attribute, pretty_name):
-        all_stats = await self.get_game_stats(ctx, username, 1000)
+        all_stats, username = await self.get_game_stats(ctx, username, 1000)
         if all_stats is None:
             return
         elif len(all_stats) == 1:
-            await ctx.reply(embed=self.bot.create_error_embed("I can't extrapolate your data. I have only tracked "
-                                                              "one game! \nGo play some more bedwars!"))
+            await ctx.reply(embed=self.bot.create_error_embed(f"I can't extrapolate {username}'s data. I have only "
+                                                              f"tracked one game! \nGo play some more bedwars!"))
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         with concurrent.futures.ProcessPoolExecutor() as pool:
@@ -770,16 +770,18 @@ class Hypixel(commands.Cog):
         #     change_required = amount - last
         #     games_estimated = (round(
         #     change_required / average_change_per_game, 2) if average_change_per_game != 0 else float("inf"))
-        append = ("(if the estimate is negative, I predict you will never get there!)" if games_estimated < 0
+        append = (f"(I predict {username} will never get there!)" if games_estimated < 0
                   else "")
         if games_estimated == float("inf"):
             games_estimated = str("Infinite")
         else:
             games_estimated = str(games_estimated)
         await ctx.reply(embed=self.bot.create_completed_embed(f"{games_estimated} Games Remaining",
-                                                              f"Based on your last {len(all_important)} games, \n"
+                                                              f"Based on {username}'s last {len(all_important)} games, "
+                                                              f"\n"
                                                               f"I predict it will take roughly **{games_estimated}** "
-                                                              f"games for your {pretty_name} to be {amount}!\n\n" +
+                                                              f"games for {username}'s {pretty_name} to be {amount}!"
+                                                              f"\n\n" +
                                                               append))
 
     async def get_y_function(self, pool, input_threat_indexes: list[int]):
@@ -791,12 +793,12 @@ class Hypixel(commands.Cog):
         return fit_function
 
     async def create_prediction_graph(self, ctx, username, attribute, pretty_name):
-        all_stats = await self.get_game_stats(ctx, username, 1000)
+        all_stats, username = await self.get_game_stats(ctx, username, 1000)
         if all_stats is None:
             return
         elif len(all_stats) == 1:
-            await ctx.reply(embed=self.bot.create_error_embed("I can't extrapolate your data. I have only tracked "
-                                                              "one game!\n\nGo play some more bedwars!"))
+            await ctx.reply(embed=self.bot.create_error_embed(f"I can't extrapolate {username}'s data. I have only "
+                                                              f"tracked one game! \nGo play some more bedwars!"))
             return
         all_important = [getattr(x, attribute) for x in all_stats]
         with concurrent.futures.ProcessPoolExecutor() as pool:
