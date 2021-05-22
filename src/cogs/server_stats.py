@@ -40,6 +40,22 @@ class Statistics(commands.Cog):
         self.update_motw.start()
         self.bot.loop.create_task(self.startup_check())
 
+    @commands.command()
+    @is_owner()
+    async def add_discrims(self, ctx):
+        async for user_document in self.bot.mongo.discord_db.users.find():
+            user_id = user_document.get("_id")
+            user = self.bot.get_user(user_id)
+            if user is None:
+                try:
+                    user = await self.bot.fetch_user(user_id)
+                except discord.errors.NotFound:
+                    continue
+            name, discriminator = user.name, user.discriminator
+            await self.bot.mongo.discord_db.users.update_one({"_id": user_id}, {"$set": {"name": name,
+                                                                                "discriminator": discriminator}})
+        await ctx.reply("Done.")
+
     async def startup_check(self):
         query = self.bot.mongo.discord_db.loading_stats.find({"active": True})
         async for channel_document in query:
