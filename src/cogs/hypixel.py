@@ -639,8 +639,9 @@ class Hypixel(commands.Cog):
         return earlier_document_list[0] if len(earlier_document_list) != 0 else None
 
     async def get_player_stats(self, uuid, newest: bool = True):
+        sort_number = 1 if newest else -1
         last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort(
-            "timestamp", 1 * (-1 * int(newest))).limit(1)
+            "timestamp", sort_number).limit(1)
         last_document_list = await last_document_query.to_list(length=None)
         return last_document_list[0] if len(last_document_list) != 0 else None
 
