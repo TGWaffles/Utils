@@ -273,9 +273,7 @@ class Hypixel(commands.Cog):
 
         Essentially, just sends the bedwars image as a file independent of the web host."""
         if username is None or isinstance(username, discord.User):
-            print(username)
-            username = await self.discord_to_hypixel(ctx.author)
-            print(username)
+            username = await self.discord_to_hypixel(username if username is not None else ctx.author)
         now = datetime.datetime.now()
         async with ctx.typing():
             """Checks cache for file. Can probably be extrapolated into a method, but this replies to the calling
@@ -544,7 +542,7 @@ class Hypixel(commands.Cog):
     async def track_player(self, ctx, username: Optional[Union[discord.User, str]]):
         async with ctx.typing():
             if username is None or isinstance(username, discord.User):
-                username = await self.discord_to_hypixel(ctx.author)
+                username = await self.discord_to_hypixel(username if username is not None else ctx.author)
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
@@ -652,7 +650,7 @@ class Hypixel(commands.Cog):
     async def daily(self, ctx, username: Optional[Union[discord.User, str]]):
         async with ctx.typing():
             if username is None or isinstance(username, discord.User):
-                username = await self.discord_to_hypixel(ctx.author)
+                username = await self.discord_to_hypixel(username if username is not None else ctx.author)
             uuid = await self.uuid_from_identifier(username)
             if uuid is None:
                 await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
@@ -731,7 +729,7 @@ class Hypixel(commands.Cog):
                                                  "threat_index", "threatindex", "lvl"])
     async def graph_statistic_command(self, ctx, username: Optional[Union[discord.User, str]], num_games: int = 25):
         if username is None or isinstance(username, discord.User):
-            username = await self.discord_to_hypixel(ctx.author)
+            username = await self.discord_to_hypixel(username if username is not None else ctx.author)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
@@ -824,7 +822,7 @@ class Hypixel(commands.Cog):
                                            "threat_index", "threatindex", "lvl"])
     async def predict_statistic(self, ctx, username: Optional[Union[discord.User, str]], amount: Optional[float]):
         if username is None or isinstance(username, discord.User):
-            username = await self.discord_to_hypixel(ctx.author)
+            username = await self.discord_to_hypixel(username if username is not None else ctx.author)
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
