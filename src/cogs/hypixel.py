@@ -97,6 +97,12 @@ class Hypixel(commands.Cog):
                 "mode": status.get("mode"), "map": status.get("map"), "uuid": user_uuid, "threat_index": threat_index,
                 "fkdr": fkdr, "stats": player["stats"]}
 
+    async def check_db_for_user(self, name, discriminator):
+        user = await self.bot.mongo.discord_db.users.find_one({"name": name, "discriminator": discriminator})
+        if user is not None:
+            return user.get("_id")
+        return None
+
     async def store_discord_data(self, player):
         """Checks if the player has a valid discord name we know of, and if so, stores it."""
         discord_name = player.get("socialMedia", {}).get("links", {}).get("DISCORD", None)
@@ -106,14 +112,17 @@ class Hypixel(commands.Cog):
             name, discriminator = discord_name.split("#")
         except ValueError:
             return
-        user = discord.utils.get(self.bot.users, name=name, discriminator=discriminator)
-        if user is None:
-            users = [user for user in self.bot.users if user.name.lower() == name.lower() and
-                     user.discriminator == discriminator]
-            user = users[0] if len(users) != 0 else None
+        user_id = await self.check_db_for_user(name, discriminator)
+        if user_id is None:
+            user = discord.utils.get(self.bot.users, name=name, discriminator=discriminator)
             if user is None:
-                return
-        await self.hypixel_db.players.update_one({"_id": player.get("uuid")}, {"$set": {"discord_id": user.id}})
+                users = [user for user in self.bot.users if user.name.lower() == name.lower() and
+                         user.discriminator == discriminator]
+                user = users[0] if len(users) != 0 else None
+                if user is None:
+                    return
+            user_id = user.id
+        await self.hypixel_db.players.update_one({"_id": player.get("uuid")}, {"$set": {"discord_id": user_id}})
 
     async def get_user_stats(self, user_uuid, prioritize=False):
         """Gets the actual information from hypixel, determines whether the member is online or not, and also fetches
@@ -124,7 +133,7 @@ class Hypixel(commands.Cog):
         """
         # Gets raw information from the API via my rate limit abiding queue in hypixel_helper
         player = await self.hypixel_api.get_player(user_uuid, prioritize)
-        await self.store_discord_data(player)
+        self.bot.loop.create_task(self.store_discord_data(player))
         # They are online if they last logged in after they last logged out
         member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
         experience = player.get("stats").get("Bedwars", {}).get("Experience", 0)

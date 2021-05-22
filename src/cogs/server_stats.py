@@ -43,6 +43,7 @@ class Statistics(commands.Cog):
     @commands.command()
     @is_owner()
     async def add_discrims(self, ctx):
+        await ctx.reply("Starting...")
         async for user_document in self.bot.mongo.discord_db.users.find():
             user_id = user_document.get("_id")
             user = self.bot.get_user(user_id)
