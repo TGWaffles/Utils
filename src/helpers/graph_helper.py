@@ -58,7 +58,7 @@ def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_la
     new_values = np.arange(-len(input_data) + 1, extrapolate_max, 1)
     if background_image is not None:
         background_im = plt.imread(BytesIO(background_image))
-        plt.imshow(background_im)
+        plt.imshow(background_im, extent=[new_values[0], new_values[-1], 0, max(extrapolated_values)])
     plt.plot(x_values, input_data, 'b-', label='True Data')
     plt.plot(new_values, extrapolated_values, 'r--', label="Extrapolated Data")
     if x_label is not None:
