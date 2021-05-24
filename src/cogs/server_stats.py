@@ -136,6 +136,9 @@ class Statistics(commands.Cog):
                                                                               "Progress: Starting..."))
         for channel in ctx.guild.text_channels:
             print(channel.id)
+            channel_doc = await self.bot.mongo.discord_db.channels.find_one({"_id": channel.id})
+            if channel_doc is not None and channel_doc.get("nostore", False):
+                continue
             if channel == ctx.channel:
                 self.bot.loop.create_task(self.load_channel(channel, sent_message.id))
             else:
@@ -145,6 +148,9 @@ class Statistics(commands.Cog):
             self.bot.loop.create_task(self.update_embeds())
 
     async def load_channel(self, channel: discord.TextChannel, sent_message_id=None):
+        channel_doc = await self.bot.mongo.discord_db.channels.find_one({"_id": channel.id})
+        if channel_doc is not None and channel_doc.get("nostore", False):
+            return
         after = datetime.datetime(2015, 1, 1)
         most_recent_message = channel.history(limit=1)
         most_recent_message = await most_recent_message.flatten()
