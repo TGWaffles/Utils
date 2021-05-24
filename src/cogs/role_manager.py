@@ -86,6 +86,7 @@ class RoleManager(commands.Cog):
 
         def check_reactor(temp_reaction: discord.Reaction, user: discord.User):
             return user == ctx.author and temp_reaction.message.id == sent.id
+
         try:
             reaction, _ = await self.bot.wait_for("reaction_add", timeout=300.0, check=check_reactor)
         except asyncio.TimeoutError:
@@ -132,8 +133,8 @@ class RoleManager(commands.Cog):
             await sent.edit(embed=self.bot.create_error_embed("That emoji was not set."))
         await self.role_assign.update_one({"_id": embed_message_id}, {"$set": {"roles": roles}})
         await sent.edi(embed=self.bot.create_completed_embed("Removed Reaction Role",
-                                                              f"Removed the reaction role "
-                                                              f"associated with {str(emoji)}"))
+                                                             f"Removed the reaction role "
+                                                             f"associated with {str(emoji)}"))
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):

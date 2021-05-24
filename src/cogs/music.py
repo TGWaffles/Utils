@@ -177,10 +177,13 @@ class Music(commands.Cog):
         await self.music_db.songs.update_one({"_id": guild.id}, {'$set': {"queue": guild_queue}}, upsert=True)
         return True
 
-    async def bulk_enqueue(self, guild, song_urls):
+    async def bulk_enqueue(self, guild, song_urls, start=False):
         guild_document = await self.guild_document_from_guild(guild)
         guild_queue = guild_document.get("queue", [])
-        guild_queue += song_urls
+        if start:
+            guild_queue = song_urls + guild_queue
+        else:
+            guild_queue += song_urls
         await self.music_db.songs.update_one({"_id": guild.id}, {'$set': {"queue": guild_queue}}, upsert=True)
         return True
 
@@ -329,11 +332,17 @@ class Music(commands.Cog):
                     playlist_info = [video_info["webpage_url"]]
             first_song = playlist_info.pop(0)
             first_song = await self.transform_single_song(first_song)
-            await self.enqueue(ctx.guild, first_song)
             await self.music_db.songs.update_one({"_id": ctx.guild.id}, {'$set': {"text_channel_id": ctx.channel.id}},
                                                  upsert=True)
+            start = False
             if not ctx.voice_client.is_playing() or not isinstance(ctx.voice_client.source, YTDLSource):
+                start = True
+            if start:
+                await self.enqueue(ctx.guild, first_song, None, True)
                 self.bot.loop.create_task(self.play_next_queued(ctx.voice_client))
+                await asyncio.sleep(1)
+            else:
+                await self.enqueue(ctx.guild, first_song)
             first_song_name = await self.title_from_url(first_song)
             embed = self.bot.create_completed_embed("Added song to queue!", f"Added [{first_song_name}]"
                                                                             f"({first_song}) "
@@ -348,8 +357,18 @@ class Music(commands.Cog):
                 futures.append(self.bot.loop.create_task(self.title_from_url(url), name=url))
             await asyncio.sleep(2)
             titles = await asyncio.gather(*futures)
-            await self.bulk_enqueue(ctx.guild, titles)
+            await self.bulk_enqueue(ctx.guild, titles, start)
             await self.send_queue(ctx.channel, ctx)
+
+    @commands.command(aliases=["repeat"])
+    async def loop(self, ctx):
+        guild_document = await self.guild_document_from_guild(ctx.guild)
+        if guild_document.get("loop", False):
+            await self.music_db.songs.update_one({"_id": guild_document.get("_id")}, {"$set": {"loop", True}})
+            await ctx.reply(embed=self.bot.create_completed_embed("Enabled Looping!", "The song will now loop!"))
+        else:
+            await self.music_db.songs.update_one({"_id": guild_document.get("_id")}, {"$set": {"loop", False}})
+            await ctx.reply(embed=self.bot.create_completed_embed("Disabled Looping!", "The song will no longer loop!"))
 
     @commands.command(aliases=["shuff", "mix"])
     async def shuffle(self, ctx):
@@ -380,7 +399,10 @@ class Music(commands.Cog):
         if len(guild_queued) == 0:
             # await voice_client.disconnect()
             return
-        next_song_url = guild_queued.pop(0)
+        if guild_document.get("loop", False):
+            next_song_url = guild_queued[0]
+        else:
+            next_song_url = guild_queued.pop(0)
         await self.music_db.songs.update_one({"_id": voice_client.guild.id}, {'$set': {"queue": guild_queued}},
                                              upsert=True)
         local_ffmpeg_options = ffmpeg_options.copy()
