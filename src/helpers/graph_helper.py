@@ -66,8 +66,9 @@ def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_la
         plt.xticks(new_values)
     plt.grid()
     if background_image is not None:
+        fig = plt.figure()
         background_im = plt.imread(BytesIO(background_image))
-        plt.figimage(background_im, xo=plt.figure().get_figwidth() - 64, yo=plt.figure().get_figwidth() - 64)
+        plt.figimage(background_im, xo=fig.get_figwidth() * fig.dpi - 64, yo=fig.get_figwidth() * fig.dpi - 64)
     plt.savefig(file)
     file.seek(0)
     return file.read()
