@@ -164,7 +164,7 @@ class Hypixel(commands.Cog):
     async def get_head_image(self, user_uuid):
         # If the head image has been cached less than 5 mins ago, used the cached version
         if user_uuid in self.head_images and (datetime.datetime.now() -
-                                                   self.head_images[user_uuid][1]).total_seconds() < 300:
+                                              self.head_images[user_uuid][1]).total_seconds() < 300:
             return self.head_images[user_uuid][0]
         else:
             # Else fetch it from cravatar, cache it and use that version
@@ -786,30 +786,22 @@ class Hypixel(commands.Cog):
         with concurrent.futures.ProcessPoolExecutor() as pool:
             games_estimated = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index,
                                                                                 all_important, amount))
-        # if attribute == "threat_index":
-        #     with concurrent.futures.ProcessPoolExecutor() as pool:
-        #         games_estimated = await self.bot.loop.run_in_executor(pool, partial(extrapolate_threat_index,
-        #                                                                             all_important, amount))
-        # else:
-        #     first = all_important[0]
-        #     last = all_important[-1]
-        #     average_change_per_game = (last - first) / len(all_important)
-        #     change_required = amount - last
-        #     games_estimated = (round(
-        #     change_required / average_change_per_game, 2) if average_change_per_game != 0 else float("inf"))
-        append = (f"(I predict {username} will never get there!)" if games_estimated < 0
-                  else "")
         if games_estimated == float("inf"):
             games_estimated = str("Infinite")
         else:
             games_estimated = str(games_estimated)
-        await ctx.reply(embed=self.bot.create_completed_embed(f"{games_estimated} Games Remaining",
-                                                              f"Based on {username}'s last {len(all_important)} games, "
-                                                              f"\n"
-                                                              f"I predict it will take roughly **{games_estimated}** "
-                                                              f"games for {username}'s {pretty_name} to be {amount}!"
-                                                              f"\n\n" +
-                                                              append))
+        embed = discord.Embed(title=f"{games_estimated} Games Remaining")
+        embed.description = (f"Based on {username}'s last {len(all_important)} games, "
+                             f"\n"
+                             f"I predict it will take roughly **{games_estimated}** "
+                             f"games for {username}'s {pretty_name} to be {amount}!"
+                             f"\n\n")
+        embed.colour = discord.Colour.green()
+        if games_estimated == "Infinite" or float(games_estimated) < 0:
+            embed.description += f"(I predict {username} will never get there!)"
+            embed.colour = discord.Colour.red()
+
+        await ctx.reply(embed=embed)
 
     async def get_y_function(self, pool, input_threat_indexes: list[int]):
         a, b, c, d = await self.bot.loop.run_in_executor(pool, partial(run_curve_fit, input_threat_indexes))
@@ -830,15 +822,6 @@ class Hypixel(commands.Cog):
         all_important = [getattr(x, attribute) for x in all_stats]
         with concurrent.futures.ProcessPoolExecutor() as pool:
             y_func = await self.get_y_function(pool, all_important)
-            # if attribute == "threat_index":
-            #     y_func = await self.get_y_function(pool, all_important)
-            # else:
-            #     first = all_important[0]
-            #     last = all_important[-1]
-            #     average_change_per_game = (last - first) / len(all_important)
-            #
-            #     def y_func(x):
-            #         return first + (x * average_change_per_game)
             extrapolate_max = int(round(0.5 * len(all_important))) - 1
             values = numpy.arange(0, len(all_important) + extrapolate_max, 1)
             data = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
@@ -848,6 +831,12 @@ class Hypixel(commands.Cog):
         discord_file = discord.File(file, "image.png")
         embed = discord.Embed(title=f"Future Prediction for {username}'s {pretty_name}")
         embed.set_image(url="attachment://image.png")
+        if y_func(2) < y_func(1):
+            embed.colour = discord.Colour.red()
+        elif y_func(1) == y_func(2):
+            embed.colour = discord.Colour.orange()
+        else:
+            embed.colour = discord.Colour.green()
         await ctx.reply(embed=embed, file=discord_file)
 
     @predict.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
