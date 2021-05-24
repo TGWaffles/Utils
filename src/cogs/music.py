@@ -364,11 +364,14 @@ class Music(commands.Cog):
     async def loop(self, ctx):
         guild_document = await self.guild_document_from_guild(ctx.guild)
         if guild_document.get("loop", False):
-            await self.music_db.songs.update_one({"_id": guild_document.get("_id")}, {"$set": {"loop": True}})
-            await ctx.reply(embed=self.bot.create_completed_embed("Enabled Looping!", "The song will now loop!"))
-        else:
             await self.music_db.songs.update_one({"_id": guild_document.get("_id")}, {"$set": {"loop": False}})
             await ctx.reply(embed=self.bot.create_completed_embed("Disabled Looping!", "The song will no longer loop!"))
+        else:
+            if ctx.voice_client.source is not None:
+                currently_playing_url = ctx.voice_client.source.webpage_url
+                await self.enqueue(ctx.voice_client.guild, currently_playing_url)
+            await self.music_db.songs.update_one({"_id": guild_document.get("_id")}, {"$set": {"loop": True}})
+            await ctx.reply(embed=self.bot.create_completed_embed("Enabled Looping!", "The song will now loop!"))
 
     @commands.command(aliases=["shuff", "mix"])
     async def shuffle(self, ctx):
