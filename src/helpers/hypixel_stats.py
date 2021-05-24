@@ -145,9 +145,9 @@ class HypixelStats:
 
 def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats) -> list[Embed]:
     all_embeds = []
-    categories = [("Overall Daily Statistics", (today, yesterday)), ("Solos", (today.solos, yesterday.solos)),
+    categories = [("Overall", (today, yesterday)), ("Solos", (today.solos, yesterday.solos)),
                   ("Doubles", (today.doubles, yesterday.doubles)), ("Trios", (today.trios, yesterday.trios)),
-                  ("Fours", (today.fours, yesterday.fours)), ("Two_Fours", (today.two_four, yesterday.two_four))]
+                  ("Fours", (today.fours, yesterday.fours)), ("4v4", (today.two_four, yesterday.two_four))]
     for category in categories:
         subtitle = category[0]
         today, yesterday = category[1]
