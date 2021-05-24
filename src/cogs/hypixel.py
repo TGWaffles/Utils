@@ -692,7 +692,7 @@ class Hypixel(commands.Cog):
             latest_stats = HypixelStats.from_dict(last_document["stats"])
             earliest_stats = HypixelStats.from_dict(first_document["stats"])
             all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earliest_stats, latest_stats,
-                                             True, username)
+                                             True)
             image = await self.get_head_image(uuid)
             file = discord.File(BytesIO(image), filename="head.png")
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
