@@ -31,11 +31,10 @@ class API(commands.Cog):
         return suggestions[0] if len(suggestions) > 0 else word
 
     async def handle_speak_message(self, request: web.Request):
-        query = self.api_db.find()
-        known_keys = await query.to_list(length=None)
         try:
             request_json = await request.json()
-            assert request_json.get("token", "") in [x.get("key") for x in known_keys]
+            user_doc = await self.api_db.find_one({"key": request_json.get("token", "none")})
+            assert user_doc is not None
         except (TypeError, json.JSONDecodeError):
             return web.Response(status=400)
         except AssertionError:
@@ -46,7 +45,7 @@ class API(commands.Cog):
         if content == "":
             return web.Response(status=400)
         try:
-            member_id = [x for x in known_keys if x.get("key") == token][0].get("_id")
+            member_id = user_doc.get("_id")
         except ValueError:
             return
         if member_id == 230778630597246983:
