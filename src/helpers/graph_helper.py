@@ -51,7 +51,7 @@ def plot_stats(data, *_, x_label=None, y_label=None):
     return file.read()
 
 
-def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_label=None, background_image=None):
+def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_label=None):
     file = BytesIO()
     x_values = np.arange(-len(input_data) + 1, 1, 1)
     extrapolate_max = int(round(0.5 * len(input_data)))
@@ -65,10 +65,6 @@ def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_la
     if len(new_values) < 10:
         plt.xticks(new_values)
     plt.grid()
-    if background_image is not None:
-        fig = plt.figure()
-        background_im = plt.imread(BytesIO(background_image))
-        plt.figimage(background_im, xo=fig.get_figwidth() * fig.dpi - 64, yo=fig.get_figwidth() * fig.dpi - 64)
     plt.savefig(file)
     file.seek(0)
     return file.read()
