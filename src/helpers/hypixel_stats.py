@@ -143,7 +143,7 @@ class HypixelStats:
         return cls(solos, doubles, trios, fours, two_four, experience)
 
 
-def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats) -> list[Embed]:
+def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats, image=False, username="") -> list[Embed]:
     all_embeds = []
     categories = [("Overall", (today, yesterday)), ("Solos", (today.solos, yesterday.solos)),
                   ("Doubles", (today.doubles, yesterday.doubles)), ("Trios", (today.trios, yesterday.trios)),
@@ -173,6 +173,8 @@ def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats) -> 
         embed.add_field(name="Games Lost", value=str(games_lost))
         win_rate = str(round(games_won / games_lost, 2)) if games_lost != 0 else "Infinite"
         embed.add_field(name="Winrate", value=win_rate)
+        if image:
+            embed.set_author(name=username, icon_url="attachment://head.png")
         all_embeds.append(embed)
 
     return all_embeds

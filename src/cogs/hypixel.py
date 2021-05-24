@@ -3,7 +3,7 @@ import inspect
 import secrets
 import traceback
 from functools import partial
-from typing import Optional, Union
+from typing import Optional
 
 import discord
 import mcuuid.api
@@ -17,7 +17,6 @@ from src.checks.role_check import is_staff
 from src.helpers.graph_helper import plot_stats, plot_and_extrapolate
 from src.helpers.hypixel_helper import *
 from src.helpers.hypixel_stats import HypixelStats, create_delta_embeds
-from src.helpers.mongo_helper import MongoDB
 from src.helpers.paginator import EmbedPaginator
 from src.storage.token import hypixel_token
 
@@ -162,6 +161,19 @@ class Hypixel(commands.Cog):
         else:
             return self.offline_player(player, experience, user_uuid, threat_index, fkdr)
 
+    async def get_head_image(self, user_uuid):
+        # If the head image has been cached less than 5 mins ago, used the cached version
+        if user_uuid in self.head_images and (datetime.datetime.now() -
+                                                   self.head_images[user_uuid][1]).total_seconds() < 300:
+            return self.head_images[user_uuid][0]
+        else:
+            # Else fetch it from cravatar, cache it and use that version
+            async with aiohttp.ClientSession() as session:
+                async with session.get("http://cravatar.eu/helmavatar/{}/64.png".format(user_uuid)) as response:
+                    head_image = await response.read()
+                    self.head_images[user_uuid] = (head_image, datetime.datetime.now())
+                    return head_image
+
     async def get_expanded_player(self, user_uuid, pool, reset=False, prioritize=False):
         """
 
@@ -172,17 +184,7 @@ class Hypixel(commands.Cog):
         :return: player dictionary with player["file"] being the generated image.
         """
         player = await self.get_user_stats(user_uuid, prioritize)
-        # If the head image has been cached less than 5 mins ago, used the cached version
-        if player["uuid"] in self.head_images and (datetime.datetime.now() -
-                                                   self.head_images[player["uuid"]][1]).total_seconds() < 300:
-            player["head_image"] = self.head_images[player["uuid"]][0]
-        else:
-            # Else fetch it from cravatar, cache it and use that version
-            async with aiohttp.ClientSession() as session:
-                async with session.get("http://cravatar.eu/helmavatar/{}/64.png".format(player["uuid"])) as response:
-                    head_image = await response.read()
-                    self.head_images[player["uuid"]] = (head_image, datetime.datetime.now())
-                    player["head_image"] = head_image
+        player["head_image"] = await self.get_head_image(player["uuid"])
         # Run the get_file_for_member function in another process and await its completion
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
         last_file = None
@@ -689,8 +691,11 @@ class Hypixel(commands.Cog):
                 return
             latest_stats = HypixelStats.from_dict(last_document["stats"])
             earliest_stats = HypixelStats.from_dict(first_document["stats"])
-            all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earliest_stats, latest_stats)
-            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
+            all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earliest_stats, latest_stats,
+                                             True, username)
+            image = await self.get_head_image(uuid)
+            file = discord.File(BytesIO(image), filename="head.png")
+            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
             await paginator.start()
 
     async def true_username_and_uuid(self, ctx, username):

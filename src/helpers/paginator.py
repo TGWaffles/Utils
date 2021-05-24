@@ -8,7 +8,9 @@ from typing import Optional
 
 
 class BasePaginator:
-    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], reply_message: discord.Message):
+    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], reply_message: discord.Message,
+                 file=None):
+        self.file = file
         self.reply_message = reply_message
         self.channel = channel
         self.page_index = 0
@@ -18,9 +20,9 @@ class BasePaginator:
 
     async def start(self):
         if self.reply_message is None:
-            self.message = await self.channel.send(embed=self.create_page())
+            self.message = await self.channel.send(embed=self.create_page(), file=self.file)
         else:
-            self.message = await self.reply_message.reply(embed=self.create_page())
+            self.message = await self.reply_message.reply(embed=self.create_page(), file=self.file)
         await self.message.add_reaction(config.rewind_emoji)
         await self.message.add_reaction(config.fast_forward_emoji)
         self.bot.add_listener(self.on_raw_reaction_add, "on_raw_reaction_add")
@@ -93,10 +95,11 @@ class Paginator(BasePaginator):
 
 class EmbedPaginator(BasePaginator):
     def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], embeds: list[discord.Embed],
-                 reply_message=None):
-        super().__init__(bot, channel, reply_message)
+                 reply_message=None, file: discord.File = None):
+        super().__init__(bot, channel, reply_message, file=file)
         self.page_index = 0
         self.pages: list[discord.Embed] = embeds
+        self.files = None
         self.message = None
 
     async def update_message(self):
