@@ -723,10 +723,10 @@ class Hypixel(commands.Cog):
             return None, None
         # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
         all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
-        return all_stats, username
+        return all_stats, username, uuid
 
     async def graph_stats(self, ctx, username, num_games, attribute, nice_name):
-        all_stats, username = await self.get_game_stats(ctx, username, num_games)
+        all_stats, username, uuid = await self.get_game_stats(ctx, username, num_games)
         if all_stats is None:
             return
         all_important = [getattr(x, attribute) for x in all_stats]
@@ -775,7 +775,7 @@ class Hypixel(commands.Cog):
                                                               "Please specify a stat to predict!"))
 
     async def predict_games(self, ctx, username, amount, attribute, pretty_name):
-        all_stats, username = await self.get_game_stats(ctx, username, 1000)
+        all_stats, username, uuid = await self.get_game_stats(ctx, username, 1000)
         if all_stats is None:
             return
         elif len(all_stats) == 1:
@@ -812,7 +812,7 @@ class Hypixel(commands.Cog):
         return fit_function
 
     async def create_prediction_graph(self, ctx, username, attribute, pretty_name):
-        all_stats, username = await self.get_game_stats(ctx, username, 1000)
+        all_stats, username, uuid = await self.get_game_stats(ctx, username, 1000)
         if all_stats is None:
             return
         elif len(all_stats) == 1:
@@ -831,13 +831,16 @@ class Hypixel(commands.Cog):
         discord_file = discord.File(file, "image.png")
         embed = discord.Embed(title=f"Future Prediction for {username}'s {pretty_name}")
         embed.set_image(url="attachment://image.png")
+        embed.set_thumbnail(url="attachment://head.png")
+        head_data = await self.get_head_image(uuid)
+        head_file = discord.File(BytesIO(head_data), filename="head.png")
         if y_func(2) < y_func(1):
             embed.colour = discord.Colour.red()
         elif y_func(1) == y_func(2):
             embed.colour = discord.Colour.orange()
         else:
             embed.colour = discord.Colour.green()
-        await ctx.reply(embed=embed, file=discord_file)
+        await ctx.reply(embed=embed, files=[discord_file, head_file])
 
     @predict.command(name="fkdr", aliases=["finals", "kills", "deaths", "beds_broken", "brokenbeds",
                                            "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
