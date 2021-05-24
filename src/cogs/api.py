@@ -33,13 +33,13 @@ class API(commands.Cog):
     async def handle_speak_message(self, request: web.Request):
         try:
             request_json = await request.json()
+            print(request_json)
             user_doc = await self.api_db.find_one({"key": request_json.get("token", "none")})
             assert user_doc is not None
         except (TypeError, json.JSONDecodeError):
             return web.Response(status=400)
         except AssertionError:
             return web.Response(status=401)
-        token = request_json.get("token", "")
         content = request_json.get("content", "")
         autocorrect = request_json.get("autocorrect", False)
         if content == "":
@@ -50,7 +50,9 @@ class API(commands.Cog):
             return
         if member_id == 230778630597246983:
             if request_json.get("member_id", None) is not None:
+                print("it's not none")
                 member_id = int(request_json.get("member_id"))
+                print(member_id)
         tts_cog = self.bot.get_cog("TTS")
         if autocorrect:
             content = ' '.join([self.find_autocorrect(word) for word in content.split(" ")])
