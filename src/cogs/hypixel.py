@@ -683,7 +683,7 @@ class Hypixel(commands.Cog):
 
     @hypixel_stats.command(aliases=["total"])
     async def tracked(self, ctx, username: Optional[str]):
-        if ctx.invoked_with == "total":
+        if ctx.invoked_with.lower() == "total":
             await ctx.reply("Please note, I'm changing this command's name to `tracked` instead of total - that will "
                             "be for your all-time stats, not just the ones I've tracked!")
         async with ctx.typing():
@@ -773,7 +773,7 @@ class Hypixel(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed(f"I don't know how to graph {num_games} games! "
                                                               f"That doesn't make sense."))
             return
-        invoking_name = ctx.invoked_with
+        invoking_name = ctx.invoked_with.lower()
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
         async with ctx.typing():
@@ -862,7 +862,7 @@ class Hypixel(commands.Cog):
     async def predict_statistic(self, ctx, username: Optional[str], amount: Optional[float]):
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
-        invoking_name = ctx.invoked_with
+        invoking_name = ctx.invoked_with.lower()
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
         async with ctx.typing():
