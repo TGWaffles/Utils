@@ -618,7 +618,7 @@ class Hypixel(commands.Cog):
         if message.channel.id in await self.hypixel_db.players.distinct("channels"):
             await message.delete()
 
-    @commands.group(aliases=["hstats", "hs"])
+    @commands.group(aliases=["hstats", "hs"], case_insensitive=True)
     async def hypixel_stats(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
@@ -779,7 +779,7 @@ class Hypixel(commands.Cog):
         async with ctx.typing():
             await self.graph_stats(ctx, username, num_games, attribute_name, pretty_name)
 
-    @hypixel_stats.group(aliases=["p"])
+    @hypixel_stats.group(aliases=["p"], case_insensitive=True)
     async def predict(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "

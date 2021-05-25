@@ -44,7 +44,7 @@ def plot_stats(data, *_, x_label=None, y_label=None):
         y_smooth = data
     else:
         x_new = np.linspace(min(x_values), max(x_values), len(x_values) * 100)
-        spline = make_interp_spline(x_values, data, k=3)
+        spline = make_interp_spline(x_values, data, k=2)
         y_smooth = spline(x_new)
     plt.plot(x_new, y_smooth)
     if x_label is not None:
@@ -69,7 +69,7 @@ def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_la
         y_smooth = input_data
     else:
         x_new = np.linspace(min(x_values), max(x_values), len(x_values) * 100)
-        spline = make_interp_spline(x_values, input_data, k=3)
+        spline = make_interp_spline(x_values, input_data, k=2)
         y_smooth = spline(x_new)
     plt.plot(x_new, y_smooth, 'b-', label='True Data')
     plt.plot(new_values, extrapolated_values, 'r--', label="Extrapolated Data")
