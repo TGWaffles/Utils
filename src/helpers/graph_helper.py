@@ -39,9 +39,13 @@ def pie_chart_from_amount_and_labels(labels, amounts):
 def plot_stats(data, *_, x_label=None, y_label=None):
     file = BytesIO()
     x_values = np.arange(-len(data) + 1, 1, 1)
-    x_new = np.linspace(min(x_values), max(x_values), len(x_values) * 100)
-    spline = make_interp_spline(x_values, data, k=3)
-    y_smooth = spline(x_new)
+    if len(data) < 4:
+        x_new = x_values
+        y_smooth = data
+    else:
+        x_new = np.linspace(min(x_values), max(x_values), len(x_values) * 100)
+        spline = make_interp_spline(x_values, data, k=3)
+        y_smooth = spline(x_new)
     plt.plot(x_new, y_smooth)
     if x_label is not None:
         plt.xlabel(x_label)
@@ -60,9 +64,13 @@ def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_la
     x_values = np.arange(-len(input_data) + 1, 1, 1)
     extrapolate_max = int(round(0.5 * len(input_data)))
     new_values = np.arange(-len(input_data) + 1, extrapolate_max, 1)
-    x_new = np.linspace(min(x_values), max(x_values), len(x_values) * 100)
-    spline = make_interp_spline(x_values, input_data, k=3)
-    y_smooth = spline(x_new)
+    if len(input_data) < 4:
+        x_new = x_values
+        y_smooth = input_data
+    else:
+        x_new = np.linspace(min(x_values), max(x_values), len(x_values) * 100)
+        spline = make_interp_spline(x_values, input_data, k=3)
+        y_smooth = spline(x_new)
     plt.plot(x_new, y_smooth, 'b-', label='True Data')
     plt.plot(new_values, extrapolated_values, 'r--', label="Extrapolated Data")
     if x_label is not None:
