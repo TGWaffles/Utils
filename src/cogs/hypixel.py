@@ -684,7 +684,7 @@ class Hypixel(commands.Cog):
     @hypixel_stats.command(aliases=["total"])
     async def tracked(self, ctx, username: Optional[str]):
         if ctx.invoked_with == "total":
-            await ctx.reply("Please note, I'm changing this command's name to `tracked` instead of total - that will`"
+            await ctx.reply("Please note, I'm changing this command's name to `tracked` instead of total - that will "
                             "be for your all-time stats, not just the ones I've tracked!")
         async with ctx.typing():
             last_document, username, uuid = await self.process_data_command(ctx, username)
