@@ -681,8 +681,11 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
 
-    @hypixel_stats.command()
-    async def total(self, ctx, username: Optional[str]):
+    @hypixel_stats.command(aliases=["total"])
+    async def tracked(self, ctx, username: Optional[str]):
+        if ctx.invoked_with == "total":
+            await ctx.reply("Please note, I'm changing this command's name to `tracked` instead of total - that will`"
+                            "be for your all-time stats, not just the ones I've tracked!")
         async with ctx.typing():
             last_document, username, uuid = await self.process_data_command(ctx, username)
             first_document = await self.get_player_stats(uuid, False)
@@ -762,6 +765,14 @@ class Hypixel(commands.Cog):
     async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = 25):
         if username is None:
             username = await self.discord_to_hypixel(username if username is not None else ctx.author)
+        if num_games == 1:
+            await ctx.reply(embed=self.bot.create_error_embed("Please try graphing more than one game - otherwise it "
+                                                              "would just be dots on a white background!"))
+            return
+        elif num_games < 1:
+            await ctx.reply(embed=self.bot.create_error_embed(f"I don't know how to graph {num_games} games! "
+                                                              f"That doesn't make sense."))
+            return
         invoking_name = ctx.invoked_with
         attribute_name = self.internal_names[invoking_name]
         pretty_name = self.pretty_names[attribute_name]
@@ -772,7 +783,9 @@ class Hypixel(commands.Cog):
     async def predict(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
-                                                              "Please specify a stat to predict!"))
+                                                              "Please specify a stat to predict!\n"
+                                                              "For example, do u!hypixel_stats predict fkdr i5j to "
+                                                              "predict i5j's fkdr!"))
 
     async def predict_games(self, ctx, username, amount, attribute, pretty_name):
         all_stats, username, uuid = await self.get_game_stats(ctx, username, 1000)
