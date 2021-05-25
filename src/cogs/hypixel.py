@@ -720,7 +720,7 @@ class Hypixel(commands.Cog):
         all_documents = await document_query.to_list(length=None)
         if len(all_documents) == 0:
             await ctx.reply(embed=self.bot.create_error_embed(f"{username} is not being tracked."))
-            return None, None
+            return None, None, None
         # Oldest -> Newest list of HypixelStats objects, each representing stats after a game.
         all_stats = [HypixelStats.from_dict(x.get("stats")) for x in all_documents[::-1]]
         return all_stats, username, uuid
