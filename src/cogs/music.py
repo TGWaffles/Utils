@@ -214,10 +214,16 @@ class Music(commands.Cog):
         self.url_to_title_cache[video_url] = title
         return title
 
-    @staticmethod
-    def thumbnail_from_url(video_url):
+    async def thumbnail_from_url(self, video_url):
         exp = r"^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*"
-        s = re.findall(exp, video_url)[0][-1]
+        try:
+            s = re.findall(exp, video_url)[0][-1]
+        except IndexError:
+            json_response = await YTDLSource.get_video_data(video_url, self.bot.loop)
+            try:
+                return json_response["thumbnails"][-1]["url"]
+            except (KeyError, IndexError):
+                return None
         thumbnail = f"https://i.ytimg.com/vi/{s}/hqdefault.jpg"
         return thumbnail
 
@@ -350,7 +356,8 @@ class Music(commands.Cog):
                                                                             f"Please note other songs in "
                                                                             f"a playlist may still be "
                                                                             f"processing.")
-            embed.set_thumbnail(url=self.thumbnail_from_url(first_song))
+            thumbnail_url = await self.thumbnail_from_url(first_song)
+            embed.set_thumbnail(url=thumbnail_url)
             await ctx.reply(embed=embed)
             futures = []
             for url in playlist_info:
@@ -434,7 +441,9 @@ class Music(commands.Cog):
         title = await self.title_from_url(next_song_url)
         embed = self.bot.create_completed_embed("Playing next song!", "Playing **[{}]({})**".format(title,
                                                                                                     next_song_url))
-        embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
+        thumbnail_url = await self.thumbnail_from_url(next_song_url)
+        if thumbnail_url is not None:
+            embed.set_thumbnail(url=thumbnail_url)
         text_channel_id = guild_document.get("text_channel_id", None)
         if text_channel_id is None:
             print("text channel id is none")
@@ -553,3 +562,14 @@ def setup(bot: UtilsBot):
 def teardown(bot: UtilsBot):
     cog = bot.get_cog("Music")
     bot.loop.create_task(cog.save_all_tracks())
+
+
+async def temp():
+    json_response = await YTDLSource.get_video_data("the part when", asyncio.get_event_loop())
+    print(json_response["thumbnails"][-1]["url"])
+    keyerror, indexerror
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.create_task(temp())
+    loop.run_forever()
