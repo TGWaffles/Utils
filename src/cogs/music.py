@@ -437,10 +437,12 @@ class Music(commands.Cog):
         embed.set_thumbnail(url=self.thumbnail_from_url(next_song_url))
         text_channel_id = guild_document.get("text_channel_id", None)
         if text_channel_id is None:
+            print("text channel id is none")
             return
         # noinspection PyTypeChecker
         called_channel = self.bot.get_channel(text_channel_id)
         history = await called_channel.history(limit=1).flatten()
+        print("sending message")
         if len(history) > 0 and history[0].author.id == self.bot.user.id:
             old_message = history[0]
             if len(old_message.embeds) > 0:
