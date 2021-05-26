@@ -562,14 +562,3 @@ def setup(bot: UtilsBot):
 def teardown(bot: UtilsBot):
     cog = bot.get_cog("Music")
     bot.loop.create_task(cog.save_all_tracks())
-
-
-async def temp():
-    json_response = await YTDLSource.get_video_data("the part when", asyncio.get_event_loop())
-    print(json_response["thumbnails"][-1]["url"])
-    keyerror, indexerror
-
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(temp())
-    loop.run_forever()
