@@ -39,6 +39,8 @@ class GameModeStats:
 
     @classmethod
     def from_dict(cls, store_dict):
+        if store_dict is None:
+            return cls(0, 0, 0, 0, 0, 0, 0)
         deaths = store_dict["deaths"]
         kills = store_dict["kills"]
         beds_lost = store_dict["beds_lost"]
@@ -134,6 +136,14 @@ class HypixelStats:
 
     @classmethod
     def from_dict(cls, store_dict):
+        if store_dict is None:
+            solos = GameModeStats.from_dict(None)
+            doubles = GameModeStats.from_dict(None)
+            trios = GameModeStats.from_dict(None)
+            fours = GameModeStats.from_dict(None)
+            two_four = GameModeStats.from_dict(None)
+            experience = 0
+            return cls(solos, doubles, trios, fours, two_four, experience)
         solos = GameModeStats.from_dict(store_dict["solos"])
         doubles = GameModeStats.from_dict(store_dict["doubles"])
         trios = GameModeStats.from_dict(store_dict["trios"])

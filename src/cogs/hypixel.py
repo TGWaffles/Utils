@@ -720,6 +720,19 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
             await paginator.start()
 
+    @hypixel_stats.command()
+    async def total(self, ctx, username: Optional[str]):
+        async with ctx.typing():
+            last_document, username, uuid = await self.process_data_command(ctx, username)
+            baseline = HypixelStats.from_dict(None)
+            latest_stats = HypixelStats.from_dict(last_document["stats"])
+            all_embeds = create_delta_embeds(f"{username}'s Stats - All Time Total", baseline, latest_stats,
+                                             True)
+            image = await self.get_head_image(uuid)
+            file = discord.File(BytesIO(image), filename="head.png")
+            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
+            await paginator.start()
+
     async def true_username_and_uuid(self, ctx, username):
         uuid = await self.uuid_from_identifier(username)
         if uuid is None:
