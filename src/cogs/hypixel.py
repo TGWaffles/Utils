@@ -649,16 +649,17 @@ class Hypixel(commands.Cog):
             return last_document_list[0] if len(last_document_list) != 0 else None
         return last_document_list
 
-    async def process_data_command(self, ctx, username, amount=1):
+    async def process_data_command(self, ctx, username, amount=1, allow_untracked=False):
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
         username, uuid = await self.true_username_and_uuid(ctx, username)
         if username is None or uuid is None:
-            return None, None
+            return None, None, None
         last_document = await self.get_player_stats(uuid, amount=amount)
-        if last_document is None or (isinstance(last_document, list) and len(last_document) == 0):
+        if last_document is None or (isinstance(last_document, list) and len(last_document) == 0) and not \
+                allow_untracked:
             await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
-            return None, None
+            return None, None, None
         return last_document, username, uuid
 
     @hypixel_stats.command()
@@ -691,6 +692,8 @@ class Hypixel(commands.Cog):
             return
         async with ctx.typing():
             last_document, username, uuid = await self.process_data_command(ctx, username)
+            if last_document is None:
+                return
             first_document = await self.get_player_stats(uuid, False)
             if first_document == last_document:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
@@ -723,9 +726,17 @@ class Hypixel(commands.Cog):
     @hypixel_stats.command()
     async def total(self, ctx, username: Optional[str]):
         async with ctx.typing():
-            last_document, username, uuid = await self.process_data_command(ctx, username)
+            last_document, username, uuid = await self.process_data_command(ctx, username, allow_untracked=True)
+            if last_document is None:
+                if uuid is None:
+                    return
+                player = await self.get_user_stats(uuid, True)
+                stats = player.get("stats")
+                bedwars = stats.get("Bedwars")
+                latest_stats = HypixelStats.from_stats(bedwars)
+            else:
+                latest_stats = HypixelStats.from_dict(last_document["stats"])
             baseline = HypixelStats.from_dict(None)
-            latest_stats = HypixelStats.from_dict(last_document["stats"])
             all_embeds = create_delta_embeds(f"{username}'s Stats - All Time Total", baseline, latest_stats,
                                              True)
             image = await self.get_head_image(uuid)
