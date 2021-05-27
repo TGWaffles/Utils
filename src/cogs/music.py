@@ -250,7 +250,7 @@ class Music(commands.Cog):
         return [song[0] for song in spotify_playlist]
 
     async def transform_single_song(self, song):
-        if "open.spotify.com" not in song:
+        if "youtube" in song:
             return song
         _, string_song, duration = await self.bot.loop.run_in_executor(None, partial(self.spotify.get_track, song))
         if string_song is None:
