@@ -640,21 +640,23 @@ class Hypixel(commands.Cog):
         earlier_document_list = await earlier_document_query.to_list(length=1)
         return earlier_document_list[0] if len(earlier_document_list) != 0 else None
 
-    async def get_player_stats(self, uuid, newest: bool = True):
+    async def get_player_stats(self, uuid, newest: bool = True, amount=1):
         sort_number = -1 if newest else 1
         last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort(
-            "timestamp", sort_number).limit(1)
+            "timestamp", sort_number).limit(amount)
         last_document_list = await last_document_query.to_list(length=None)
-        return last_document_list[0] if len(last_document_list) != 0 else None
+        if amount == 1:
+            return last_document_list[0] if len(last_document_list) != 0 else None
+        return last_document_list
 
-    async def process_data_command(self, ctx, username):
+    async def process_data_command(self, ctx, username, amount=1):
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
         username, uuid = await self.true_username_and_uuid(ctx, username)
         if username is None or uuid is None:
             return None, None
-        last_document = await self.get_player_stats(uuid)
-        if last_document is None:
+        last_document = await self.get_player_stats(uuid, amount=amount)
+        if last_document is None or (isinstance(last_document, list) and len(last_document) == 0):
             await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
             return None, None
         return last_document, username, uuid
@@ -696,6 +698,22 @@ class Hypixel(commands.Cog):
             latest_stats = HypixelStats.from_dict(last_document["stats"])
             earliest_stats = HypixelStats.from_dict(first_document["stats"])
             all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earliest_stats, latest_stats,
+                                             True)
+            image = await self.get_head_image(uuid)
+            file = discord.File(BytesIO(image), filename="head.png")
+            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
+            await paginator.start()
+
+    @hypixel_stats.command()
+    async def last(self, ctx, username: Optional[str]):
+        async with ctx.typing():
+            last_documents, username, uuid = await self.process_data_command(ctx, username, amount=2)
+            if len(last_documents) != 2:
+                await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
+                return
+            earlier_stats = HypixelStats.from_dict(last_documents[0]["stats"])
+            latest_stats = HypixelStats.from_dict(last_documents[1]["stats"])
+            all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earlier_stats, latest_stats,
                                              True)
             image = await self.get_head_image(uuid)
             file = discord.File(BytesIO(image), filename="head.png")
