@@ -683,7 +683,7 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
             await paginator.start()
 
-    @hypixel_stats.command(aliases=["total"])
+    @hypixel_stats.command()
     async def tracked(self, ctx, username: Optional[str]):
         if ctx.invoked_with.lower() == "total":
             await ctx.reply("Please note, I've changed this command's name to `tracked` instead of total - total will "
