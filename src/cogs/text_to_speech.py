@@ -168,6 +168,16 @@ class TTS(commands.Cog):
         member = message.author
         await self.speak_content_in_channel(member, message.clean_content)
 
+    async def disconnect_from_api(self, member_id):
+        member_id = int(member_id)
+        for guild in self.bot.guilds:
+            for voice_channel in guild.voice_channels:
+                if any(True for member in voice_channel.members if member.id == member_id):
+                    voices_in_guild = [x for x in self.bot.voice_clients if x.guild == guild]
+                    for voice_client in voices_in_guild:
+                        await voice_client.disconnect()
+
+
     async def speak_id_content(self, member_id, content):
         member_id = int(member_id)
         for guild in self.bot.guilds:

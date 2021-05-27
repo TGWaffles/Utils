@@ -15,7 +15,7 @@ class API(commands.Cog):
         self.speller = aspell.Speller('lang', 'en')
         self.api_db = self.bot.mongo.client.api.users
         app = web.Application()
-        app.add_routes([web.post('/speak', self.handle_speak_message)])
+        app.add_routes([web.post('/speak', self.handle_speak_message), web.post('/disconnect', self.handle_disconnect)])
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
 
@@ -29,6 +29,18 @@ class API(commands.Cog):
     def find_autocorrect(self, word):
         suggestions = self.speller.suggest(word)
         return suggestions[0] if len(suggestions) > 0 else word
+
+    async def handle_disconnect(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            user_doc = await self.api_db.find_one({"key": request_json.get("token", "none")})
+            assert user_doc is not None
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=401)
+        tts_cog = self.bot.get_cog("TTS")
+        await tts_cog.disconnect_from_api(user_doc.get("_id"))
 
     async def handle_speak_message(self, request: web.Request):
         try:
