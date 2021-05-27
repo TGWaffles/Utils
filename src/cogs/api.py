@@ -40,7 +40,8 @@ class API(commands.Cog):
         except AssertionError:
             return web.Response(status=401)
         tts_cog = self.bot.get_cog("TTS")
-        await tts_cog.disconnect_from_api(user_doc.get("_id"))
+        self.bot.loop.create_task(tts_cog.disconnect_from_api(user_doc.get("_id")))
+        return web.Response(status=202)
 
     async def handle_speak_message(self, request: web.Request):
         try:
