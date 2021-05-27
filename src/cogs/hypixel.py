@@ -711,9 +711,9 @@ class Hypixel(commands.Cog):
             if len(last_documents) != 2:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
                 return
-            earlier_stats = HypixelStats.from_dict(last_documents[0]["stats"])
-            latest_stats = HypixelStats.from_dict(last_documents[1]["stats"])
-            all_embeds = create_delta_embeds(f"{username}'s Stats - All Recorded", earlier_stats, latest_stats,
+            earlier_stats = HypixelStats.from_dict(last_documents[1]["stats"])
+            latest_stats = HypixelStats.from_dict(last_documents[0]["stats"])
+            all_embeds = create_delta_embeds(f"{username}'s Stats - Last Game", earlier_stats, latest_stats,
                                              True)
             image = await self.get_head_image(uuid)
             file = discord.File(BytesIO(image), filename="head.png")
