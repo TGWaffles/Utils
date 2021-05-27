@@ -656,8 +656,8 @@ class Hypixel(commands.Cog):
         if username is None or uuid is None:
             return None, None, None
         last_document = await self.get_player_stats(uuid, amount=amount)
-        if last_document is None or (isinstance(last_document, list) and len(last_document) == 0) and not \
-                allow_untracked:
+        if ((last_document is None or (isinstance(last_document, list) and len(last_document) == 0)) and not
+                allow_untracked):
             await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
             return None, None, None
         return last_document, username, uuid
