@@ -70,24 +70,26 @@ class Meta(commands.Cog):
             monitor_info = ""
             if monitor["status"] > 7:
                 offline_count += 1
-                monitor_info += "Offline."
+                monitor_info += "**Offline**\n\n"
                 online_search = True
-                last_text = "Last Online: {}\nI have been down for: {}\n"
+                last_text = "Last Online: {}\n\nI have been down for: {}\n"
             else:
-                monitor_info += "Online.\n"
+                monitor_info += "**Online**\n\n"
                 online_search = False
-                last_text = "Last Offline: {}\nI have been online for: {}\n"
+                last_text = "Last Offline: {}\n\nI have been online for: {}\n"
             last_event = self.get_last_event_time(monitor, online_search)
             if last_event != datetime.datetime(1970, 1, 1):
                 delta_since_last = datetime.datetime.now() - last_event
                 last_text = last_text.format(last_event.strftime("%Y-%m-%d %H:%M UTC"),
-                                             humanize.naturaltime(delta_since_last))
+                                             humanize.naturaldelta(delta_since_last))
             else:
                 last_text = last_text.format("never", "all known history")
             monitor_info += last_text
-            embed.add_field(name=monitor["friendly_name"], value=monitor_info)
+            embed.add_field(name=monitor["friendly_name"], value=monitor_info, inline=False)
         if offline_count > 0:
             embed.colour = discord.Colour.red()
+        else:
+            embed.colour = discord.Colour.green()
         await ctx.reply(embed=embed)
 
 
