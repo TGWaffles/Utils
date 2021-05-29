@@ -85,7 +85,7 @@ class Meta(commands.Cog):
             else:
                 last_text = last_text.format("never", "all known history")
             monitor_info += last_text
-            embed.add_field(name=monitor["friendly_name"], value=monitor_info, inline=False)
+            embed.add_field(name=f"__{monitor['friendly_name']}__", value=monitor_info, inline=False)
         if offline_count > 0:
             embed.colour = discord.Colour.red()
         else:
