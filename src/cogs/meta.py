@@ -72,15 +72,15 @@ class Meta(commands.Cog):
                 offline_count += 1
                 monitor_info += "**Offline**\n\n"
                 online_search = True
-                last_text = "Last Online: {}\n\nI have been down for: {}\n"
+                last_text = "Last Online: {}\n\nI have been down for {}\n"
             else:
                 monitor_info += "**Online**\n\n"
                 online_search = False
-                last_text = "Last Offline: {}\n\nI have been online for: {}\n"
+                last_text = "Last Offline: {}\n\nI have been online for {}\n"
             last_event = self.get_last_event_time(monitor, online_search)
             if last_event != datetime.datetime(1970, 1, 1):
                 delta_since_last = datetime.datetime.now() - last_event
-                last_text = last_text.format(last_event.strftime("%Y-%m-%d %H:%M UTC"),
+                last_text = last_text.format(last_event.strftime("%a, %b %d at %I:%S%p"),
                                              humanize.naturaldelta(delta_since_last))
             else:
                 last_text = last_text.format("never", "all known history")
