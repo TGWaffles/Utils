@@ -58,6 +58,7 @@ class HypixelStats:
         self.trios: GameModeStats = trios
         self.fours: GameModeStats = fours
         self.two_four: GameModeStats = two_four
+        self.game_modes = (self.solos, self.doubles, self.trios, self.fours, self.two_four)
         self.experience = experience
 
     @property
@@ -68,7 +69,7 @@ class HypixelStats:
 
     @property
     def total_kills(self) -> int:
-        return self.solos.kills + self.doubles.kills + self.trios.kills + self.fours.kills + self.two_four.kills
+        return sum(x.kills for x in self.game_modes)
 
     @property
     def kills(self) -> int:
@@ -80,12 +81,11 @@ class HypixelStats:
 
     @property
     def total_deaths(self) -> int:
-        return self.solos.deaths + self.doubles.deaths + self.trios.deaths + self.fours.deaths + self.two_four.deaths
+        return sum(x.deaths for x in self.game_modes)
 
     @property
     def games_played(self) -> int:
-        return (self.solos.games_played + self.doubles.games_played + self.trios.games_played +
-                self.fours.games_played + self.two_four.games_played)
+        return sum(x.games_played for x in self.game_modes)
 
     @property
     def threat_index(self) -> float:
@@ -105,21 +105,19 @@ class HypixelStats:
 
     @property
     def wins(self) -> int:
-        return self.solos.wins + self.doubles.wins + self.trios.wins + self.fours.wins + self.two_four.wins
+        return sum(x.wins for x in self.game_modes)
 
     @property
     def losses(self) -> int:
-        return self.solos.losses + self.doubles.losses + self.trios.losses + self.fours.losses + self.two_four.losses
+        return sum(x.losses for x in self.game_modes)
 
     @property
     def beds_broken(self) -> int:
-        return (self.solos.beds_broken + self.doubles.beds_broken + self.trios.beds_broken +
-                self.fours.beds_broken + self.two_four.beds_broken)
+        return sum(x.beds_broken for x in self.game_modes)
 
     @property
     def beds_lost(self) -> int:
-        return (self.solos.beds_lost + self.doubles.beds_lost + self.trios.beds_lost +
-                self.fours.beds_lost + self.two_four.beds_lost)
+        return sum(x.beds_lost for x in self.game_modes)
 
     @classmethod
     def from_stats(cls, bedwars_stats: dict):
@@ -135,6 +133,100 @@ class HypixelStats:
         return {"solos": self.solos.to_dict(), "doubles": self.doubles.to_dict(),
                 "trios": self.trios.to_dict(), "fours": self.fours.to_dict(),
                 "two_four": self.two_four.to_dict(), "experience": self.experience}
+
+    def copy(self):
+        return HypixelStats.from_dict(self.to_dict())
+
+    @classmethod
+    def split_up(cls, last_record, new_record) -> list:
+        last_record: HypixelStats = last_record
+        new_record: HypixelStats = new_record
+        if new_record.games_played - last_record.games_played == 1:
+            return [new_record]
+        elif new_record.games_played - last_record.games_played < 1:
+            return []
+        all_have_one = True
+        modes_with_one = []
+        game_mode_names = ("solos", "doubles", "trios", "fours", "two_four")
+        for game_mode_name in game_mode_names:
+            old_mode = getattr(last_record, game_mode_name)
+            new_mode = getattr(new_record, game_mode_name)
+            if new_mode.games_played - old_mode.games_played > 1:
+                all_have_one = False
+                break
+            elif new_mode.games_played - old_mode.games_played == 1:
+                modes_with_one.append(game_mode_name)
+        returning_list = []
+        intermediary = cls(last_record.solos, last_record.doubles, last_record.trios, last_record.fours,
+                           last_record.two_four, last_record.experience)
+        if all_have_one:
+            for mode_name in modes_with_one:
+                changing_record = intermediary.copy()
+                setattr(changing_record, mode_name, getattr(new_record, mode_name))
+                intermediary = changing_record
+                returning_list.append(changing_record)
+            return returning_list
+        for mode_name in game_mode_names:
+            new_mode = getattr(new_record, mode_name)
+            old_mode = getattr(last_record, mode_name)
+            games_difference = new_mode.games_played - old_mode.games_played
+            if games_difference == 0:
+                continue
+            losses = new_mode.losses - old_mode.losses
+            wins = new_mode.wins - old_mode.wins
+            final_deaths = new_mode.deaths - old_mode.deaths
+            final_kills = new_mode.kills - old_mode.kills
+            beds_broken = new_mode.beds_broken - old_mode.beds_broken
+            beds_lost = new_mode.beds_lost - old_mode.beds_lost
+            for i in range(games_difference):
+                current_stats = getattr(intermediary, mode_name)
+                if i == games_difference - 1:
+                    stats = new_mode
+                elif losses > 0:
+                    if final_deaths > 0:
+                        deaths = current_stats.deaths + 1
+                        final_deaths -= 1
+                    else:
+                        deaths = current_stats.deaths
+                    if beds_lost > 0:
+                        this_lost = current_stats.beds_lost + 1
+                        beds_lost -= 1
+                    else:
+                        this_lost = current_stats.beds_lost
+                    stats = GameModeStats(deaths, current_stats.kills, this_lost, current_stats.beds_broken,
+                                          current_stats.wins, current_stats.losses + 1, current_stats.games_played + 1)
+                    losses -= 1
+                else:
+                    if final_deaths > 0:
+                        deaths = current_stats.deaths + 1
+                        final_deaths -= 1
+                    else:
+                        deaths = current_stats.deaths
+                    if beds_lost > 0:
+                        this_lost = current_stats.beds_lost + 1
+                        beds_lost -= 1
+                    else:
+                        this_lost = current_stats.beds_lost
+                    if final_kills > 0:
+                        this_kills = int(final_kills / wins)
+                        final_kills -= this_kills
+                        this_kills += current_stats.kills
+                    else:
+                        this_kills = current_stats.kills
+                    if beds_broken > 0:
+                        this_broken = int(beds_broken / wins)
+                        beds_broken -= this_broken
+                        this_broken += current_stats.beds_broken
+                    else:
+                        this_broken = current_stats.beds_broken
+                    stats = GameModeStats(deaths, this_kills, this_lost, this_broken,
+                                          current_stats.wins + 1, current_stats.losses, current_stats.games_played + 1)
+                    wins -= 1
+                changing_record = intermediary.copy()
+                setattr(changing_record, mode_name, stats)
+                intermediary = changing_record
+                returning_list.append(changing_record)
+        return returning_list
 
     @classmethod
     def from_dict(cls, store_dict):

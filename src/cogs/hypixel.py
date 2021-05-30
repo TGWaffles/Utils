@@ -535,9 +535,15 @@ class Hypixel(commands.Cog):
             last_stats = HypixelStats.from_dict(last_stats_dict)
             if last_stats.games_played == hypixel_stats.games_played:
                 return player_data
-        player_document = {"uuid": uuid, "stats": hypixel_stats.to_dict(),
-                           "timestamp": datetime.datetime.now()}
-        await self.hypixel_db.statistics.insert_one(player_document)
+            stats_to_insert = HypixelStats.split_up(last_stats, hypixel_stats)
+            for statistic in stats_to_insert:
+                player_document = {"uuid": uuid, "stats": statistic.to_dict(),
+                                   "timestamp": datetime.datetime.now()}
+                await self.hypixel_db.statistics.insert_one(player_document)
+        else:
+            player_document = {"uuid": uuid, "stats": hypixel_stats.to_dict(),
+                               "timestamp": datetime.datetime.now()}
+            await self.hypixel_db.statistics.insert_one(player_document)
         return player_data
 
     @commands.command()
