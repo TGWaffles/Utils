@@ -54,43 +54,44 @@ class Meta(commands.Cog):
 
     @commands.command()
     async def status(self, ctx):
-        embed = discord.Embed(title="Current Service Status", url="https://utils.thom.club/status")
-        url = "https://api.uptimerobot.com/v2/getMonitors"
+        async with ctx.typing():
+            embed = discord.Embed(title="Current Service Status", url="https://utils.thom.club/status")
+            url = "https://api.uptimerobot.com/v2/getMonitors"
 
-        payload = f"api_key={uptime_robot_api}&format=json&logs=1&all_time_uptime_ratio=1"
-        headers = {
-            'content-type': "application/x-www-form-urlencoded",
-            'cache-control': "no-cache"
-        }
-        offline_count = 0
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=payload, headers=headers) as request:
-                returned_json = await request.json()
-        for monitor in returned_json.get("monitors", []):
-            monitor_info = ""
-            if monitor["status"] > 7:
-                offline_count += 1
-                monitor_info += "**Offline**\n\n"
-                online_search = True
-                last_text = "Last Online: {}\n\nI have been down for {}\n"
+            payload = f"api_key={uptime_robot_api}&format=json&logs=1&all_time_uptime_ratio=1"
+            headers = {
+                'content-type': "application/x-www-form-urlencoded",
+                'cache-control': "no-cache"
+            }
+            offline_count = 0
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, data=payload, headers=headers) as request:
+                    returned_json = await request.json()
+            for monitor in returned_json.get("monitors", []):
+                monitor_info = ""
+                if monitor["status"] > 7:
+                    offline_count += 1
+                    monitor_info += "**Offline**\n\n"
+                    online_search = True
+                    last_text = "Last Online: {}\n\nI have been down for {}\n"
+                else:
+                    monitor_info += "**Online**\n\n"
+                    online_search = False
+                    last_text = "Last Offline: {}\n\nI have been online for {}\n"
+                last_event = self.get_last_event_time(monitor, online_search)
+                if last_event != datetime.datetime(1970, 1, 1):
+                    delta_since_last = datetime.datetime.now() - last_event
+                    last_text = last_text.format(last_event.strftime("%a, %b %d at %I:%S%p"),
+                                                 humanize.naturaldelta(delta_since_last))
+                else:
+                    last_text = last_text.format("never", "all known history")
+                monitor_info += last_text
+                embed.add_field(name=f"__{monitor['friendly_name']}__", value=monitor_info, inline=False)
+            if offline_count > 0:
+                embed.colour = discord.Colour.red()
             else:
-                monitor_info += "**Online**\n\n"
-                online_search = False
-                last_text = "Last Offline: {}\n\nI have been online for {}\n"
-            last_event = self.get_last_event_time(monitor, online_search)
-            if last_event != datetime.datetime(1970, 1, 1):
-                delta_since_last = datetime.datetime.now() - last_event
-                last_text = last_text.format(last_event.strftime("%a, %b %d at %I:%S%p"),
-                                             humanize.naturaldelta(delta_since_last))
-            else:
-                last_text = last_text.format("never", "all known history")
-            monitor_info += last_text
-            embed.add_field(name=f"__{monitor['friendly_name']}__", value=monitor_info, inline=False)
-        if offline_count > 0:
-            embed.colour = discord.Colour.red()
-        else:
-            embed.colour = discord.Colour.green()
-        await ctx.reply(embed=embed)
+                embed.colour = discord.Colour.green()
+            await ctx.reply(embed=embed)
 
 
 def setup(bot):

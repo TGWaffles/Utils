@@ -114,7 +114,7 @@ class HypixelAPI:
                 this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
             try:
                 await asyncio.gather(*this_loop_tasks)
-            except (exceptions, waiting_exceptions):
+            except (*exceptions, *waiting_exceptions):
                 continue
 
     async def get_player(self, uuid, prioritize=False):
