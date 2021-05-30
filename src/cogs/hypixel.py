@@ -709,22 +709,28 @@ class Hypixel(commands.Cog):
 
     async def check_swap(self, ctx, username, number):
         if number is not None:
+            print("number not none")
             return username, number
         try:
             username = int(username)
         except ValueError:
+            print("couldnt cast to int")
             return username, number
         try:
             associated_user = await self.discord_to_hypixel(ctx.author)
         except commands.MissingRequiredArgument:
+            print("unknown discord association")
             return username, number
         uuid = await self.uuid_from_identifier(username)
         if uuid is None:
+            print("unknown uuid, returning associated_user")
             return associated_user, username
         found_entry = await self.hypixel_db.players.find_one({"_id": uuid})
         if found_entry is None:
+            print("no entry for that user, returning associated")
             return associated_user, username
         else:
+            print("entry found, returning normal")
             return username, number
 
     @hypixel_stats.command()
