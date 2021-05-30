@@ -747,7 +747,11 @@ class Hypixel(commands.Cog):
                 return
             earlier_stats = HypixelStats.from_dict(last_documents[1]["stats"])
             latest_stats = HypixelStats.from_dict(last_documents[0]["stats"])
-            all_embeds = create_delta_embeds(f"{username}'s Stats - Last Game", earlier_stats, latest_stats,
+            if games_ago == 1:
+                embed_title = f"{username}'s Stats - Last Game"
+            else:
+                embed_title = f"{username}'s Stats - {games_ago} Games Ago"
+            all_embeds = create_delta_embeds(embed_title, earlier_stats, latest_stats,
                                              True)
             image = await self.get_head_image(uuid)
             file = discord.File(BytesIO(image), filename="head.png")
