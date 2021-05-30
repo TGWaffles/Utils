@@ -62,6 +62,8 @@ class HypixelStats:
 
     @property
     def fkdr(self) -> float:
+        if self.total_deaths == 0:
+            return 0
         return self.total_kills / self.total_deaths
 
     @property
