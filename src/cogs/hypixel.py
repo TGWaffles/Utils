@@ -652,9 +652,18 @@ class Hypixel(commands.Cog):
     async def process_data_command(self, ctx, username, amount=1, allow_untracked=False, skip=0):
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
-        username, uuid = await self.true_username_and_uuid(ctx, username)
+        username, uuid = await self.true_username_and_uuid(ctx, username, handled=True)
         if username is None or uuid is None:
-            return None, None, None
+            try:
+                username = await self.discord_to_hypixel(ctx.author)
+            except commands.BadArgument:
+                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                                delete_after=10)
+                await ctx.message.delete()
+                return None, None, None
+            username, uuid = await self.true_username_and_uuid(ctx, username, handled=False)
+            if username is None or uuid is None:
+                return None, None, None
         last_document = await self.get_player_stats(uuid, amount=amount, skip=skip)
         if ((last_document is None or (isinstance(last_document, list) and len(last_document) == 0)) and not
                 allow_untracked):
@@ -717,7 +726,11 @@ class Hypixel(commands.Cog):
                 return
             earlier_stats = HypixelStats.from_dict(last_documents[1]["stats"])
             latest_stats = HypixelStats.from_dict(last_documents[0]["stats"])
-            all_embeds = create_delta_embeds(f"{username}'s Stats - Last Game", earlier_stats, latest_stats,
+            if games_ago == 1:
+                embed_title = f"{username}'s Stats - Last Game"
+            else:
+                embed_title = f"{username}'s Stats - {games_ago} Games Ago"
+            all_embeds = create_delta_embeds(embed_title, earlier_stats, latest_stats,
                                              True)
             image = await self.get_head_image(uuid)
             file = discord.File(BytesIO(image), filename="head.png")
@@ -745,15 +758,16 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
             await paginator.start()
 
-    async def true_username_and_uuid(self, ctx, username):
+    async def true_username_and_uuid(self, ctx, username, handled=False):
         uuid = await self.uuid_from_identifier(username)
         if uuid is None:
             try:
                 user = await converter.UserConverter().convert(ctx, username)
             except commands.BadArgument:
-                await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
-                                delete_after=10)
-                await ctx.message.delete()
+                if not handled:
+                    await ctx.reply(embed=self.bot.create_error_embed("Invalid username or uuid {}!".format(username)),
+                                    delete_after=10)
+                    await ctx.message.delete()
                 return None, None
             username = await self.discord_to_hypixel(user)
             uuid = await self.uuid_from_identifier(username)
