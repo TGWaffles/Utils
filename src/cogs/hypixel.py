@@ -710,6 +710,7 @@ class Hypixel(commands.Cog):
     async def check_swap(self, ctx, username, number):
         if number is not None:
             print("number not none")
+            print(number)
             return username, number
         try:
             username = int(username)
@@ -734,9 +735,11 @@ class Hypixel(commands.Cog):
             return username, number
 
     @hypixel_stats.command()
-    async def last(self, ctx, username: Optional[str], games_ago: Optional[int] = 1):
+    async def last(self, ctx, username: Optional[str], games_ago: Optional[int] = None):
         async with ctx.typing():
             username, games_ago = await self.check_swap(ctx, username, games_ago)
+            if games_ago is None:
+                games_ago = 1
             last_documents, username, uuid = await self.process_data_command(ctx, username, amount=2,
                                                                              skip=games_ago - 1)
             if len(last_documents) != 2:
