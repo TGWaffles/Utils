@@ -945,7 +945,7 @@ class Hypixel(commands.Cog):
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
     async def predict_statistic(self, ctx, username: Optional[str], amount: Optional[float]):
-        username, amount = await self.check_swap(ctx, username, amount)
+        username, amount = await self.check_swap(ctx, username, amount, is_float=True)
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with.lower()
