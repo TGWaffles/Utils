@@ -185,6 +185,13 @@ def create_delta_embeds(title, yesterday: HypixelStats, today: HypixelStats, ima
         embed.add_field(name="Winrate", value=win_rate)
         if image:
             embed.set_thumbnail(url="attachment://head.png")
+        if subtitle == "Overall":
+            games_played = today.games_played - yesterday.games_played
+            level = today.level - yesterday.level
+            threat_index = today.threat_index - yesterday.threat_index
+            embed.add_field(name="Games Played", value=str(games_played))
+            embed.add_field(name="Level", value=str(level))
+            embed.add_field(name="Threat Index", value=str(threat_index))
         all_embeds.append(embed)
 
     return all_embeds
