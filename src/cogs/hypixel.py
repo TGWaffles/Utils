@@ -838,10 +838,12 @@ class Hypixel(commands.Cog):
                                                  "bedsdestroyed", "beds_destroyed", "beds_lost", "bedslost", "bblr",
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
-    async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = 25):
-        username, amount = await self.check_swap(ctx, username, num_games)
+    async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = None):
+        username, num_games = await self.check_swap(ctx, username, num_games)
         if username is None:
             username = await self.discord_to_hypixel(username if username is not None else ctx.author)
+        if num_games is None:
+            num_games = 25
         if num_games == 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please try graphing more than one game - otherwise it "
                                                               "would just be dots on a white background!"))
