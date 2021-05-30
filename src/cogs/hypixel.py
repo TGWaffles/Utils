@@ -640,22 +640,22 @@ class Hypixel(commands.Cog):
         earlier_document_list = await earlier_document_query.to_list(length=1)
         return earlier_document_list[0] if len(earlier_document_list) != 0 else None
 
-    async def get_player_stats(self, uuid, newest: bool = True, amount=1):
+    async def get_player_stats(self, uuid, newest: bool = True, amount=1, skip=0):
         sort_number = -1 if newest else 1
         last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort(
-            "timestamp", sort_number).limit(amount)
+            "timestamp", sort_number).skip(skip).limit(amount)
         last_document_list = await last_document_query.to_list(length=None)
         if amount == 1:
             return last_document_list[0] if len(last_document_list) != 0 else None
         return last_document_list
 
-    async def process_data_command(self, ctx, username, amount=1, allow_untracked=False):
+    async def process_data_command(self, ctx, username, amount=1, allow_untracked=False, skip=0):
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
         username, uuid = await self.true_username_and_uuid(ctx, username)
         if username is None or uuid is None:
             return None, None, None
-        last_document = await self.get_player_stats(uuid, amount=amount)
+        last_document = await self.get_player_stats(uuid, amount=amount, skip=skip)
         if ((last_document is None or (isinstance(last_document, list) and len(last_document) == 0)) and not
                 allow_untracked):
             await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
@@ -708,9 +708,10 @@ class Hypixel(commands.Cog):
             await paginator.start()
 
     @hypixel_stats.command()
-    async def last(self, ctx, username: Optional[str]):
+    async def last(self, ctx, username: Optional[str], games_ago: Optional[int] = 1):
         async with ctx.typing():
-            last_documents, username, uuid = await self.process_data_command(ctx, username, amount=2)
+            last_documents, username, uuid = await self.process_data_command(ctx, username, amount=2,
+                                                                             skip=games_ago - 1)
             if len(last_documents) != 2:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
                 return
