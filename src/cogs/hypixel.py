@@ -707,9 +707,30 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
             await paginator.start()
 
+    async def check_swap(self, ctx, username, number):
+        if number is not None:
+            return username, number
+        try:
+            username = int(username)
+        except ValueError:
+            return username, number
+        try:
+            associated_user = await self.discord_to_hypixel(ctx.author)
+        except commands.MissingRequiredArgument:
+            return username, number
+        uuid = await self.uuid_from_identifier(username)
+        if uuid is None:
+            return associated_user, username
+        found_entry = await self.hypixel_db.players.find_one({"_id": uuid})
+        if found_entry is None:
+            return associated_user, username
+        else:
+            return username, number
+
     @hypixel_stats.command()
     async def last(self, ctx, username: Optional[str], games_ago: Optional[int] = 1):
         async with ctx.typing():
+            username, games_ago = await self.check_swap(ctx, username, games_ago)
             last_documents, username, uuid = await self.process_data_command(ctx, username, amount=2,
                                                                              skip=games_ago - 1)
             if len(last_documents) != 2:
