@@ -658,7 +658,11 @@ class Hypixel(commands.Cog):
         last_document = await self.get_player_stats(uuid, amount=amount, skip=skip)
         if ((last_document is None or (isinstance(last_document, list) and len(last_document) == 0)) and not
                 allow_untracked):
-            await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+            if skip == 0:
+                await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
+            else:
+                await ctx.reply(embed=self.bot.create_error_embed(f"That player was not being tracked {skip + 1} "
+                                                                  f"games ago."))
             return None, None, None
         return last_document, username, uuid
 
@@ -686,10 +690,6 @@ class Hypixel(commands.Cog):
 
     @hypixel_stats.command()
     async def tracked(self, ctx, username: Optional[str]):
-        if ctx.invoked_with.lower() == "total":
-            await ctx.reply("Please note, I've changed this command's name to `tracked` instead of total - total will "
-                            "be for your all-time stats, not just the ones I've tracked!")
-            return
         async with ctx.typing():
             last_document, username, uuid = await self.process_data_command(ctx, username)
             if last_document is None:
@@ -707,31 +707,27 @@ class Hypixel(commands.Cog):
             paginator = EmbedPaginator(self.bot, None, all_embeds, ctx, file=file)
             await paginator.start()
 
-    async def check_swap(self, ctx, username, number):
-        if number is not None:
-            print("number not none")
-            print(number)
+    async def check_swap(self, ctx, username, number, is_float=False):
+        if number is not None or username is None:
             return username, number
         try:
-            username = int(username)
+            if is_float:
+                username = float(username)
+            else:
+                username = int(username)
         except ValueError:
-            print("couldnt cast to int")
             return username, number
         try:
             associated_user = await self.discord_to_hypixel(ctx.author)
         except commands.MissingRequiredArgument:
-            print("unknown discord association")
             return username, number
         uuid = await self.uuid_from_identifier(username)
         if uuid is None:
-            print("unknown uuid, returning associated_user")
             return associated_user, username
         found_entry = await self.hypixel_db.players.find_one({"_id": uuid})
         if found_entry is None:
-            print("no entry for that user, returning associated")
             return associated_user, username
         else:
-            print("entry found, returning normal")
             return username, number
 
     @hypixel_stats.command()
@@ -742,6 +738,8 @@ class Hypixel(commands.Cog):
                 games_ago = 1
             last_documents, username, uuid = await self.process_data_command(ctx, username, amount=2,
                                                                              skip=games_ago - 1)
+            if last_documents is None:
+                return
             if len(last_documents) != 2:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I've only recorded one data point for {username}."))
                 return
@@ -841,6 +839,7 @@ class Hypixel(commands.Cog):
                                                  "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                                  "threat_index", "threatindex", "lvl"])
     async def graph_statistic_command(self, ctx, username: Optional[str], num_games: int = 25):
+        username, amount = await self.check_swap(ctx, username, num_games)
         if username is None:
             username = await self.discord_to_hypixel(username if username is not None else ctx.author)
         if num_games == 1:
@@ -938,6 +937,7 @@ class Hypixel(commands.Cog):
                                            "level", "xp", "wins", "losses", "winrate", "win_rate", "wr", "ti",
                                            "threat_index", "threatindex", "lvl"])
     async def predict_statistic(self, ctx, username: Optional[str], amount: Optional[float]):
+        username, amount = await self.check_swap(ctx, username, amount)
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
         invoking_name = ctx.invoked_with.lower()
