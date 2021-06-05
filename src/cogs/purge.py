@@ -18,6 +18,7 @@ class Purge(commands.Cog):
     async def purge(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             message: discord.Message = ctx.message
+            message.application = {"original_content": message.content}
             message.content = "u!purge_internal " + message.content.partition(f"{ctx.invoked_with} ")[2]
             await self.bot.process_commands(message)
 

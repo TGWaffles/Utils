@@ -231,7 +231,10 @@ def get_bot():
             embed = discord.Embed(title="MonkeyUtils experienced an error in a command.", colour=discord.Colour.red())
             embed.description = format_exc()[:2000]
             embed.add_field(name="Command passed error", value=str(error))
-            embed.add_field(name="Context", value=ctx.message.content)
+            if ctx.message.application is not None and ctx.message.application.get("original_content") is not None:
+                embed.add_field(name="Context", value=ctx.message.application.get("original_content"))
+            else:
+                embed.add_field(name="Context", value=ctx.message.content)
             print_tb(error.__traceback__)
             if hasattr(error, "original"):
                 print_tb(error.original.__traceback__)
