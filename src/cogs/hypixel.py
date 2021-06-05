@@ -206,6 +206,7 @@ class Hypixel(commands.Cog):
             same_file = False
         player["file"] = member_file.read()
         player["unchanged"] = same_file
+        self.user_to_files[player["name"].lower()] = (player["file"], datetime.datetime.now())
         # Remember to close the file since we're only storing the raw bytes.
         member_file.close()
         return player
@@ -506,7 +507,6 @@ class Hypixel(commands.Cog):
         else:
             new_messages = False
         for member, file in zip(our_members, member_files):
-            self.user_to_files[member["name"].lower()] = (file, datetime.datetime.now())
             token = secrets.token_urlsafe(6).replace("-", "")
             embed = await self.get_user_embed(member)
             embed.set_image(url="https://hypixel.thom.club/{}-{}.png".format(member["name"], token))
