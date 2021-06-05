@@ -168,7 +168,7 @@ def get_level_from_xp(exp):
         level += 1
         exp_without_prestiges -= exp_for_easy_level
     if level < EASY_LEVELS + 1:
-        return round(level + exp / get_xp_for_level(level+1), 2)
+        return round(level + exp_without_prestiges / get_xp_for_level(level+1), 2)
     return round(level + (exp_without_prestiges / 5000), 2)
 
 
