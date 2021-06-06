@@ -628,8 +628,9 @@ class Hypixel(commands.Cog):
     @is_staff()
     async def hypixel_status(self, ctx):
         embed = discord.Embed(title="Current Hypixel Info Status")
-        if len(self.last_ten_updates) == 0:
-            await ctx.reply(embed=self.bot.create_error_embed("I haven't actually ran yet!"))
+        if len(self.last_ten_updates) < 2:
+            await ctx.reply(embed=self.bot.create_error_embed("I haven't ran enough times to collect status "
+                                                              "information!"))
             return
         time_differences = []
         for i in range(len(self.last_ten_updates) - 1):
@@ -637,10 +638,13 @@ class Hypixel(commands.Cog):
         average_period = sum([x.total_seconds() for x in time_differences]) / len(time_differences)
         average_period = round(average_period, 2)
         time_since_last = datetime.datetime.now() - self.last_ten_updates[-1]
-        embed.add_field(name="Average Update Time", value=f"{average_period} seconds")
-        embed.add_field(name="Last Update", value=humanize.naturaltime(time_since_last))
-        embed.add_field(name="Total Players", value=f"{self.user_count}")
-        embed.add_field(name="Times Ran", value=humanize.intword(self.runs))
+        embed.add_field(name="Average Update Time", value=f"{average_period} seconds", inline=False)
+        embed.add_field(name="Last Update", value=humanize.naturaltime(time_since_last), inline=False)
+        next_update_estimation = self.last_ten_updates[-1] + datetime.timedelta(seconds=average_period)
+        embed.add_field(name="Next Update Estimation", value=f"{humanize.naturaltime(next_update_estimation)}",
+                        inline=False)
+        embed.add_field(name="Total Players", value=f"{self.user_count}", inline=False)
+        embed.add_field(name="Times Ran", value=humanize.intword(self.runs), inline=False)
         embed.timestamp = self.last_ten_updates[-1]
         if time_since_last.total_seconds() < 300:
             embed.colour = discord.Colour.green()
