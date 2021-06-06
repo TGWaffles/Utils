@@ -39,6 +39,7 @@ class Hypixel(commands.Cog):
         self.user_to_files = {}
         self.token_last_used = {}
         self.last_ten_updates = []
+        self.time_taken = []
         self.user_count = 0
         self.runs = 0
         self.latest_tokens = []
@@ -615,7 +616,9 @@ class Hypixel(commands.Cog):
             await asyncio.gather(*pending_tasks)
             if len(self.last_ten_updates) > 9:
                 self.last_ten_updates.pop(0)
+                self.time_taken.pop(0)
             self.last_ten_updates.append(datetime.datetime.now())
+            self.time_taken.append((datetime.datetime.now() - now).total_seconds())
             self.runs += 1
         # Bad practice, but catches ALL errors here since we don't want this to stop for all channels,
         # even in case of error.
@@ -625,7 +628,6 @@ class Hypixel(commands.Cog):
             print(traceback.format_exc())
 
     @commands.command(aliases=["hstatus"], description="Gives information about the current status of hypixel info.")
-    @is_staff()
     async def hypixel_status(self, ctx):
         embed = discord.Embed(title="Current Hypixel Info Status")
         if len(self.last_ten_updates) < 2:
@@ -638,11 +640,14 @@ class Hypixel(commands.Cog):
         average_period = sum([x.total_seconds() for x in time_differences]) / len(time_differences)
         average_period = round(average_period, 2)
         time_since_last = datetime.datetime.now() - self.last_ten_updates[-1]
-        embed.add_field(name="Average Update Time", value=f"{average_period} seconds", inline=False)
+        embed.add_field(name="Average Update Period", value=f"{average_period} seconds", inline=False)
         embed.add_field(name="Last Update", value=humanize.naturaltime(time_since_last), inline=False)
         next_update_estimation = self.last_ten_updates[-1] + datetime.timedelta(seconds=average_period)
         embed.add_field(name="Next Update Estimation", value=f"{humanize.naturaltime(next_update_estimation)}",
                         inline=False)
+        average_request_time = sum(self.time_taken) / len(self.time_taken)
+        average_request_time = round(average_request_time, 2)
+        embed.add_field(name="Average Time For Requests", value=f"{average_request_time} seconds")
         embed.add_field(name="Total Players", value=f"{self.user_count}", inline=False)
         embed.add_field(name="Times Ran", value=humanize.intword(self.runs), inline=False)
         embed.timestamp = self.last_ten_updates[-1]
