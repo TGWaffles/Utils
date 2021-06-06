@@ -9,6 +9,7 @@ import discord
 import mcuuid.api
 import mcuuid.tools
 import numpy
+import humanize as humanize
 from aiohttp import web
 from discord.ext import commands, tasks
 from discord.ext.commands import converter
@@ -37,6 +38,9 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.start()
         self.user_to_files = {}
         self.token_last_used = {}
+        self.last_ten_updates = []
+        self.user_count = 0
+        self.runs = 0
         self.latest_tokens = []
         self.head_images = {}
         self.external_ip = None
@@ -593,6 +597,7 @@ class Hypixel(commands.Cog):
             offline_members.sort(key=lambda x: float(x["threat_index"]))
             online_members.sort(key=lambda x: float(x["threat_index"]))
             member_dicts = offline_members + online_members
+            self.user_count = len(member_dicts)
             # Runs send_embeds task for all known hypixel channels.
             pending_tasks = []
             all_channel_ids = await self.hypixel_db.players.distinct("channels")
@@ -608,12 +613,39 @@ class Hypixel(commands.Cog):
             # Runs them simultaneously so we can send/edit (5 * channel_count) messages at once rather than just 5 at
             # a time (very slow)
             await asyncio.gather(*pending_tasks)
+            if len(self.last_ten_updates) > 9:
+                self.last_ten_updates.pop(0)
+            self.last_ten_updates.append(datetime.datetime.now())
+            self.runs += 1
         # Bad practice, but catches ALL errors here since we don't want this to stop for all channels,
         # even in case of error.
         except Exception as e:
             print("hypixel error")
             print(e)
             print(traceback.format_exc())
+
+    @commands.command(aliases=["hstatus"], description="Gives information about the current status of hypixel info.")
+    @is_staff()
+    async def hypixel_status(self, ctx):
+        embed = discord.Embed(title="Current Hypixel Info Status")
+        time_differences = []
+        for i in range(len(self.last_ten_updates) - 1):
+            time_differences.append(self.last_ten_updates[i+1] - self.last_ten_updates[i])
+        average_period = sum([x.total_seconds() for x in time_differences]) / len(time_differences)
+        average_period = round(average_period, 2)
+        time_since_last = datetime.datetime.now() - self.last_ten_updates[-1]
+        embed.add_field(name="Average Update Time", value=f"{average_period} seconds")
+        embed.add_field(name="Last Update", value=humanize.naturaltime(time_since_last))
+        embed.add_field(name="Total Players", value=f"{self.user_count}")
+        embed.add_field(name="Times Ran", value=humanize.intword(self.runs))
+        embed.timestamp = self.last_ten_updates[-1]
+        if time_since_last.total_seconds() < 300:
+            embed.colour = discord.Colour.green()
+        elif time_since_last.total_seconds() < 600:
+            embed.colour = discord.Colour.orange()
+        else:
+            embed.colour = discord.Colour.red()
+        await ctx.reply(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message):
