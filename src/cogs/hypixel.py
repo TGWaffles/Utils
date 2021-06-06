@@ -628,6 +628,9 @@ class Hypixel(commands.Cog):
     @is_staff()
     async def hypixel_status(self, ctx):
         embed = discord.Embed(title="Current Hypixel Info Status")
+        if len(self.last_ten_updates) == 0:
+            await ctx.reply(embed=self.bot.create_error_embed("I haven't actually ran yet!"))
+            return
         time_differences = []
         for i in range(len(self.last_ten_updates) - 1):
             time_differences.append(self.last_ten_updates[i+1] - self.last_ten_updates[i])
