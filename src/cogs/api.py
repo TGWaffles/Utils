@@ -117,7 +117,7 @@ class API(commands.Cog):
                     user = await self.bot.fetch_user(user_id)
                 except discord.errors.NotFound:
                     resolved_dict[user_id] = "https://discordapp.com/assets/dd4dbc0016779df1378e7812eabaa04d.png"
-            resolved_dict[user_id] = user.avatar_url
+            resolved_dict[user_id] = str(user.avatar_url)
         return web.json_response({"resolved": resolved_dict})
 
     @commands.command()
