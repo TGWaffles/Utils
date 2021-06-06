@@ -1,6 +1,7 @@
 import json
 import secrets
 import aspell
+import discord
 
 from aiohttp import web
 from discord.ext import commands
@@ -15,7 +16,8 @@ class API(commands.Cog):
         self.speller = aspell.Speller('lang', 'en')
         self.api_db = self.bot.mongo.client.api.users
         app = web.Application()
-        app.add_routes([web.post('/speak', self.handle_speak_message), web.post('/disconnect', self.handle_disconnect)])
+        app.add_routes([web.post('/speak', self.handle_speak_message), web.post('/disconnect', self.handle_disconnect),
+                        web.get('/check_access', self.check_access), web.get('/avatar_urls', self.avatar_urls)])
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
 
@@ -71,6 +73,52 @@ class API(commands.Cog):
             content = ' '.join([self.find_autocorrect(word) for word in content.split(" ")])
         self.bot.loop.create_task(tts_cog.speak_id_content(int(member_id), content))
         return web.Response(status=202)
+
+    async def check_access(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            user_id = request_json.get("user_id")
+            channel_id = request_json.get("channel_id")
+            assert user_id is not None and channel_id is not None
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=400)
+        channel: discord.TextChannel = self.bot.get_channel(channel_id)
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(channel_id)
+            except discord.errors.NotFound:
+                return web.Response(status=404)
+        guild: discord.Guild = channel.guild
+        member = guild.get_member(user_id)
+        if member is None:
+            try:
+                member = guild.fetch_member(user_id)
+            except discord.errors.NotFound:
+                return web.Response(status=401)
+        permissions: discord.Permissions = channel.permissions_for(member)
+        return web.json_response({"has_access": permissions.read_messages})
+
+    async def avatar_urls(self, request: web.Request):
+        try:
+            request_json = await request.json()
+            user_ids = request_json.get("user_ids", [])
+            assert len(user_ids) > 0
+        except (TypeError, json.JSONDecodeError):
+            return web.Response(status=400)
+        except AssertionError:
+            return web.Response(status=400)
+        resolved_dict = {}
+        for user_id in user_ids:
+            user: discord.User = self.bot.get_user(user_id)
+            if user is None:
+                try:
+                    user = await self.bot.fetch_user(user_id)
+                except discord.errors.NotFound:
+                    resolved_dict[user_id] = "https://discordapp.com/assets/dd4dbc0016779df1378e7812eabaa04d.png"
+            resolved_dict[user_id] = user.avatar_url
+        return web.json_response({"resolved": resolved_dict})
 
     @commands.command()
     async def api_key(self, ctx):

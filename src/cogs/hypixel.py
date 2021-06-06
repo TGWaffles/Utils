@@ -644,8 +644,7 @@ class Hypixel(commands.Cog):
         embed.add_field(name="Average Update Period", value=f"{average_period} seconds")
         embed.add_field(name="Last Update", value=humanize.naturaltime(time_since_last))
         next_update_estimation = self.last_ten_updates[-1] + datetime.timedelta(seconds=average_period)
-        embed.add_field(name="Next Update Estimation", value=f"{humanize.naturaltime(next_update_estimation)}",
-                        inline=False)
+        embed.add_field(name="Next Update Estimation", value=f"{humanize.naturaltime(next_update_estimation)}")
         average_request_time = sum(self.time_taken) / len(self.time_taken)
         average_request_time = round(average_request_time, 2)
         embed.add_field(name="Average Time For Requests", value=f"{average_request_time} seconds")
