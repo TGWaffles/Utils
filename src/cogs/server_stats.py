@@ -652,7 +652,7 @@ class Statistics(commands.Cog):
                f"&before={datetime.datetime.now().isoformat()}&channel_id=f{ctx.channel.id}")
         embed = discord.Embed(title=f"Chat Transcript for the last {amount} messages.", url=url,
                               colour=discord.Colour.green())
-        await ctx.reply(embed)
+        await ctx.reply(embed=embed)
 
     async def name_from_id(self, user_id, guild):
         member = guild.get_member(user_id)
