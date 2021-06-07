@@ -649,7 +649,7 @@ class Statistics(commands.Cog):
         else:
             earliest_time = earliest_message_list[0].get("created_at")
         url = (f"https://utils.thom.club/chat_logs?after={earliest_time.isoformat()}"
-               f"&before={datetime.datetime.now().isoformat()}&channel_id=f{ctx.channel.id}")
+               f"&before={datetime.datetime.now().isoformat()}&channel_id={ctx.channel.id}")
         embed = discord.Embed(title=f"Chat Transcript for the last {amount} messages.", url=url,
                               colour=discord.Colour.green())
         await ctx.reply(embed=embed)
