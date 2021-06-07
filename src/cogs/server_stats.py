@@ -635,8 +635,13 @@ class Statistics(commands.Cog):
         await sent.delete()
         await ctx.reply(embed=embed, file=discord_file)
 
-    @commands.command()
-    async def transcript(self, ctx, amount: Optional[int] = 25):
+    @commands.group()
+    async def transcript(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid subcommand. Valid subcommands: `last`"))
+
+    @transcript.command()
+    async def last(self, ctx, amount: Optional[int] = 25):
         """Generates a sharable transcript of the current channel up to amount messages ago."""
         if amount < 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
