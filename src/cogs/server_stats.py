@@ -54,7 +54,7 @@ class Statistics(commands.Cog):
                     continue
             name, discriminator = user.name, user.discriminator
             await self.bot.mongo.discord_db.users.update_one({"_id": user_id}, {"$set": {"name": name,
-                                                                                "discriminator": discriminator}})
+                                                                                         "discriminator": discriminator}})
         await ctx.reply("Done.")
 
     async def startup_check(self):
@@ -116,8 +116,8 @@ class Statistics(commands.Cog):
                 dashes = 10 - stars
                 if lowest_percent != 100:
                     await update_message.edit(embed=self.bot.create_processing_embed(
-                                                    "Back-Dating Statistics",
-                                                    f"Progress: {stars_string}{'-' * dashes} ({lowest_percent:.2f}%)"))
+                        "Back-Dating Statistics",
+                        f"Progress: {stars_string}{'-' * dashes} ({lowest_percent:.2f}%)"))
                 else:
                     await update_message.edit(embed=self.bot.create_completed_embed("Back-Dated Statistics!",
                                                                                     "Finished back-dating statistics!"))
@@ -320,7 +320,7 @@ class Statistics(commands.Cog):
                 original_embed = discord.Embed.from_dict(original_message.get("embeds")[0])
                 embed.title = "Edits for Embed Message"
                 embed.description = f"Original Embed Title: {original_embed.title}\nOriginal Embed Description: "
-                embed.description += original_embed.description[:2048-len(embed.description)]
+                embed.description += original_embed.description[:2048 - len(embed.description)]
                 last_edit_title = original_embed.title
                 last_edit_description = original_embed.description
                 last_edit_fields = original_embed.fields
@@ -634,6 +634,25 @@ class Statistics(commands.Cog):
         embed.set_image(url="attachment://image.png")
         await sent.delete()
         await ctx.reply(embed=embed, file=discord_file)
+
+    @commands.command()
+    async def transcript(self, ctx, amount: Optional[int] = 25):
+        """Generates a sharable transcript of the current channel up to amount messages ago."""
+        if amount < 1:
+            await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
+            return
+        message_cursor = self.bot.mongo.discord_db.messages.find({"channel_id": ctx.channel.id}).skip(amount)
+        earliest_message_list = await message_cursor.to_list(length=1)
+        if len(earliest_message_list) == 0:
+            earliest_message_list = await ctx.channel.history(oldest_first=True, limit=1).flatten()
+            earliest_time = earliest_message_list[0].created_at
+        else:
+            earliest_time = earliest_message_list[0].get("created_at")
+        url = (f"https://utils.thom.club/chat_logs?after={earliest_time.isoformat()}"
+               f"&before={datetime.datetime.now().isoformat()}&channel_id=f{ctx.channel.id}")
+        embed = discord.Embed(title=f"Chat Transcript for the last {amount} messages.", url=url,
+                              colour=discord.Colour.green())
+        await ctx.reply(embed)
 
     async def name_from_id(self, user_id, guild):
         member = guild.get_member(user_id)
