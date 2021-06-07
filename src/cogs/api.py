@@ -98,7 +98,7 @@ class API(commands.Cog):
             except discord.errors.NotFound:
                 return web.Response(status=401)
         permissions: discord.Permissions = channel.permissions_for(member)
-        return web.json_response({"has_access": permissions.read_messages})
+        return web.json_response({"has_access": permissions.read_messages, "can_delete": permissions.manage_messages})
 
     async def avatar_urls(self, request: web.Request):
         try:
