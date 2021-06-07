@@ -640,9 +640,9 @@ class Statistics(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid subcommand. Valid subcommands: `last`"))
 
-    @transcript.command()
+    @transcript.command(description="Generates a sharable transcript (only with others in the chat) "
+                                    "of the current channel up to [amount] messages ago.")
     async def last(self, ctx, amount: Optional[int] = 25):
-        """Generates a sharable transcript of the current channel up to amount messages ago."""
         if amount < 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
             return

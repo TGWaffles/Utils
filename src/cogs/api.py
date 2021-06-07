@@ -94,7 +94,7 @@ class API(commands.Cog):
         member = guild.get_member(user_id)
         if member is None:
             try:
-                member = guild.fetch_member(user_id)
+                member = await guild.fetch_member(user_id)
             except discord.errors.NotFound:
                 return web.Response(status=401)
         permissions: discord.Permissions = channel.permissions_for(member)
