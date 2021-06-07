@@ -641,7 +641,8 @@ class Statistics(commands.Cog):
         if amount < 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
             return
-        message_cursor = self.bot.mongo.discord_db.messages.find({"channel_id": ctx.channel.id}).skip(amount)
+        message_cursor = self.bot.mongo.discord_db.messages.find({"channel_id": ctx.channel.id}).sort(
+            "created_at", -1).skip(amount)
         earliest_message_list = await message_cursor.to_list(length=1)
         if len(earliest_message_list) == 0:
             earliest_message_list = await ctx.channel.history(oldest_first=True, limit=1).flatten()
