@@ -638,7 +638,8 @@ class Statistics(commands.Cog):
     @commands.group()
     async def transcript(self, ctx):
         if ctx.invoked_subcommand is None:
-            await ctx.reply(embed=self.bot.create_error_embed("Invalid subcommand. Valid subcommands: `last`"))
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid subcommand. Valid subcommands: `last`, "
+                                                              "`deleted`"))
 
     @transcript.command(description="Generates a sharable transcript (only with others in the chat) "
                                     "of the current channel up to [amount] messages ago.")
@@ -660,7 +661,7 @@ class Statistics(commands.Cog):
                               colour=discord.Colour.green())
         await ctx.reply(embed=embed)
 
-    @commands.command(description="Generates a sharable transcript (only with others in the chat) "
+    @transcript.command(description="Generates a sharable transcript (only with others in the chat) "
                                   "of deleted messages in the current channel up to [amount] deleted messages ago.")
     async def deleted(self, ctx, amount: Optional[int] = 25):
         if amount < 1:
