@@ -660,6 +660,26 @@ class Statistics(commands.Cog):
                               colour=discord.Colour.green())
         await ctx.reply(embed=embed)
 
+    @commands.command(description="Generates a sharable transcript (only with others in the chat) "
+                                  "of deleted messages in the current channel up to [amount] deleted messages ago.")
+    async def deleted(self, ctx, amount: Optional[int] = 25):
+        if amount < 1:
+            await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
+            return
+        message_cursor = self.bot.mongo.discord_db.messages.find({"channel_id": ctx.channel.id, "deleted": True}).sort(
+            "created_at", -1).skip(amount)
+        earliest_message_list = await message_cursor.to_list(length=1)
+        if len(earliest_message_list) == 0:
+            earliest_message_list = await ctx.channel.history(oldest_first=True, limit=1).flatten()
+            earliest_time = earliest_message_list[0].created_at
+        else:
+            earliest_time = earliest_message_list[0].get("created_at")
+        url = (f"https://utils.thom.club/chat_logs?after={earliest_time.isoformat()}"
+               f"&before={datetime.datetime.now().isoformat()}&channel_id={ctx.channel.id}&deleted=1")
+        embed = discord.Embed(title=f"Chat Transcript for the last {amount} deleted messages.", url=url,
+                              colour=discord.Colour.green())
+        await ctx.reply(embed=embed)
+
     async def name_from_id(self, user_id, guild):
         member = guild.get_member(user_id)
         if member is None:
