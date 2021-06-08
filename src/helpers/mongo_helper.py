@@ -3,9 +3,12 @@ import datetime
 
 import discord
 import motor.motor_asyncio
+from pymongo import UpdateOne
+from discord.ext import commands
 from pymongo.errors import BulkWriteError
 
 from src.storage import config
+from src.storage.token import token
 
 
 class MongoDB:
@@ -45,7 +48,8 @@ class MongoDB:
         await self.force_insert(self.discord_db.channels, channel_document)
 
     async def insert_user(self, user: discord.User):
-        user_document = {"_id": user.id, "name": user.name, "discriminator": user.discriminator, "bot": user.bot}
+        user_document = {"_id": user.id, "name": user.name, "discriminator": user.discriminator, "bot": user.bot,
+                         "avatar_hash": user.avatar}
         await self.force_insert(self.discord_db.users, user_document)
 
     async def insert_member(self, member: discord.Member):
@@ -147,10 +151,13 @@ class MongoDB:
 
 
 async def main():
-    # bot = commands.Bot(command_prefix="NoPrefix", intents=discord.Intents.all())
-    # await bot.login(token)
-    # asyncio.get_event_loop().create_task(bot.connect())
-    # await bot.wait_until_ready()
+    bot = commands.Bot(command_prefix="NoPrefix", intents=discord.Intents.all())
+    print("logging in ")
+    await bot.login(token)
+    print("logged in")
+    asyncio.get_event_loop().create_task(bot.connect())
+    await bot.wait_until_ready()
+    print("ready`")
     # for guild in bot.guilds:
     #     print(guild.name)
     # database = DatabaseHelper()
@@ -158,7 +165,23 @@ async def main():
     db = MongoDB()
     client = db.client
     discord_db = client.discord
-    print()
+    requests = []
+    print("starting")
+    async for user in discord_db.users.find():
+        discord_user = bot.get_user(user.get('_id'))
+        if discord_user is None:
+            try:
+                discord_user = await bot.fetch_user(user.get('_id'))
+            except discord.errors.NotFound:
+                continue
+        requests.append(UpdateOne({"_id": user.get('_id')}, {"$set": {"avatar_hash": discord_user.avatar}}))
+        if len(requests) > 250:
+            print("writing")
+            try:
+                await discord_db.users.bulk_write(requests, False)
+            except BulkWriteError as e:
+                print(e)
+            requests = []
 
 
 if __name__ == '__main__':
