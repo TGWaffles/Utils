@@ -725,6 +725,10 @@ class Statistics(commands.Cog):
         await self.bot.mongo.insert_member(after)
 
     @commands.Cog.listener()
+    async def on_user_update(self, _, after):
+        await self.bot.mongo.insert_user(after)
+
+    @commands.Cog.listener()
     async def on_bulk_message_delete(self, messages):
         await self.bot.mongo.discord_db.messages.update_many({"_id": {'$in': [message.id for message in messages]}},
                                                              {'$set': {"deleted": True}})
