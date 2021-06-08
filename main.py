@@ -155,6 +155,8 @@ def get_bot():
     @bot.event
     async def on_ready():
         print("Ready!")
+        for extension_name, extension in bot.extensions.items():
+            bot.unload_extension(extension_name)
         bot.mongo = MongoDB()
         bot.guild = bot.get_guild(config.monkey_guild_id)
         bot.error_channel = bot.get_channel(config.error_channel_id)
