@@ -138,6 +138,10 @@ class Statistics(commands.Cog):
             print(channel.id)
             channel_doc = await self.bot.mongo.discord_db.channels.find_one({"_id": channel.id})
             if channel_doc is not None and channel_doc.get("nostore", False):
+                if channel == ctx.channel:
+                    loading_doc = {"_id": channel.id, "guild_id": channel.guild.id, "active": False,
+                                   "sent_message_id": sent_message.id}
+                    await self.bot.mongo.force_insert(self.bot.mongo.discord_db.loading_stats, loading_doc)
                 continue
             if channel == ctx.channel:
                 self.bot.loop.create_task(self.load_channel(channel, sent_message.id))
