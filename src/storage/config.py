@@ -20,15 +20,8 @@ lexi_id = 280843294508974103
 darby_id = 513116059470004275
 lexibot_id = 730015197980262424
 
-# extensions = ["logger"]
 
-
-if os.environ.get("DATABASE_SERVER", None) is not None and not os.path.exists("second"):
-    extensions = ["logger"]
-else:
-    extensions = ["meta", "suggestions", "restart", "audit", "purge", "misc", "bot_manager", "text_to_speech",
-                  "monkey_guild", "api", "og_checker", "blacklist", "server_stats", "games", "hypixel", "music",
-                  "role_manager", "dynamic_channels", "reputation"]
+extensions = [os.path.splitext(x)[0] for x in os.listdir("src/cogs") if x != "__init__.py"]
 
 dev = False
 if dev:

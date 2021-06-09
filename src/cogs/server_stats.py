@@ -662,7 +662,7 @@ class Statistics(commands.Cog):
         await ctx.reply(embed=embed)
 
     @transcript.command(description="Generates a sharable transcript (only with others in the chat) "
-                                  "of deleted messages in the current channel up to [amount] deleted messages ago.")
+                                    "of deleted messages in the current channel up to [amount] deleted messages ago.")
     async def deleted(self, ctx, amount: Optional[int] = 25):
         if amount < 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
@@ -692,72 +692,3 @@ class Statistics(commands.Cog):
         else:
             name = (member.nick or member.name)
         return name
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None or \
-                not isinstance(message.author, discord.Member):
-            return
-        await self.bot.mongo.insert_message(message)
-
-    @commands.Cog.listener()
-    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
-        await self.bot.mongo.discord_db.messages.update_one({"_id": payload.message_id},
-                                                            {'$set': {"deleted": True}})
-
-    @commands.Cog.listener()
-    async def on_raw_message_edit(self, payload: discord.RawMessageUpdateEvent):
-        await self.bot.mongo.message_edit(payload)
-
-    @commands.Cog.listener()
-    async def on_member_remove(self, member: discord.Member):
-        await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": member.id, "guild_id": member.guild.id}},
-                                                           {'$set': {"deleted": True}})
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member: discord.Member):
-        if not isinstance(member, discord.Member):
-            return
-        await self.bot.mongo.insert_member(member)
-
-    @commands.Cog.listener()
-    async def on_member_update(self, _, after):
-        await self.bot.mongo.insert_member(after)
-
-    @commands.Cog.listener()
-    async def on_user_update(self, _, after):
-        await self.bot.mongo.insert_user(after)
-
-    @commands.Cog.listener()
-    async def on_bulk_message_delete(self, messages):
-        await self.bot.mongo.discord_db.messages.update_many({"_id": {'$in': [message.id for message in messages]}},
-                                                             {'$set': {"deleted": True}})
-
-    @commands.Cog.listener()
-    async def on_guild_channel_update(self, _, after):
-        if isinstance(after, discord.TextChannel):
-            await self.bot.mongo.insert_channel(after)
-
-    @commands.Cog.listener()
-    async def on_guild_channel_delete(self, channel):
-        if isinstance(channel, discord.TextChannel):
-            await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id},
-                                                                {'$set': {"deleted": True}})
-
-    @commands.Cog.listener()
-    async def on_guild_channel_create(self, channel):
-        if isinstance(channel, discord.TextChannel):
-            await self.bot.mongo.insert_channel(channel)
-
-    @commands.Cog.listener()
-    async def on_guild_join(self, guild):
-        await self.bot.mongo.insert_guild(guild)
-
-    @commands.Cog.listener()
-    async def on_guild_update(self, _, guild):
-        await self.bot.mongo.insert_guild(guild)
-
-
-def setup(bot: UtilsBot):
-    cog = Statistics(bot)
-    bot.add_cog(cog)

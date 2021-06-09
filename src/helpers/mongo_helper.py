@@ -35,7 +35,7 @@ class MongoDB:
         return result
 
     async def insert_guild(self, guild: discord.Guild):
-        guild_document = {"_id": guild.id, "name": guild.name, "removed": False}
+        guild_document = {"_id": guild.id, "name": guild.name, "removed": False, "stats": True}
         await self.force_insert(self.discord_db.guilds, guild_document)
         return guild_document
 
@@ -165,23 +165,18 @@ async def main():
     db = MongoDB()
     client = db.client
     discord_db = client.discord
-    requests = []
     print("starting")
-    async for user in discord_db.users.find():
+    async for user in discord_db.users.find({"avatar_hash": None}):
+        print(user.get('_id'))
         discord_user = bot.get_user(user.get('_id'))
         if discord_user is None:
             try:
                 discord_user = await bot.fetch_user(user.get('_id'))
             except discord.errors.NotFound:
                 continue
-        requests.append(UpdateOne({"_id": user.get('_id')}, {"$set": {"avatar_hash": discord_user.avatar}}))
-        if len(requests) > 250:
-            print("writing")
-            try:
-                await discord_db.users.bulk_write(requests, False)
-            except BulkWriteError as e:
-                print(e)
-            requests = []
+        print(discord_user.avatar)
+        await discord_db.users.update_one({"_id": user.get('_id')}, {"$set": {"avatar_hash": discord_user.avatar}})
+        print("inserted")
 
 
 if __name__ == '__main__':
