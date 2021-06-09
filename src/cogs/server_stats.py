@@ -70,9 +70,6 @@ class Statistics(commands.Cog):
         self.running = True
         pipeline = [
             {
-                "$match": {"active": True}
-            },
-            {
                 "$project": {"_id": "$guild_id"}
             }
         ]
