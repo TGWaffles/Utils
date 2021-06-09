@@ -21,7 +21,10 @@ darby_id = 513116059470004275
 lexibot_id = 730015197980262424
 
 
-extensions = [os.path.splitext(x)[0] for x in os.listdir("src/cogs") if x != "__init__.py"]
+extensions = [os.path.splitext(x)[0] for x in os.listdir("src/cogs") if not x.startswith("__")]
+if "restart" in extensions:
+    extensions.remove("restart")
+    extensions.insert(0, "restart")
 
 dev = False
 if dev:
