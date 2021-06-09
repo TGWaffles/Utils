@@ -31,7 +31,7 @@ class DBMaintainer(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
-        message_ids = payload.message_ids
+        message_ids = list(payload.message_ids)
         await self.bot.mongo.discord_db.messages.update_many({"_id": {'$in': message_ids}},
                                                              {'$set': {"deleted": True}})
 
