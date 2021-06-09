@@ -639,7 +639,34 @@ class Statistics(commands.Cog):
     async def transcript(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid subcommand. Valid subcommands: `last`, "
-                                                              "`deleted`"))
+                                                              "`deleted`, `live`"))
+
+    async def get_earliest_time(self, channel, amount):
+        message_cursor = self.bot.mongo.discord_db.messages.find({"channel_id": channel.id}).sort(
+            "created_at", -1).skip(amount)
+        earliest_message_list = await message_cursor.to_list(length=1)
+        if len(earliest_message_list) == 0:
+            earliest_message_list = await channel.history(oldest_first=True, limit=1).flatten()
+            earliest_time = earliest_message_list[0].created_at
+        else:
+            earliest_time = earliest_message_list[0].get("created_at")
+        return earliest_time
+
+    @transcript.command(description="Generates a sharable LIVE transcript (only with others in the chat) "
+                                    "of the current channel, including up to [amount] messages ago.")
+    async def live(self, ctx, amount: Optional[int] = 25):
+        if amount < 1:
+            await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
+            return
+        earliest_time = await self.get_earliest_time(ctx.channel, amount)
+        now = datetime.datetime.now()
+        before = now + datetime.timedelta(hours=24)
+        url = (f"https://utils.thom.club/chat_logs?after={earliest_time.isoformat()}"
+               f"&before={before.isoformat()}&channel_id={ctx.channel.id}")
+        embed = discord.Embed(title=f"LIVE Chat Transcript for the last {amount} messages and any from this point on, "
+                                    f"until 24 hours from now.",
+                              url=url, colour=discord.Colour.green())
+        await ctx.reply(embed=embed)
 
     @transcript.command(description="Generates a sharable transcript (only with others in the chat) "
                                     "of the current channel up to [amount] messages ago.")
@@ -647,14 +674,7 @@ class Statistics(commands.Cog):
         if amount < 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please choose an amount > 1."))
             return
-        message_cursor = self.bot.mongo.discord_db.messages.find({"channel_id": ctx.channel.id}).sort(
-            "created_at", -1).skip(amount)
-        earliest_message_list = await message_cursor.to_list(length=1)
-        if len(earliest_message_list) == 0:
-            earliest_message_list = await ctx.channel.history(oldest_first=True, limit=1).flatten()
-            earliest_time = earliest_message_list[0].created_at
-        else:
-            earliest_time = earliest_message_list[0].get("created_at")
+        earliest_time = await self.get_earliest_time(ctx.channel, amount)
         url = (f"https://utils.thom.club/chat_logs?after={earliest_time.isoformat()}"
                f"&before={datetime.datetime.now().isoformat()}&channel_id={ctx.channel.id}")
         embed = discord.Embed(title=f"Chat Transcript for the last {amount} messages.", url=url,
