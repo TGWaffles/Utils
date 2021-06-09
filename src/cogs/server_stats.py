@@ -692,3 +692,9 @@ class Statistics(commands.Cog):
         else:
             name = (member.nick or member.name)
         return name
+
+
+def setup(bot: UtilsBot):
+    cog = Statistics(bot)
+    bot.add_cog(cog)
+
