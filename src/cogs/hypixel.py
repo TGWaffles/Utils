@@ -533,6 +533,13 @@ class Hypixel(commands.Cog):
             hypixel_stats = HypixelStats.from_stats(bedwars)
         except KeyError:
             return player_data
+        except AttributeError as e:
+            print(uuid)
+            print(player_data.get("name"))
+            print("There was a nonetype I think")
+            print(e)
+            print(traceback.format_tb(e))
+            return player_data
         last_document_query = self.hypixel_db.statistics.find({"uuid": uuid}).sort("timestamp", -1).limit(1)
         last_document_list = await last_document_query.to_list(length=1)
         if len(last_document_list) != 0:

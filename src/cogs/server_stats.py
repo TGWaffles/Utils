@@ -81,7 +81,6 @@ class Statistics(commands.Cog):
             return
         while True:
             for guild_id in unique_guild_ids:
-                print(guild_id)
                 lowest_percent = 100
                 sent_message_id = None
                 sent_message_channel_id = None
