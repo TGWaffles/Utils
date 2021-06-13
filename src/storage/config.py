@@ -22,6 +22,9 @@ lexibot_id = 730015197980262424
 
 
 extensions = [os.path.splitext(x)[0] for x in os.listdir("src/cogs") if not x.startswith("__")]
+if "text_to_speech" in extensions:
+    extensions.remove("text_to_speech")
+    extensions.insert(0, "text_to_speech")
 if "restart" in extensions:
     extensions.remove("restart")
     extensions.insert(0, "restart")
