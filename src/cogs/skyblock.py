@@ -49,6 +49,7 @@ class Skyblock(commands.Cog):
                 maximum_prices.append((timestamp, max(known_auctions)))
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
+                return
             with ProcessPoolExecutor() as pool:
                 data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
                                                                          title=f"Prices for {query} books",
