@@ -1,3 +1,4 @@
+import humanize
 import pandas
 import matplotlib
 import matplotlib.pyplot as plt
@@ -37,15 +38,21 @@ def pie_chart_from_amount_and_labels(labels, amounts):
     return file.read()
 
 
+def num_humanizer(x, pos=0):
+    return humanize.intword(x)
+
+
 def plot_multiple(x_label="", y_label="", title="", **kwargs):
     file = BytesIO()
     plt.gca().xaxis.set_major_formatter(dates.DateFormatter("%Y-%m-%d %H:%M"))
+    plt.gca().yaxis.set_major_formatter(num_humanizer)
     plt.gca().xaxis.set_major_locator(dates.HourLocator(interval=max(1, len(kwargs) // 30)))
     for title, data in kwargs.items():
         x = [x[0] for x in data]
         y = [x[1] for x in data]
         plt.plot(x, y, label=title)
     plt.gcf().autofmt_xdate()
+    plt.ticklabel_format(style='plain')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
