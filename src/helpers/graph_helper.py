@@ -39,7 +39,7 @@ def pie_chart_from_amount_and_labels(labels, amounts):
 
 
 def num_humanizer(x, pos=0):
-    return humanize.intword(x)
+    return humanize.intword(x, format="%.2f")
 
 
 def plot_multiple(x_label="", y_label="", title="", **kwargs):
