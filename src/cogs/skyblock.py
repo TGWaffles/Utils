@@ -41,6 +41,8 @@ class Skyblock(commands.Cog):
             for timestamp, all_auctions in await self.get_bin_auctions(query, book=True):
                 gc.collect()
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
+                if len(known_auctions) == 0:
+                    continue
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
@@ -129,6 +131,8 @@ class Skyblock(commands.Cog):
             for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
                 gc.collect()
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
+                if len(known_auctions) == 0:
+                    continue
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
@@ -153,6 +157,8 @@ class Skyblock(commands.Cog):
             for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
                 gc.collect()
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
+                if len(known_auctions) == 0:
+                    continue
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
             with ProcessPoolExecutor() as pool:
@@ -174,6 +180,8 @@ class Skyblock(commands.Cog):
             for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
                 gc.collect()
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
+                if len(known_auctions) == 0:
+                    continue
                 minimum_prices.append((timestamp, min(known_auctions)))
             with ProcessPoolExecutor() as pool:
                 data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,

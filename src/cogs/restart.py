@@ -50,6 +50,7 @@ class Restart(commands.Cog):
             return
         await reply_message.edit(embed=self.bot.create_processing_embed("Restarting", "Update download completed! "
                                                                                       f"Reloading `{extension_name}`."))
+        extension_name = "src.cogs." + extension_name
         try:
             try:
                 self.bot.reload_extension(extension_name)
