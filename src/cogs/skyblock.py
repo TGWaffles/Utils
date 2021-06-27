@@ -79,7 +79,11 @@ class Skyblock(commands.Cog):
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
             with ProcessPoolExecutor() as pool:
-                data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple, Minimum=minimum_prices,
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
+                                                                         title=f"Prices for {query}",
+                                                                         x_label="Date",
+                                                                         y_label="Price in coins",
+                                                                         Minimum=minimum_prices,
                                                                          Average=average_prices,
                                                                          Maximum=maximum_prices))
             file = BytesIO(data)

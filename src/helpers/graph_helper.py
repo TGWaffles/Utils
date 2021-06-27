@@ -52,7 +52,6 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
         y = [x[1] for x in data]
         plt.plot(x, y, label=title)
     plt.gcf().autofmt_xdate()
-    # plt.ticklabel_format(style='plain')
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
