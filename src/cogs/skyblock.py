@@ -1,3 +1,4 @@
+import asyncio
 from functools import partial
 from io import BytesIO
 from statistics import mean
@@ -23,38 +24,47 @@ class Skyblock(commands.Cog):
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`"))
 
-    async def get_bin_auctions(self, query):
-        async for auction in self.skyblock_db.auctions.find().sort("timestamp", 1):
-            pipeline = [
-                {
-                    "$match": {
-                        "_id.auction_id": auction["_id"]
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": 0,
-                        "auctions": 1
-                    }
-                },
-                {
-                    "$unwind": "$auctions"
-                },
-                {
-                    "$replaceWith": "$auctions"
-                },
-                {
-                    "$match": {
-                        "bin": True,
-                        "item_name": {
-                            "$regex": f".*{query}.*",
-                            "$options": 'i'
-                        }
+    async def auctions_from_parent(self, auction, query):
+        pipeline = [
+            {
+                "$match": {
+                    "_id.auction_id": auction["_id"]
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "auctions": 1
+                }
+            },
+            {
+                "$unwind": "$auctions"
+            },
+            {
+                "$replaceWith": "$auctions"
+            },
+            {
+                "$match": {
+                    "bin": True,
+                    "item_name": {
+                        "$regex": f".*{query}.*",
+                        "$options": 'i'
                     }
                 }
-            ]
-            auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
-            yield auction["timestamp"], auctions
+            }
+        ]
+        auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
+        return auction["timestamp"], auctions
+
+    async def get_bin_auctions(self, query):
+        coroutines = []
+        futures = []
+        async for auction in self.skyblock_db.auctions.find().sort("timestamp", 1):
+            coroutines.append(self.auctions_from_parent(auction, query))
+        for coroutine in coroutines:
+            futures.append(self.bot.loop.create_task(coroutine))
+        results = asyncio.gather(*futures)
+        return results
 
     @skyblock.command()
     async def history(self, ctx, query):
@@ -62,22 +72,16 @@ class Skyblock(commands.Cog):
             minimum_prices = []
             average_prices = []
             maximum_prices = []
-            print("starting async for")
-            async for timestamp, all_auctions in self.get_bin_auctions(query.lower()):
-                print("garbage collecting")
+            for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
                 gc.collect()
-                print("transforming to starting bid")
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
-                print("appending")
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
-            print("starting pool stuff")
             with ProcessPoolExecutor() as pool:
-                data = self.bot.loop.run_in_executor(pool, partial(plot_multiple, Minimum=minimum_prices,
-                                                                   Average=average_prices,
-                                                                   Maximum=maximum_prices))
-            print("finished pool stuff")
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple, Minimum=minimum_prices,
+                                                                         Average=average_prices,
+                                                                         Maximum=maximum_prices))
             file = BytesIO(data)
             file.seek(0)
             discord_file = discord.File(fp=file, filename="image.png")
