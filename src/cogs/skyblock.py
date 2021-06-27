@@ -114,8 +114,8 @@ class Skyblock(commands.Cog):
         coroutines = []
         futures = []
         if book:
-            query = "enchanted book"
             lore_query = query
+            query = "enchanted book"
             async for auction in self.skyblock_db.auctions.find().sort("timestamp", 1):
                 coroutines.append(self.auctions_from_parent(auction, query, item_lore=lore_query))
         else:
