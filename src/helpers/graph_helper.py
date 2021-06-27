@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import make_interp_spline
+import matplotlib.dates as dates
 
 from io import BytesIO
 
@@ -32,6 +33,24 @@ def pie_chart_from_amount_and_labels(labels, amounts):
     axes.axis("equal")
     axes.pie(amounts, labels=labels, autopct='%1.1f%%')
     fig.savefig(file)
+    file.seek(0)
+    return file.read()
+
+
+def plot_multiple(x_label="", y_label="", title="", **kwargs):
+    file = BytesIO()
+    plt.gca().xaxis.set_major_formatter(dates.DateFormatter("%Y-%m-%d %H:%M"))
+    plt.gca().xaxis.set_major_locator(dates.HourLocator(interval=max(1, len(kwargs) // 30)))
+    for title, data in kwargs.items():
+        x = [x[0] for x in data]
+        y = [x[1] for x in data]
+        plt.plot(x, y, label=title)
+    plt.gcf().autofmt_xdate()
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+    plt.legend()
+    plt.savefig(file)
     file.seek(0)
     return file.read()
 
