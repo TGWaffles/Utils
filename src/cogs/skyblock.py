@@ -47,7 +47,8 @@ class Skyblock(commands.Cog):
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
-            print(len(minimum_prices))
+            if len(maximum_prices) == 0:
+                await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
             with ProcessPoolExecutor() as pool:
                 data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
                                                                          title=f"Prices for {query} books",
@@ -104,6 +105,7 @@ class Skyblock(commands.Cog):
                     }
                 }
             }
+            print(final_match)
         pipeline.append(final_match)
         auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
         return auction["timestamp"], auctions
