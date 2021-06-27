@@ -22,7 +22,40 @@ class Skyblock(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a subcommand. Valid "
-                                                              "subcommands: `history`"))
+                                                              "subcommands: `history`, `average`, `minimum`, `book`"))
+
+    @skyblock.group(case_insensitive=True)
+    async def book(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
+                                                              "Please specify a subcommand. Valid "
+                                                              "subcommands: `history`, `average`, `minimum`"))
+
+    @book.command(name="history")
+    async def book_history(self, ctx, query):
+        query = query.lower()
+        async with ctx.typing():
+            minimum_prices = []
+            average_prices = []
+            maximum_prices = []
+            for timestamp, all_auctions in await self.get_bin_auctions("enchanted book"):
+                gc.collect()
+                known_auctions = [x.get("starting_bid") for x in all_auctions if query in x.get("item_lore").lower()]
+                minimum_prices.append((timestamp, min(known_auctions)))
+                average_prices.append((timestamp, mean(known_auctions)))
+                maximum_prices.append((timestamp, max(known_auctions)))
+            with ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
+                                                                         title=f"Prices for {query} books",
+                                                                         x_label="Date",
+                                                                         y_label="Price in coins",
+                                                                         Minimum=minimum_prices,
+                                                                         Average=average_prices,
+                                                                         Maximum=maximum_prices))
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+            await ctx.reply(file=discord_file)
 
     async def auctions_from_parent(self, auction, query):
         pipeline = [
