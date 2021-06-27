@@ -91,6 +91,47 @@ class Skyblock(commands.Cog):
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
 
+    @skyblock.command()
+    async def average(self, ctx, query):
+        async with ctx.typing():
+            minimum_prices = []
+            average_prices = []
+            for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
+                gc.collect()
+                known_auctions = [x.get("starting_bid") for x in all_auctions]
+                minimum_prices.append((timestamp, min(known_auctions)))
+                average_prices.append((timestamp, mean(known_auctions)))
+            with ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
+                                                                         title=f"Average prices for {query}",
+                                                                         x_label="Date",
+                                                                         y_label="Price in coins",
+                                                                         Minimum=minimum_prices,
+                                                                         Average=average_prices))
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+            await ctx.reply(file=discord_file)
+
+    @skyblock.command()
+    async def minimum(self, ctx, query):
+        async with ctx.typing():
+            minimum_prices = []
+            for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
+                gc.collect()
+                known_auctions = [x.get("starting_bid") for x in all_auctions]
+                minimum_prices.append((timestamp, min(known_auctions)))
+            with ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
+                                                                         title=f"Minimum prices for {query}",
+                                                                         x_label="Date",
+                                                                         y_label="Price in coins",
+                                                                         Minimum=minimum_prices))
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+            await ctx.reply(file=discord_file)
+
 
 def setup(bot):
     cog = Skyblock(bot)
