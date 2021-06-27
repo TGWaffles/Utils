@@ -3,6 +3,7 @@ from io import BytesIO
 from statistics import mean
 
 import discord
+import gc
 from discord.ext import commands
 from concurrent.futures import ProcessPoolExecutor
 
@@ -36,11 +37,15 @@ class Skyblock(commands.Cog):
             average_prices = []
             maximum_prices = []
             async for timestamp, all_auctions in self.get_bin_auctions():
-                print("next auction")
+                print("garbage collecting")
+                gc.collect()
+                print("next auction start")
                 known_auctions = []
+
                 for auction in all_auctions:
                     if query.lower() in auction.get("item_name", "").lower():
                         known_auctions.append(auction.get("starting_bid"))
+                print("end of iteration")
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
