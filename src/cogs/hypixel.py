@@ -746,7 +746,12 @@ class Hypixel(commands.Cog):
     @hypixel_stats.command()
     async def weekly(self, ctx, username: Optional[str]):
         async with ctx.typing():
-            await self.time_period(ctx, username, datetime.timedelta(hours=24))
+            await self.time_period(ctx, username, datetime.timedelta(days=7))
+
+    @hypixel_stats.command()
+    async def monthly(self, ctx, username: Optional[str]):
+        async with ctx.typing():
+            await self.time_period(ctx, username, datetime.timedelta(days=30))
 
     @hypixel_stats.command()
     async def tracked(self, ctx, username: Optional[str]):
