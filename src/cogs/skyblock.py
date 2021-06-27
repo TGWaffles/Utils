@@ -42,10 +42,12 @@ class Skyblock(commands.Cog):
                 gc.collect()
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
                 if len(known_auctions) == 0:
+                    print("no known auctions")
                     continue
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
+            print(len(minimum_prices))
             with ProcessPoolExecutor() as pool:
                 data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
                                                                          title=f"Prices for {query} books",
