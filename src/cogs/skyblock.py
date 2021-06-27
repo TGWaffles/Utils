@@ -31,25 +31,29 @@ class Skyblock(commands.Cog):
 
     @skyblock.command()
     async def history(self, ctx, query):
-        minimum_prices = []
-        average_prices = []
-        maximum_prices = []
-        async for timestamp, all_auctions in self.get_bin_auctions():
-            known_auctions = []
-            for auction in all_auctions:
-                if query.lower() in auction.get("item_name", "").lower():
-                    known_auctions.append(auction.get("starting_bid"))
-            minimum_prices.append((timestamp, min(known_auctions)))
-            average_prices.append((timestamp, mean(known_auctions)))
-            maximum_prices.append((timestamp, max(known_auctions)))
-        with ProcessPoolExecutor() as pool:
-            data = self.bot.loop.run_in_executor(pool, partial(plot_multiple, Minimum=minimum_prices,
-                                                               Average=average_prices,
-                                                               Maximum=maximum_prices))
-        file = BytesIO(data)
-        file.seek(0)
-        discord_file = discord.File(fp=file, filename="image.png")
-        await ctx.reply(file=discord_file)
+        async with ctx.typing():
+            minimum_prices = []
+            average_prices = []
+            maximum_prices = []
+            async for timestamp, all_auctions in self.get_bin_auctions():
+                print("next auction")
+                known_auctions = []
+                for auction in all_auctions:
+                    if query.lower() in auction.get("item_name", "").lower():
+                        known_auctions.append(auction.get("starting_bid"))
+                minimum_prices.append((timestamp, min(known_auctions)))
+                average_prices.append((timestamp, mean(known_auctions)))
+                maximum_prices.append((timestamp, max(known_auctions)))
+            print("starting pool stuff")
+            with ProcessPoolExecutor() as pool:
+                data = self.bot.loop.run_in_executor(pool, partial(plot_multiple, Minimum=minimum_prices,
+                                                                   Average=average_prices,
+                                                                   Maximum=maximum_prices))
+            print("finished pool stuff")
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+            await ctx.reply(file=discord_file)
 
 
 def setup(bot):
