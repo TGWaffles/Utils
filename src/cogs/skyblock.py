@@ -63,7 +63,7 @@ class Skyblock(commands.Cog):
             coroutines.append(self.auctions_from_parent(auction, query))
         for coroutine in coroutines:
             futures.append(self.bot.loop.create_task(coroutine))
-        results = asyncio.gather(*futures)
+        results = await asyncio.gather(*futures)
         return results
 
     @skyblock.command()
@@ -72,9 +72,8 @@ class Skyblock(commands.Cog):
             minimum_prices = []
             average_prices = []
             maximum_prices = []
-            results = await self.get_bin_auctions(query.lower())
-            for result in results:
-                timestamp, all_auctions = result
+            for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
+                gc.collect()
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
