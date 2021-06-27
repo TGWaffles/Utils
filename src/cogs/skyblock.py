@@ -23,11 +23,37 @@ class Skyblock(commands.Cog):
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`"))
 
-    async def get_bin_auctions(self):
+    async def get_bin_auctions(self, query):
         async for auction in self.skyblock_db.auctions.find().sort("timestamp", 1):
-            auctions = []
-            async for page in self.skyblock_db.auction_pages.find({"_id.auction_id": auction["_id"]}):
-                auctions += [x for x in page["auctions"] if x.get("bin", False)]
+            pipeline = [
+                {
+                    "$match": {
+                        "_id.auction_id": auction["_id"]
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "auctions": 1
+                    }
+                },
+                {
+                    "$unwind": "$auctions"
+                },
+                {
+                    "$replaceWith": "$auctions"
+                },
+                {
+                    "$match": {
+                        "bin": True,
+                        "item_name": {
+                            "$regex": f".*{query}.*",
+                            "$options": 'i'
+                        }
+                    }
+                }
+            ]
+            auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
             yield auction["timestamp"], auctions
 
     @skyblock.command()
@@ -36,16 +62,13 @@ class Skyblock(commands.Cog):
             minimum_prices = []
             average_prices = []
             maximum_prices = []
-            async for timestamp, all_auctions in self.get_bin_auctions():
+            print("starting async for")
+            async for timestamp, all_auctions in self.get_bin_auctions(query.lower()):
                 print("garbage collecting")
                 gc.collect()
-                print("next auction start")
-                known_auctions = []
-
-                for auction in all_auctions:
-                    if query.lower() in auction.get("item_name", "").lower():
-                        known_auctions.append(auction.get("starting_bid"))
-                print("end of iteration")
+                print("transforming to starting bid")
+                known_auctions = [x.get("starting_bid") for x in all_auctions]
+                print("appending")
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
                 maximum_prices.append((timestamp, max(known_auctions)))
