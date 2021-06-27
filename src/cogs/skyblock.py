@@ -72,8 +72,9 @@ class Skyblock(commands.Cog):
             minimum_prices = []
             average_prices = []
             maximum_prices = []
-            for timestamp, all_auctions in await self.get_bin_auctions(query.lower()):
-                gc.collect()
+            results = await self.get_bin_auctions(query.lower())
+            for result in results:
+                timestamp, all_auctions = result
                 known_auctions = [x.get("starting_bid") for x in all_auctions]
                 minimum_prices.append((timestamp, min(known_auctions)))
                 average_prices.append((timestamp, mean(known_auctions)))
