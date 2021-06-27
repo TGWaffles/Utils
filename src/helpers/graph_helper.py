@@ -57,6 +57,7 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
     plt.ylabel(y_label)
     plt.title(title)
     plt.legend()
+    plt.tight_layout()
     plt.savefig(file)
     file.seek(0)
     return file.read()
