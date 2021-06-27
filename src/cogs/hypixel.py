@@ -722,7 +722,8 @@ class Hypixel(commands.Cog):
         if last_document is None:
             return
         if last_document.get("timestamp") < yesterday:
-            await ctx.reply(embed=self.bot.create_error_embed(f"{username} has not played Bedwars today."))
+            await ctx.reply(embed=self.bot.create_error_embed(f"{username} has not played Bedwars in the last "
+                                                              f"{humanize.naturaldelta(time_delta)}."))
             return
         earlier_document = await self.get_stats_from_before(uuid, time_delta)
         if earlier_document is None:
