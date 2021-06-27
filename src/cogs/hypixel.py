@@ -637,7 +637,7 @@ class Hypixel(commands.Cog):
             return
         time_differences = []
         for i in range(len(self.last_ten_updates) - 1):
-            time_differences.append(self.last_ten_updates[i+1] - self.last_ten_updates[i])
+            time_differences.append(self.last_ten_updates[i + 1] - self.last_ten_updates[i])
         average_period = sum([x.total_seconds() for x in time_differences]) / len(time_differences)
         average_period = round(average_period, 2)
         time_since_last = datetime.datetime.now() - self.last_ten_updates[-1]
@@ -707,7 +707,7 @@ class Hypixel(commands.Cog):
             return None, None, None
         last_document = await self.get_player_stats(uuid, amount=amount, skip=skip)
         if ((last_document is None or (isinstance(last_document, list) and len(last_document) == 0)) and not
-                allow_untracked):
+        allow_untracked):
             if skip == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("That player is not being tracked."))
             else:
@@ -716,27 +716,37 @@ class Hypixel(commands.Cog):
             return None, None, None
         return last_document, username, uuid
 
+    async def time_period(self, ctx, username, time_delta):
+        yesterday = datetime.datetime.now() - time_delta
+        last_document, username, uuid = await self.process_data_command(ctx, username)
+        if last_document is None:
+            return
+        if last_document.get("timestamp") < yesterday:
+            await ctx.reply(embed=self.bot.create_error_embed(f"{username} has not played Bedwars today."))
+            return
+        earlier_document = await self.get_stats_from_before(uuid, time_delta)
+        if earlier_document is None:
+            await ctx.reply(embed=self.bot.create_error_embed(f"I don't have statistics for {username} from before "
+                                                              f"{humanize.naturaldate(yesterday)}!"))
+            return
+        today_stats = HypixelStats.from_dict(last_document["stats"])
+        yesterday_stats = HypixelStats.from_dict(earlier_document["stats"])
+        todays_date_string = datetime.datetime.now().strftime("%A, %B %d %Y")
+        yesterday_date_string = yesterday.strftime("%A, %B %d %Y")
+        all_embeds = create_delta_embeds(f"{username}'s Stats - {yesterday_date_string} - {todays_date_string}",
+                                         yesterday_stats, today_stats)
+        paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
+        await paginator.start()
+
     @hypixel_stats.command()
     async def daily(self, ctx, username: Optional[str]):
         async with ctx.typing():
-            yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-            last_document, username, uuid = await self.process_data_command(ctx, username)
-            if last_document is None:
-                return
-            if last_document.get("timestamp") < yesterday:
-                await ctx.reply(embed=self.bot.create_error_embed(f"{username} has not played Bedwars today."))
-                return
-            earlier_document = await self.get_stats_from_before(uuid, datetime.timedelta(hours=24))
-            if earlier_document is None:
-                await ctx.reply(embed=self.bot.create_error_embed(f"I don't have statistics for {username} from before "
-                                                                  "today!"))
-                return
-            today_stats = HypixelStats.from_dict(last_document["stats"])
-            yesterday_stats = HypixelStats.from_dict(earlier_document["stats"])
-            todays_date_string = datetime.datetime.now().strftime("%A, %B %d %Y")
-            all_embeds = create_delta_embeds(f"{username}'s Stats - {todays_date_string}", yesterday_stats, today_stats)
-            paginator = EmbedPaginator(self.bot, None, all_embeds, ctx)
-            await paginator.start()
+            await self.time_period(ctx, username, datetime.timedelta(hours=24))
+
+    @hypixel_stats.command()
+    async def weekly(self, ctx, username: Optional[str]):
+        async with ctx.typing():
+            await self.time_period(ctx, username, datetime.timedelta(hours=24))
 
     @hypixel_stats.command()
     async def tracked(self, ctx, username: Optional[str]):
