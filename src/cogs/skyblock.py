@@ -166,6 +166,7 @@ class Skyblock(commands.Cog):
             pipeline.insert(1, second_match)
         pipeline.insert(1, final_match)
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
+        print(auctions)
         return auctions
 
     async def get_bin_auctions(self, query, book=False):
