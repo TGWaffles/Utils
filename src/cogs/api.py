@@ -1,5 +1,6 @@
 import json
 import secrets
+import base64
 import aspell
 import discord
 
@@ -17,7 +18,8 @@ class API(commands.Cog):
         self.api_db = self.bot.mongo.client.api.users
         app = web.Application()
         app.add_routes([web.post('/speak', self.handle_speak_message), web.post('/disconnect', self.handle_disconnect),
-                        web.get('/check_access', self.check_access), web.get('/avatar_urls', self.avatar_urls)])
+                        web.get('/check_access', self.check_access), web.get('/avatar_urls', self.avatar_urls),
+                        web.get('/regen_img/{data}', self.regen_image)])
         # noinspection PyProtectedMember
         self.bot.loop.create_task(self.start_site(app))
 
@@ -128,6 +130,17 @@ class API(commands.Cog):
         user_document = {"_id": ctx.author.id, "key": key}
         await self.bot.mongo.force_insert(self.api_db, user_document)
         await ctx.author.send("Your API key is: {}".format(key))
+
+    async def regen_image(self, request: web.Request):
+        b64_data = request.match_info['data']
+        data = base64.urlsafe_b64decode(b64_data)
+        response = web.StreamResponse()
+        response.content_type = "image/jpg"
+        response.content_length = len(data)
+        response.headers["Cache-Control"] = "max-age=15"
+        await response.prepare(request)
+        await response.write(data)
+        return response
 
 
 def setup(bot):
