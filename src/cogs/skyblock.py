@@ -35,14 +35,11 @@ class Skyblock(commands.Cog):
         minimum_prices = []
         average_prices = []
         maximum_prices = []
-        for timestamp, all_auctions in await self.get_bin_auctions(query, book=book):
+        for auction in await self.get_bin_auctions(query, book=book):
             gc.collect()
-            known_auctions = [x.get("starting_bid") for x in all_auctions]
-            if len(known_auctions) == 0:
-                continue
-            minimum_prices.append((timestamp, min(known_auctions)))
-            average_prices.append((timestamp, mean(known_auctions)))
-            maximum_prices.append((timestamp, max(known_auctions)))
+            minimum_prices.append((auction["_id"], auction["minimum"]))
+            average_prices.append((auction["_id"], auction["average"]))
+            maximum_prices.append((auction["_id"], auction["maximum"]))
         return minimum_prices, average_prices, maximum_prices
 
     @book.command(name="history")
@@ -105,24 +102,56 @@ class Skyblock(commands.Cog):
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
 
-    async def auctions_from_parent(self, auction, query, item_lore=None):
+    async def auctions_from_query(self, query, item_lore=None):
         pipeline = [
             {
                 "$match": {
-                    "_id.auction_id": auction["_id"]
+                    "$text": {"$search": f"{query}"}
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "auctions",
+                    "localField": "_id.auction_id",
+                    "foreignField": "_id",
+                    "as": "auction"
                 }
             },
             {
                 "$project": {
                     "_id": 0,
-                    "auctions": 1
+                    "auctions": 1,
+                    "auction": 1
                 }
             },
             {
                 "$unwind": "$auctions"
             },
             {
+                "$addFields": {
+                    "auctions.timestamp": "$auction.timestamp"
+                }
+            },
+            {
                 "$replaceWith": "$auctions"
+            }
+        ]
+        add_after = [{
+            "$unwind": "$timestamp"
+            },
+            {
+                "$group": {
+                    "_id": "$timestamp",
+                    "minimum": {
+                        "$min": "$starting_bid"
+                    },
+                    "average": {
+                        "$avg": "$starting_bid"
+                    },
+                    "maximum": {
+                        "$max": "$starting_bid"
+                    }
+                }
             }
         ]
         final_match = {
@@ -149,24 +178,17 @@ class Skyblock(commands.Cog):
                 }
             }
         pipeline.append(final_match)
+        pipeline += add_after
         auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
-        return auction["timestamp"], auctions
+        return auctions
 
     async def get_bin_auctions(self, query, book=False):
-        coroutines = []
-        futures = []
         if book:
             lore_query = query
             query = "enchanted book"
-            async for auction in self.skyblock_db.auctions.find().sort("timestamp", 1):
-                coroutines.append(self.auctions_from_parent(auction, query, item_lore=lore_query))
+            return await self.auctions_from_query(query, item_lore=lore_query)
         else:
-            async for auction in self.skyblock_db.auctions.find().sort("timestamp", 1):
-                coroutines.append(self.auctions_from_parent(auction, query))
-        for coroutine in coroutines:
-            futures.append(self.bot.loop.create_task(coroutine))
-        results = await asyncio.gather(*futures)
-        return results
+            return await self.auctions_from_query(query)
 
     @skyblock.command()
     async def history(self, ctx, *, query):
