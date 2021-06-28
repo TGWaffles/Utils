@@ -199,6 +199,8 @@ class RoleManager(commands.Cog):
                 await ctx.reply(embed=self.bot.create_error_embed("Please specify a role to assign on join."))
                 return
             if role.position < ctx.guild.me.top_role.position:
+                await ctx.reply(role.position)
+                await ctx.reply(ctx.guild.me.top_role.position)
                 await ctx.reply(embed=self.bot.create_error_embed("My role is too low down to auto-assign that role!"))
                 return
             guild_document = {"_id": ctx.guild.id, "role_id": role.id}
