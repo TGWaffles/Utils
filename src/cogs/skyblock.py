@@ -145,7 +145,7 @@ class Skyblock(commands.Cog):
                 }
             },
             {
-                "$unwind": "_id"
+                "$unwind": "$_id"
             }
         ]
         final_match = {
