@@ -132,7 +132,9 @@ class API(commands.Cog):
         await ctx.author.send("Your API key is: {}".format(key))
 
     async def regen_image(self, request: web.Request):
+        print("regen request received")
         b64_data = request.match_info['data']
+        print(b64_data)
         data = base64.urlsafe_b64decode(b64_data)
         response = web.StreamResponse()
         response.content_type = "image/jpg"
