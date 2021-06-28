@@ -36,10 +36,12 @@ class Skyblock(commands.Cog):
         average_prices = []
         maximum_prices = []
         for auction in await self.get_bin_auctions(query, book=book):
-            gc.collect()
             minimum_prices.append((auction["_id"], auction["minimum"]))
             average_prices.append((auction["_id"], auction["average"]))
             maximum_prices.append((auction["_id"], auction["maximum"]))
+        minimum_prices.sort(key=lambda x: x[0])
+        average_prices.sort(key=lambda x: x[0])
+        maximum_prices.sort(key=lambda x: x[0])
         return minimum_prices, average_prices, maximum_prices
 
     @book.command(name="history")
@@ -180,6 +182,7 @@ class Skyblock(commands.Cog):
         pipeline.append(final_match)
         pipeline += add_after
         auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
+        print(auctions)
         return auctions
 
     async def get_bin_auctions(self, query, book=False):
