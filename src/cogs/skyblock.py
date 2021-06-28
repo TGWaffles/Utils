@@ -181,8 +181,8 @@ class Skyblock(commands.Cog):
             }
         pipeline.append(final_match)
         pipeline += add_after
+        print(pipeline)
         auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
-        print(auctions)
         return auctions
 
     async def get_bin_auctions(self, query, book=False):
