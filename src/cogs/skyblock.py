@@ -112,38 +112,11 @@ class Skyblock(commands.Cog):
                 }
             },
             {
-                "$lookup": {
-                    "from": "auctions",
-                    "localField": "_id.auction_id",
-                    "foreignField": "_id",
-                    "as": "auction"
-                }
-            },
-            {
-                "$project": {
-                    "_id": 0,
-                    "auctions": 1,
-                    "auction": 1
-                }
-            },
-            {
-                "$unwind": "$auctions"
-            },
-            {
-                "$addFields": {
-                    "auctions.timestamp": "$auction.timestamp"
-                }
-            },
-            {
-                "$replaceWith": "$auctions"
-            }
-        ]
-        add_after = [{
-            "$unwind": "$timestamp"
+                "$unwind": "$updates"
             },
             {
                 "$group": {
-                    "_id": "$timestamp",
+                    "_id": "$updates",
                     "minimum": {
                         "$min": "$starting_bid"
                     },
@@ -153,6 +126,22 @@ class Skyblock(commands.Cog):
                     "maximum": {
                         "$max": "$starting_bid"
                     }
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "auctions",
+                    "localField": "_id",
+                    "foreignField": "_id",
+                    "as": "auction"
+                }
+            },
+            {
+                "$project": {
+                    "_id": "$auction.timestamp",
+                    "minimum": 1,
+                    "average": 1,
+                    "maximum": 1
                 }
             }
         ]
@@ -166,23 +155,17 @@ class Skyblock(commands.Cog):
             }
         }
         if item_lore is not None:
-            final_match = {
-                "$match": {
-                    "bin": True,
-                    "item_name": {
-                        "$regex": f".*{query}.*",
-                        "$options": 'i'
-                    },
-                    "item_lore": {
-                        "$regex": f".*{item_lore}.*",
-                        "$options": 'i'
+            second_match = {
+                    "$match": {
+                        "item_lore": {
+                            "$regex": f".*{item_lore}.*",
+                            "$options": 'i'
+                        }
                     }
                 }
-            }
-        pipeline.append(final_match)
-        pipeline += add_after
-        print(pipeline)
-        auctions = await self.skyblock_db.auction_pages.aggregate(pipeline=pipeline).to_list(length=None)
+            pipeline.insert(1, second_match)
+        pipeline.insert(1, final_match)
+        auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
         return auctions
 
     async def get_bin_auctions(self, query, book=False):
