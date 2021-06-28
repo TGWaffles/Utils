@@ -15,6 +15,7 @@ class RoleManager(commands.Cog):
         self.rejoin_guilds = self.bot.mongo.discord_db.rejoin_guilds
         self.rejoin_logs = self.bot.mongo.discord_db.rejoin_logs
         self.role_assign = self.bot.mongo.discord_db.role_assign
+        self.auto_roles = self.bot.mongo.discord_db.auto_roles
 
     @commands.command(aliases=["setroleassign"])
     @is_staff()
@@ -191,6 +192,28 @@ class RoleManager(commands.Cog):
 
     @commands.command()
     @is_staff()
+    async def autorole(self, ctx, role: Optional[discord.Role]):
+        old_document = await self.auto_roles.find_one({"_id": ctx.guild.id})
+        if old_document is None:
+            if role is None:
+                await ctx.reply(embed=self.bot.create_error_embed("Please specify a role to assign on join."))
+                return
+            if role.position < ctx.guild.me.top_role.position:
+                await ctx.reply(embed=self.bot.create_error_embed("My role is too low down to auto-assign that role!"))
+                return
+            guild_document = {"_id": ctx.guild.id, "role_id": role.id}
+            await self.bot.mongo.force_insert(self.auto_roles, guild_document)
+            await ctx.reply(embed=self.bot.create_completed_embed("AutoRole enabled!",
+                                                                  f"Members will now automatically receive the role "
+                                                                  f"{role.mention} on join!"))
+        else:
+            await self.auto_roles.delete_one({"_id": ctx.guild.id})
+            await ctx.reply(embed=self.bot.create_completed_embed("AutoRole disabled!",
+                                                                  f"Members will no longer automatically receive "
+                                                                  f"a role on join."))
+
+    @commands.command()
+    @is_staff()
     async def unset_role_reapply(self, ctx):
         await self.rejoin_guilds.delete_one({"_id": ctx.guild.id})
         await ctx.reply(embed=self.bot.create_completed_embed("Guild Added", "The guild has been removed from role "
@@ -205,6 +228,14 @@ class RoleManager(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         guild_id = member.guild.id
+        auto_role_doc = self.auto_roles.find_one({"_id": guild_id})
+        if auto_role_doc is not None:
+            role = member.guild.get_role(auto_role_doc["role_id"])
+            if role is not None and role != member.guild.default_role:
+                try:
+                    await member.add_roles(role)
+                except discord.errors.Forbidden:
+                    pass
         guild_doc = await self.rejoin_guilds.find_one({"_id": guild_id})
         if guild_doc is None:
             return
