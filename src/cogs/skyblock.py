@@ -130,7 +130,7 @@ class Skyblock(commands.Cog):
             },
             {
                 "$lookup": {
-                    "from": "auctions",
+                    "from": "auction_updates",
                     "localField": "_id",
                     "foreignField": "_id",
                     "as": "auction"
@@ -143,6 +143,9 @@ class Skyblock(commands.Cog):
                     "average": 1,
                     "maximum": 1
                 }
+            },
+            {
+                "$unwind": "_id"
             }
         ]
         final_match = {
