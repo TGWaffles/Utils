@@ -46,7 +46,7 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
     file = BytesIO()
     plt.gca().xaxis.set_major_formatter(dates.DateFormatter("%Y-%m-%d %H:%M"))
     plt.gca().yaxis.set_major_formatter(num_humanizer)
-    plt.gca().xaxis.set_major_locator(dates.HourLocator(interval=max(1, len(kwargs) // 30)))
+    plt.gca().xaxis.set_major_locator(dates.HourLocator(interval=max(1, len(kwargs[list(kwargs.keys())[0]]) // 10)))
     for title, data in kwargs.items():
         x = [x[0] for x in data]
         y = [x[1] for x in data]
