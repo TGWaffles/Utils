@@ -228,7 +228,7 @@ class RoleManager(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         guild_id = member.guild.id
-        auto_role_doc = self.auto_roles.find_one({"_id": guild_id})
+        auto_role_doc = await self.auto_roles.find_one({"_id": guild_id})
         if auto_role_doc is not None:
             role = member.guild.get_role(auto_role_doc["role_id"])
             if role is not None and role != member.guild.default_role:
