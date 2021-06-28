@@ -233,7 +233,7 @@ class RoleManager(commands.Cog):
             role = member.guild.get_role(auto_role_doc["role_id"])
             if role is not None and role != member.guild.default_role:
                 try:
-                    await member.add_roles(role)
+                    await member.add_roles(role, reason="Auto Role Assign")
                 except discord.errors.Forbidden:
                     pass
         guild_doc = await self.rejoin_guilds.find_one({"_id": guild_id})
@@ -257,11 +257,11 @@ class RoleManager(commands.Cog):
             if check(role):
                 valid_roles.append(role)
         try:
-            await member.add_roles(*valid_roles)
+            await member.add_roles(*valid_roles, reason="Rejoin Roles")
         except discord.errors.Forbidden:
             for role in valid_roles:
                 try:
-                    await member.add_roles(role)
+                    await member.add_roles(role, reason="Rejoin Roles")
                 except discord.errors.Forbidden:
                     print(f"I am forbidden from adding role {role.name} in guild {member.guild.name} to {member.name}")
 
