@@ -31,11 +31,11 @@ class Skyblock(commands.Cog):
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`, `average`, `minimum`"))
 
-    async def get_item_data(self, query, book=False):
+    async def get_item_data(self, query, enchant_id=None, level=None):
         minimum_prices = []
         average_prices = []
         maximum_prices = []
-        for auction in await self.get_bin_auctions(query, book=book):
+        for auction in await self.get_bin_auctions(query, enchant_id, level):
             minimum_prices.append((auction["_id"], auction["minimum"]))
             average_prices.append((auction["_id"], auction["average"]))
             maximum_prices.append((auction["_id"], auction["maximum"]))
@@ -48,7 +48,21 @@ class Skyblock(commands.Cog):
     async def book_history(self, ctx, *, query):
         query = query.lower()
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query, True)
+            level = query.split(" ")[-1]
+            try:
+                level = int(level)
+                enchant_name = " ".join(query.split(" ")[:-1])
+            except ValueError:
+                enchant_name = query
+                level = None
+            enchantment_document = await self.skyblock_db.enchantments.find_one({"name": enchant_name})
+            if enchantment_document is None:
+                await ctx.reply(embed=self.bot.create_error_embed(f"I couldn't find a matching enchantment "
+                                                                  f"for `{enchant_name}`!"))
+                return
+            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query,
+                                                                                      enchantment_document["_id"],
+                                                                                      level)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -104,7 +118,7 @@ class Skyblock(commands.Cog):
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
 
-    async def auctions_from_query(self, query, item_lore=None):
+    async def auctions_from_query(self, query, enchant_id=None, level=None):
         pipeline = [
             {
                 "$match": {
@@ -148,37 +162,27 @@ class Skyblock(commands.Cog):
                 "$unwind": "$_id"
             }
         ]
+        match_dict = {"bin": True,
+                      "item_name": {
+                          "$regex": f".*{query}.*",
+                          "$options": 'i'}}
+
+        if enchant_id is not None:
+            match_dict["enchantments.enchantment"] = enchant_id
+            if level is not None:
+                match_dict["enchantments.level"] = level
         final_match = {
             "$match": {
-                "bin": True,
-                "item_name": {
-                    "$regex": f".*{query}.*",
-                    "$options": 'i'
-                }
+                match_dict
             }
         }
-        if item_lore is not None:
-            second_match = {
-                    "$match": {
-                        "item_lore": {
-                            "$regex": f".*{item_lore}.*",
-                            "$options": 'i'
-                        }
-                    }
-                }
-            pipeline.insert(1, second_match)
         pipeline.insert(1, final_match)
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
         print(auctions)
         return auctions
 
-    async def get_bin_auctions(self, query, book=False):
-        if book:
-            lore_query = query
-            query = "enchanted book"
-            return await self.auctions_from_query(query, item_lore=lore_query)
-        else:
-            return await self.auctions_from_query(query)
+    async def get_bin_auctions(self, query, enchant_id=None, level=None):
+        return await self.auctions_from_query(query, enchant_id, level)
 
     @skyblock.command()
     async def history(self, ctx, *, query):
