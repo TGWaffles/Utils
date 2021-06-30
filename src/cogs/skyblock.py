@@ -185,8 +185,8 @@ class Skyblock(commands.Cog):
             "$match": match_dict
         }
         pipeline.insert(1, final_match)
+        print(pipeline)
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
-        print(auctions)
         return auctions
 
     async def get_bin_auctions(self, query, enchant_id=None, level=None):
