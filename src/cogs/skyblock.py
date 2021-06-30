@@ -44,25 +44,29 @@ class Skyblock(commands.Cog):
         maximum_prices.sort(key=lambda x: x[0])
         return minimum_prices, average_prices, maximum_prices
 
+    async def book_extract(self, ctx, query):
+        level = query.split(" ")[-1]
+        try:
+            level = int(level)
+            enchant_name = " ".join(query.split(" ")[:-1])
+        except ValueError:
+            enchant_name = query
+            level = None
+        enchantment_document = await self.skyblock_db.enchantments.find_one({"$text": {"$search": enchant_name}})
+        if enchantment_document is None:
+            await ctx.reply(embed=self.bot.create_error_embed(f"I couldn't find a matching enchantment "
+                                                              f"for `{enchant_name}`!"))
+            raise ValueError
+        return await self.get_item_data(query, enchantment_document["_id"], level)
+
     @book.command(name="history")
     async def book_history(self, ctx, *, query):
         query = query.lower()
         async with ctx.typing():
-            level = query.split(" ")[-1]
             try:
-                level = int(level)
-                enchant_name = " ".join(query.split(" ")[:-1])
+                minimum_prices, average_prices, maximum_prices = await self.book_extract(ctx, query)
             except ValueError:
-                enchant_name = query
-                level = None
-            enchantment_document = await self.skyblock_db.enchantments.find_one({"$text": {"$search": enchant_name}})
-            if enchantment_document is None:
-                await ctx.reply(embed=self.bot.create_error_embed(f"I couldn't find a matching enchantment "
-                                                                  f"for `{enchant_name}`!"))
                 return
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query,
-                                                                                      enchantment_document["_id"],
-                                                                                      level)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -83,7 +87,10 @@ class Skyblock(commands.Cog):
     async def book_average(self, ctx, *, query):
         query = query.lower()
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query, True)
+            try:
+                minimum_prices, average_prices, maximum_prices = await self.book_extract(ctx, query)
+            except ValueError:
+                return
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -103,7 +110,10 @@ class Skyblock(commands.Cog):
     async def book_average(self, ctx, *, query):
         query = query.lower()
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query, True)
+            try:
+                minimum_prices, average_prices, maximum_prices = await self.book_extract(ctx, query)
+            except ValueError:
+                return
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -172,9 +182,7 @@ class Skyblock(commands.Cog):
             if level is not None:
                 match_dict["enchantments.level"] = level
         final_match = {
-            "$match": {
-                match_dict
-            }
+            "$match": match_dict
         }
         pipeline.insert(1, final_match)
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
