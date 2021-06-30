@@ -55,7 +55,7 @@ class Skyblock(commands.Cog):
             except ValueError:
                 enchant_name = query
                 level = None
-            enchantment_document = await self.skyblock_db.enchantments.find_one({"name": enchant_name})
+            enchantment_document = await self.skyblock_db.enchantments.find_one({"$text": {"$search": enchant_name}})
             if enchantment_document is None:
                 await ctx.reply(embed=self.bot.create_error_embed(f"I couldn't find a matching enchantment "
                                                                   f"for `{enchant_name}`!"))
