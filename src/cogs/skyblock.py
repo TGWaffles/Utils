@@ -57,7 +57,7 @@ class Skyblock(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed(f"I couldn't find a matching enchantment "
                                                               f"for `{enchant_name}`!"))
             raise ValueError
-        return await self.get_item_data(query, enchantment_document["_id"], level)
+        return await self.get_item_data("Enchanted Book", enchantment_document["_id"], level)
 
     @book.command(name="history")
     async def book_history(self, ctx, *, query):
