@@ -178,13 +178,18 @@ class Skyblock(commands.Cog):
                           "$options": 'i'}}
 
         if enchant_id is not None:
+            match_dict["item_name"] = "Enchanted Book"
             match_dict["enchantments.enchantment"] = enchant_id
             if level is not None:
                 match_dict["enchantments.level"] = level
-        final_match = {
-            "$match": match_dict
-        }
-        pipeline.insert(1, final_match)
+            pipeline[0] = {
+                "$match": match_dict
+            }
+        else:
+            final_match = {
+                "$match": match_dict
+            }
+            pipeline.insert(1, final_match)
         print(pipeline)
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
         return auctions
