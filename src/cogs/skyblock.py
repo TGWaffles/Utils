@@ -200,7 +200,7 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def history(self, ctx, *, query):
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query, False)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -220,7 +220,7 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def average(self, ctx, *, query):
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query, False)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -239,7 +239,7 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def minimum(self, ctx, *, query):
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query, False)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
