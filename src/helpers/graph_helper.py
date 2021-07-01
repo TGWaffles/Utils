@@ -46,11 +46,14 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
     file = BytesIO()
     plt.gca().xaxis.set_major_formatter(dates.DateFormatter("%Y-%m-%d %H:%M"))
     plt.gca().yaxis.set_major_formatter(num_humanizer)
-    plt.gca().xaxis.set_major_locator(dates.HourLocator(interval=max(1, len(kwargs[list(kwargs.keys())[0]]) // 10)))
-    for title, data in kwargs.items():
+    interval = max(1, len(kwargs[list(kwargs.keys())[0]]) // 10)
+    print(f"interval is {interval}, key 0 is {list(kwargs.keys())[0]}, len of that is "
+          f"{len(kwargs[list(kwargs.keys())[0]])}")
+    plt.gca().xaxis.set_major_locator(dates.HourLocator(interval=interval))
+    for kwarg_title, data in kwargs.items():
         x = [x[0] for x in data]
         y = [x[1] for x in data]
-        plt.plot(x, y, label=title)
+        plt.plot(x, y, label=kwarg_title)
     plt.gcf().autofmt_xdate()
     plt.xlabel(x_label)
     plt.ylabel(y_label)
