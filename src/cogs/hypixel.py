@@ -812,9 +812,11 @@ class Hypixel(commands.Cog):
             earlier_stats = HypixelStats.from_dict(last_documents[1]["stats"])
             latest_stats = HypixelStats.from_dict(last_documents[0]["stats"])
             if games_ago == 1:
-                embed_title = f"{username}'s Stats - Last Game"
+                embed_title = f"{username}'s Stats - Last Game " \
+                              f"({last_documents[1]['timestamp'].strftime('%A, %B %d %Y')})"
             else:
-                embed_title = f"{username}'s Stats - {games_ago} Games Ago"
+                embed_title = f"{username}'s Stats - {games_ago} Games Ago " \
+                              f"({last_documents[1]['timestamp'].strftime('%A, %B %d %Y')})"
             all_embeds = create_delta_embeds(embed_title, earlier_stats, latest_stats,
                                              True)
             image = await self.get_head_image(uuid)
