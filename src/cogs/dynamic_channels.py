@@ -33,9 +33,16 @@ class DynamicChannels(commands.Cog):
             channel = self.bot.get_channel(channel_id)
             if channel is None:
                 continue
+            channel_name = channel.name
+            try:
+                old_count = channel_name.split(": ")[1]
+                old_count = int(old_count)
+            except (IndexError, ValueError):
+                old_count = 0
             count = await self.bot.mongo.discord_db.messages.count_documents({"guild_id": channel.guild.id,
                                                                               "deleted": False})
-            await channel.edit(name=f"Messages: {count:,}")
+            if count - old_count > count / 200:
+                await channel.edit(name=f"Messages: {count:,}")
 
 
 def setup(bot: UtilsBot):
