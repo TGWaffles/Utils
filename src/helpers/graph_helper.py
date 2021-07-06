@@ -63,14 +63,13 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
         bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
         arrowprops = dict(arrowstyle="->", connectionstyle="angle,angleA=0,angleB=60")
         kw = dict(xycoords='data', textcoords="axes fraction",
-                  arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
+                  arrowprops=arrowprops, bbox=bbox_props, ha="left", va="top")
         ax.annotate(text, xy=(x_max, y_max), xytext=(0.94, 0.96), **kw)
         text = "x={:.3f}, y={:.3f}".format(x_min, y_min)
-        ax = plt.gca()
         bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
         arrowprops = dict(arrowstyle="->", connectionstyle="angle,angleA=0,angleB=60")
         kw = dict(xycoords='data', textcoords="axes fraction",
-                  arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
+                  arrowprops=arrowprops, bbox=bbox_props, ha="left", va="bottom")
         ax.annotate(text, xy=(x_min, y_min), xytext=(0.94, 0.96), **kw)
 
     plt.gcf().autofmt_xdate()
