@@ -54,23 +54,6 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
         x = [x[0] for x in data]
         y = [x[1] for x in data]
         plt.plot(x, y, label=kwarg_title)
-        y_max = max(y)
-        y_min = min(y)
-        x_min = x[y.index(y_min)]
-        x_max = x[y.index(y_max)]
-        text = "x={:.3f}, y={:.3f}".format(x_max, y_max)
-        ax = plt.gca()
-        bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-        arrowprops = dict(arrowstyle="->", connectionstyle="angle,angleA=0,angleB=60")
-        kw = dict(xycoords='data', textcoords="axes fraction",
-                  arrowprops=arrowprops, bbox=bbox_props, ha="left", va="top")
-        ax.annotate(text, xy=(x_max, y_max), xytext=(0.94, 0.96), **kw)
-        text = "x={:.3f}, y={:.3f}".format(x_min, y_min)
-        bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-        arrowprops = dict(arrowstyle="->", connectionstyle="angle,angleA=0,angleB=60")
-        kw = dict(xycoords='data', textcoords="axes fraction",
-                  arrowprops=arrowprops, bbox=bbox_props, ha="left", va="bottom")
-        ax.annotate(text, xy=(x_min, y_min), xytext=(0.94, 0.96), **kw)
 
     plt.gcf().autofmt_xdate()
     plt.xlabel(x_label)
