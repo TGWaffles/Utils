@@ -131,11 +131,6 @@ class Skyblock(commands.Cog):
     async def auctions_from_query(self, query, enchant_id=None, level=None):
         pipeline = [
             {
-                "$match": {
-                    "$text": {"$search": f"{query}"}
-                }
-            },
-            {
                 "$unwind": "$updates"
             },
             {
@@ -172,7 +167,8 @@ class Skyblock(commands.Cog):
                 "$unwind": "$_id"
             }
         ]
-        match_dict = {"bin": True,
+        match_dict = {"$text": {"$search": f"{query}"},
+                      "bin": True,
                       "item_name": {
                           "$regex": f".*{query}.*",
                           "$options": 'i'}}
@@ -182,14 +178,10 @@ class Skyblock(commands.Cog):
             match_dict["enchantments.enchantment"] = enchant_id
             if level is not None:
                 match_dict["enchantments.level"] = level
-            pipeline[0] = {
-                "$match": match_dict
-            }
-        else:
-            final_match = {
-                "$match": match_dict
-            }
-            pipeline.insert(1, final_match)
+        final_match = {
+            "$match": match_dict
+        }
+        pipeline.insert(0, final_match)
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
         return auctions
 
