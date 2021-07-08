@@ -2,13 +2,13 @@ import re
 
 import discord
 
-from main import UtilsBot
+# from main import UtilsBot
 from src.storage import config
 from typing import Optional
 
 
 class BasePaginator:
-    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], reply_message: discord.Message,
+    def __init__(self, bot, channel: Optional[discord.TextChannel], reply_message: discord.Message,
                  file=None):
         self.file = file
         self.reply_message = reply_message
@@ -50,7 +50,7 @@ class BasePaginator:
 
 
 class Paginator(BasePaginator):
-    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], title=None, full_text=None,
+    def __init__(self, bot, channel: Optional[discord.TextChannel], title=None, full_text=None,
                  max_length=2000, reply_message=None):
         super().__init__(bot, channel, reply_message)
         self.title = title
@@ -103,7 +103,7 @@ class Paginator(BasePaginator):
 
 
 class EmbedPaginator(BasePaginator):
-    def __init__(self, bot: UtilsBot, channel: Optional[discord.TextChannel], embeds: list[discord.Embed],
+    def __init__(self, bot, channel: Optional[discord.TextChannel], embeds: list[discord.Embed],
                  reply_message=None, file: discord.File = None):
         super().__init__(bot, channel, reply_message, file=file)
         self.page_index = 0
