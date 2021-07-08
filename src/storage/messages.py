@@ -38,3 +38,7 @@ for that piece."""
 chess_win = "Congratulations! You have won the chess game with {}!"
 chess_loss = "Chess Game with {} - You lost!"
 chess_draw = "The chess game with {} was a draw."
+
+rarity_messages = "" \
+                  "0 - ALL, 1 - COMMON, 2 - UNCOMMON, 3 - RARE, 4 - EPIC, 5 - LEGENDARY, 6 - MYTHIC, 7 - SPECIAL, " \
+                  "8 - VERY SPECIAL "

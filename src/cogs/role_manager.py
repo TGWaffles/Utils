@@ -265,6 +265,12 @@ class RoleManager(commands.Cog):
                 except discord.errors.Forbidden:
                     print(f"I am forbidden from adding role {role.name} in guild {member.guild.name} to {member.name}")
 
+    @commands.group()
+    async def role(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            await ctx.reply(embed=self.bot.create_error_embed("Unknown subcommand!"))
+            await ctx.send_help()
+
 
 def setup(bot):
     cog = RoleManager(bot)
