@@ -1,17 +1,12 @@
-import asyncio
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from io import BytesIO
-from statistics import mean
 
 import discord
-import gc
 from discord.ext import commands
-from concurrent.futures import ProcessPoolExecutor
 
 from main import UtilsBot
-from src.checks.message_check import ask_question
 from src.helpers.graph_helper import plot_multiple
-from src.helpers.models.skyblock_models import TooLongException
 
 
 class Skyblock(commands.Cog):
