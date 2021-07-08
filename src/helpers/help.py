@@ -6,10 +6,8 @@ from typing import List, Union
 
 import discord
 from discord.ext import commands
-from discord.ext.commands.cog import Cog
-from discord.ext.commands.help import HelpCommand, MinimalHelpCommand
-
-from .navigation import Navigation
+from discord.ext.commands.help import MinimalHelpCommand
+from pretty_help.navigation import Navigation
 
 
 class Paginator:
