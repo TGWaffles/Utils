@@ -14,6 +14,7 @@ from discord.ext import commands
 from discord.ext.commands.core import _convert_to_bool
 
 from src.checks.message_check import check_reply
+from src.helpers.help import UtilsHelp
 from src.helpers.mongo_helper import MongoDB
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
@@ -29,7 +30,7 @@ class UtilsBot(commands.Bot):
         # help_command.paginator.char_limit = 2000
         super().__init__(command_prefix=self.determine_prefix, description=config.description,
                          loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True,
-                         help_command=UtilsBot())
+                         help_command=UtilsHelp(self))
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
