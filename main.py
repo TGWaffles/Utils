@@ -11,6 +11,8 @@ import subprocess
 from typing import Union
 from pretty_help import PrettyHelp
 from discord.ext import commands
+from pretty_help.pretty_help import Paginator
+
 from src.storage import config
 from src.checks.message_check import check_reply
 from discord.ext.commands.core import _convert_to_bool
@@ -25,14 +27,11 @@ class UtilsBot(commands.Bot):
         # Initialises the actual commands.Bot class
         intents = discord.Intents.all()
         intents.members = True
-        if os.environ.get("DATABASE_SERVER", None) is not None and not os.path.exists("second"):
-            super().__init__(command_prefix=self.determine_prefix, description=config.description,
-                             loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True,
-                             help_command=None)
-        else:
-            super().__init__(command_prefix=self.determine_prefix, description=config.description,
-                             loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True,
-                             help_command=PrettyHelp(color=discord.Colour.blue()))
+        help_command = PrettyHelp(color=discord.Colour.blue())
+        help_command.paginator.char_limit = 2000
+        super().__init__(command_prefix=self.determine_prefix, description=config.description,
+                         loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True,
+                         help_command=help_command)
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
