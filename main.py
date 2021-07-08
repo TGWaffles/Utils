@@ -9,9 +9,8 @@ import pymongo
 import subprocess
 
 from typing import Union
-from pretty_help import PrettyHelp
+from src.helpers.help import PrettyHelp
 from discord.ext import commands
-from pretty_help.pretty_help import Paginator
 
 from src.storage import config
 from src.checks.message_check import check_reply
