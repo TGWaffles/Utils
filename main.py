@@ -1,26 +1,22 @@
-import discord
 import asyncio
-import sys
+import datetime
 import json
 import os
-import datetime
-import time
-import pymongo
 import subprocess
-
+import sys
+import time
+from traceback import format_exc, print_tb
 from typing import Union
 
-from discord.ext.commands import MinimalHelpCommand
-
-from src.helpers.help import PrettyHelp
+import discord
+import pymongo
 from discord.ext import commands
-
-from src.storage import config
-from src.checks.message_check import check_reply
 from discord.ext.commands.core import _convert_to_bool
-from src.helpers.storage_helper import DataHelper
-from traceback import format_exc, print_tb
+
+from src.checks.message_check import check_reply
 from src.helpers.mongo_helper import MongoDB
+from src.helpers.storage_helper import DataHelper
+from src.storage import config
 from src.storage.token import token  # token.py is just one variable - token = "token"
 
 
@@ -33,7 +29,7 @@ class UtilsBot(commands.Bot):
         # help_command.paginator.char_limit = 2000
         super().__init__(command_prefix=self.determine_prefix, description=config.description,
                          loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True,
-                         help_command=MinimalHelpCommand())
+                         help_command=UtilsBot())
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
