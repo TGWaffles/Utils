@@ -73,6 +73,7 @@ class Paginator(BasePaginator):
         self.full_text = ""
 
     async def start(self):
+        self.remaining_text = self.full_text
         self.fill_pages()
         await super().start()
 
