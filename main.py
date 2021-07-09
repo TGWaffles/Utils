@@ -29,8 +29,8 @@ class UtilsBot(commands.Bot):
         # help_command = PrettyHelp(color=discord.Colour.blue())
         # help_command.paginator.char_limit = 2000
         super().__init__(command_prefix=self.determine_prefix, description=config.description,
-                         loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True,
-                         help_command=UtilsHelp(self))
+                         loop=asyncio.get_event_loop(), intents=intents, case_insensitive=True)
+        self.help_command = UtilsHelp(self)
         self.guild = None
         self.error_channel = None
         self.data = DataHelper()
