@@ -4,14 +4,11 @@ from src.helpers.paginator import Paginator
 
 
 class UtilsHelp(MinimalHelpCommand):
-    def __init__(self, bot, **options):
-        print("INIT CALLED")
-        print(options)
-        exit()
+    def __init__(self, **options):
         super().__init__(**options)
-        self.paginator = Paginator(bot=bot, channel=None)
-        exit()
+        self.paginator = Paginator(bot=None, channel=None)
 
     async def send_pages(self):
+        self.paginator.bot = self.context.bot
         self.paginator.channel = self.get_destination()
         await self.paginator.start()
