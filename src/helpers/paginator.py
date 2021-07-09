@@ -61,8 +61,10 @@ class Paginator(BasePaginator):
         self.pages = []
         self.message = None
 
-    def add_line(self):
-        self.full_text += "\n"
+    def add_line(self, line='', *, empty=False):
+        self.full_text += line + "\n"
+        if empty:
+            self.full_text += "\n"
 
     def close_page(self):
         pass
