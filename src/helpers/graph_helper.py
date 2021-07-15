@@ -66,10 +66,10 @@ def plot_multiple(x_label="", y_label="", title="", **kwargs):
     return file.read()
 
 
-def plot_stats(data, *_, x_label=None, y_label=None):
+def plot_stats(data, *_, x_label=None, y_label=None, smooth=True):
     file = BytesIO()
     x_values = np.arange(-len(data) + 1, 1, 1)
-    if len(data) < 4:
+    if len(data) < 4 or not smooth:
         x_new = x_values
         y_smooth = data
     else:
@@ -89,12 +89,12 @@ def plot_stats(data, *_, x_label=None, y_label=None):
     return file.read()
 
 
-def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_label=None):
+def plot_and_extrapolate(input_data, extrapolated_values, *_, x_label=None, y_label=None, smooth=True):
     file = BytesIO()
     x_values = np.arange(-len(input_data) + 1, 1, 1)
     extrapolate_max = int(round(0.5 * len(input_data)))
     new_values = np.arange(-len(input_data) + 1, extrapolate_max, 1)
-    if len(input_data) < 4:
+    if len(input_data) < 4 or not smooth:
         x_new = x_values
         y_smooth = input_data
     else:

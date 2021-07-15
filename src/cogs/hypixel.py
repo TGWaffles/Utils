@@ -15,6 +15,7 @@ from discord.ext import commands, tasks
 from discord.ext.commands import converter
 
 from src.checks.role_check import is_staff
+from src.checks.user_check import is_owner
 from src.helpers.graph_helper import plot_stats, plot_and_extrapolate
 from src.helpers.hypixel_helper import *
 from src.helpers.hypixel_stats import HypixelStats, create_delta_embeds
@@ -45,6 +46,7 @@ class Hypixel(commands.Cog):
         self.latest_tokens = []
         self.head_images = {}
         self.external_ip = None
+        self.smooth_mode = True
         self.site = None
         self.app = web.Application()
         self.app.add_routes(
@@ -740,6 +742,12 @@ class Hypixel(commands.Cog):
         await paginator.start()
 
     @hypixel_stats.command()
+    @is_owner()
+    async def smooth(self, ctx):
+        self.smooth_mode = not self.smooth_mode
+        await ctx.reply(self.smooth_mode)
+
+    @hypixel_stats.command()
     async def daily(self, ctx, username: Optional[str]):
         async with ctx.typing():
             await self.time_period(ctx, username, datetime.timedelta(hours=24))
@@ -883,10 +891,10 @@ class Hypixel(commands.Cog):
             return
         with concurrent.futures.ProcessPoolExecutor() as pool:
             data = await self.bot.loop.run_in_executor(pool, partial(plot_stats, all_important, x_label="Games",
-                                                                     y_label=nice_name))
+                                                                     y_label=nice_name, smooth=self.smooth_mode))
         file = BytesIO(data)
         discord_file = discord.File(file, filename="image.png")
-        embed = discord.Embed(title=f"{username}'s {nice_name} over the last {len(all_important)} games")
+        embed = discord.Embed(title=f"{username}'s {nice_name} over the last {len(all_important) - 1} games")
         embed.set_image(url="attachment://image.png")
         await ctx.reply(embed=embed, file=discord_file)
 
@@ -910,10 +918,11 @@ class Hypixel(commands.Cog):
         username, num_games = await self.check_swap(ctx, username, num_games)
         if username is None:
             username = await self.discord_to_hypixel(username if username is not None else ctx.author)
+        num_games += 1
         if num_games is None:
-            num_games = 25
+            num_games = 26
         if num_games == 1:
-            await ctx.reply(embed=self.bot.create_error_embed("Please try graphing more than one game - otherwise it "
+            await ctx.reply(embed=self.bot.create_error_embed("Please try graphing more than zero games - otherwise it "
                                                               "would just be dots on a white background!"))
             return
         elif num_games < 1:
@@ -986,7 +995,8 @@ class Hypixel(commands.Cog):
             values = numpy.arange(0, len(all_important) + extrapolate_max, 1)
             data = await self.bot.loop.run_in_executor(pool, partial(plot_and_extrapolate, all_important,
                                                                      y_func(values),
-                                                                     x_label="Games", y_label=pretty_name))
+                                                                     x_label="Games", y_label=pretty_name,
+                                                                     smooth=self.smooth_mode))
         file = BytesIO(data)
         discord_file = discord.File(file, "image.png")
         embed = discord.Embed(title=f"Future Prediction for {username}'s {pretty_name}")

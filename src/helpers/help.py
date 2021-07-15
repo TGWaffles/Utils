@@ -6,7 +6,7 @@ from src.helpers.paginator import Paginator
 class UtilsHelp(MinimalHelpCommand):
     def __init__(self, **options):
         super().__init__(**options)
-        self.paginator = Paginator(bot=None, channel=None)
+        self.paginator = Paginator(bot=None, channel=None, max_length=500)
 
     async def send_pages(self):
         self.paginator.bot = self.context.bot
