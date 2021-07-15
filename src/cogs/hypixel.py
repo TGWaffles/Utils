@@ -918,9 +918,9 @@ class Hypixel(commands.Cog):
         username, num_games = await self.check_swap(ctx, username, num_games)
         if username is None:
             username = await self.discord_to_hypixel(username if username is not None else ctx.author)
-        num_games += 1
         if num_games is None:
-            num_games = 26
+            num_games = 25
+        num_games += 1
         if num_games == 1:
             await ctx.reply(embed=self.bot.create_error_embed("Please try graphing more than zero games - otherwise it "
                                                               "would just be dots on a white background!"))
