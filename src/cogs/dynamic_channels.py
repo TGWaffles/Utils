@@ -35,7 +35,7 @@ class DynamicChannels(commands.Cog):
                 continue
             channel_name = channel.name
             try:
-                old_count = channel_name.split(": ")[1]
+                old_count = channel_name.split(": ")[1].replace(",", "")
                 old_count = int(old_count)
             except (IndexError, ValueError):
                 old_count = 0

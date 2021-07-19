@@ -230,7 +230,7 @@ class Misc(commands.Cog):
         possible_presences = ["Current CPU load: {}%!".format(psutil.cpu_percent(None)),
                               "Current RAM usage: {}MB/{}MB.".format(used, total),
                               "Total guild count: {}!".format(len(self.bot.guilds)),
-                              "Owner: THOMAS#1707"]
+                              "Owner: ThomasW#1707"]
         activity = discord.Game(name=possible_presences[self.current_presence])
         self.current_presence += 1
         if self.current_presence > len(possible_presences) - 1:
