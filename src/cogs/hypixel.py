@@ -346,8 +346,8 @@ class Hypixel(commands.Cog):
         await sent.edit(embed=self.bot.create_processing_embed(
             "Converting {}".format(channel.name), "Completed all prior messages. Adding channel to database."))
         channel_collection = self.hypixel_db.channels
-        async for channel in channel_collection.find({"guild_id": ctx.guild.id}):
-            await self.delete_channel_from_all_users(channel.get("_id"))
+        async for old_channel in channel_collection.find({"guild_id": ctx.guild.id}):
+            await self.delete_channel_from_all_users(old_channel.get("_id"))
         await channel_collection.delete_many({"guild_id": ctx.guild.id})
         channel_document = {"_id": channel.id, "guild_id": ctx.guild.id}
         await self.bot.mongo.force_insert(channel_collection, channel_document)

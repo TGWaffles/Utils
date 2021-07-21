@@ -248,7 +248,16 @@ def get_bot():
             if error_channel is None:
                 error_channel = bot.get_channel(config.error_channel_id)
             await error_channel.send(embed=embed)
-            await ctx.reply(embed=embed)
+            try:
+                await ctx.reply(embed=embed)
+            except discord.errors.HTTPException as http_e:
+                if http_e.code == 400:
+                    await ctx.send(embed=bot.create_error_embed("The original message was deleted! "
+                                                                "Could not reply with error. Please don't run commands "
+                                                                "in a channel that auto-deletes."))
+                    await ctx.send(embed=embed)
+                print(f"{http_e.code = }, {http_e.args = }")
+
             # bot.restart()
         except Exception as e:
             print("Error in sending error to discord. Error was {}".format(error))
