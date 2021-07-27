@@ -37,6 +37,7 @@ class Hypixel(commands.Cog):
         self.update_hypixel_info.add_exception_type(discord.errors.DiscordServerError)
         self.update_hypixel_info.add_exception_type(discord.errors.HTTPException)
         self.update_hypixel_info.start()
+        self.auto_restart.start()
         self.user_to_files = {}
         self.token_last_used = {}
         self.last_ten_updates = []
@@ -574,6 +575,14 @@ class Hypixel(commands.Cog):
             else:
                 await ctx.reply(embed=self.bot.create_error_embed(f"{username} is already being tracked!"))
                 return
+
+    @tasks.loop(seconds=60, count=None)
+    async def auto_restart(self):
+        if len(self.last_ten_updates) > 2:
+            time_since_last = datetime.datetime.now() - self.last_ten_updates[-1]
+            if time_since_last.total_seconds() > 600:
+                print("RESTARTING DUE TO HYPIXEL FAULT")
+                self.bot.restart()
 
     @tasks.loop(seconds=45, count=None)
     async def update_hypixel_info(self):

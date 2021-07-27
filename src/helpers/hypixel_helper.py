@@ -116,6 +116,11 @@ class HypixelAPI:
                 await asyncio.gather(*this_loop_tasks)
             except (*exceptions, *waiting_exceptions):
                 continue
+            except Exception as e:
+                print("UNKNOWN EXCEPTION DISCOVERED")
+                print(e)
+                await asyncio.sleep(30)
+                print("30 second sleep over, trying again...")
 
     async def get_player(self, uuid, prioritize=False):
         uuid = uuid.replace("-", "")
