@@ -146,6 +146,9 @@ class Skyblock(commands.Cog):
 
     @book.command(name="average")
     async def book_average(self, ctx, *, query):
+        print(ctx)
+        print(type(ctx))
+        print(self)
         query = query.lower()
         async with ctx.typing():
             try:
