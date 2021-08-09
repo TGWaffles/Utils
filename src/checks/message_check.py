@@ -12,6 +12,13 @@ def check_reply(author):
     return check_author
 
 
+def question_check(author):
+    def check_author(message):
+        return message.author.id == author.id
+
+    return check_author
+
+
 def check_pinned(message):
     return not message.pinned
 

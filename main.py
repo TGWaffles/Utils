@@ -13,7 +13,7 @@ import pymongo
 from discord.ext import commands
 from discord.ext.commands.core import _convert_to_bool
 
-from src.checks.message_check import check_reply
+from src.checks.message_check import check_reply, question_check
 from src.helpers.help import UtilsHelp
 from src.helpers.mongo_helper import MongoDB
 from src.helpers.storage_helper import DataHelper
@@ -117,6 +117,17 @@ class UtilsBot(commands.Bot):
                                                                       "'no' detected. "
                                                                       "Request cancelled."))
             return False
+
+    async def ask_question(self, ctx, question=None):
+        if question is not None:
+            await ctx.reply(embed=self.create_completed_embed("Search Query", question))
+        try:
+            replied_message = await self.wait_for("message", check=question_check(ctx.author), timeout=30.0)
+        except asyncio.TimeoutError:
+            await ctx.reply(embed=self.create_error_embed("You took too long to respond! Search cancelled."))
+            ctx.kwargs["resolved"] = True
+            raise asyncio.TimeoutError()
+        return replied_message.content
 
     # The following embeds are just to create embeds with the correct colour in fewer words.
     @staticmethod

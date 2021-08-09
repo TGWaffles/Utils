@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from main import UtilsBot
 from src.helpers.graph_helper import plot_multiple
+from src.helpers.paginator import Paginator
 
 
 class Skyblock(commands.Cog):
@@ -27,6 +28,69 @@ class Skyblock(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`, `average`, `minimum`"))
+
+    async def auctions_from_names(self, names):
+        pipeline = [
+            {
+                "$match": {
+                    "item_name": {
+                        "$in": names
+                    },
+                    "bin": True
+                }
+            },
+            {
+                "$unwind": "$updates"
+            },
+            {
+                "$group": {
+                    "_id": "$updates",
+                    "minimum": {
+                        "$min": "$starting_bid"
+                    },
+                    "average": {
+                        "$avg": "$starting_bid"
+                    },
+                    "maximum": {
+                        "$max": "$starting_bid"
+                    }
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "auction_updates",
+                    "localField": "_id",
+                    "foreignField": "_id",
+                    "as": "auction"
+                }
+            },
+            {
+                "$project": {
+                    "_id": "$auction.timestamp",
+                    "minimum": 1,
+                    "average": 1,
+                    "maximum": 1
+                }
+            },
+            {
+                "$unwind": "$_id"
+            }
+        ]
+        auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
+        return auctions
+
+    async def get_item_from_name(self, item_names):
+        minimum_prices = []
+        average_prices = []
+        maximum_prices = []
+        for auction in await self.auctions_from_names(item_names):
+            minimum_prices.append((auction["_id"], auction["minimum"]))
+            average_prices.append((auction["_id"], auction["average"]))
+            maximum_prices.append((auction["_id"], auction["maximum"]))
+        minimum_prices.sort(key=lambda x: x[0])
+        average_prices.sort(key=lambda x: x[0])
+        maximum_prices.sort(key=lambda x: x[0])
+        return minimum_prices, average_prices, maximum_prices
 
     async def get_item_data(self, query, enchant_id=None, level=None):
         minimum_prices = []
@@ -232,10 +296,40 @@ class Skyblock(commands.Cog):
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
 
+    async def ask_name(self, ctx, query):
+        all_names = await self.skyblock_db.auctions.distinct("item_name")
+        valid_names = [x for x in all_names if query.lower() in x]
+        if len(valid_names) == 0:
+            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find any items matching that name!"))
+            ctx.kwargs["resolved"] = True
+            raise commands.BadArgument()
+        item_choice_text = "Are any of these the item you want? Enter the index of the item.\n0. Any Item\n"
+        for index, optional_item_name in enumerate(valid_names):
+            item_choice_text += f"{index + 1}. {optional_item_name}\n"
+        paginator = Paginator(self.bot, None, title="Choose an item", full_text=item_choice_text, max_length=500,
+                              reply_message=ctx)
+        await paginator.start()
+        item_index = await self.bot.ask_question(ctx, None)
+        try:
+            item_index = int(item_index)
+        except ValueError:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid index! Please enter a valid number. "
+                                                              "Search cancelled."))
+            ctx.kwargs["resolved"] = True
+            raise commands.BadArgument()
+        if item_index != 0:
+            valid_names = [valid_names[item_index - 1]]
+        if len(valid_names) == 0:
+            await ctx.reply(embed=self.bot.create_error_embed("I couldn't find any items matching that name!"))
+            ctx.kwargs["resolved"] = True
+            raise commands.BadArgument()
+        return valid_names
+
     @skyblock.command()
     async def minimum(self, ctx, *, query):
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query)
+            valid_names = await self.ask_name(ctx, query)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
