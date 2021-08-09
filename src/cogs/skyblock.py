@@ -171,7 +171,7 @@ class Skyblock(commands.Cog):
             await ctx.reply(file=discord_file)
 
     @book.command(name="minimum")
-    async def book_average(self, ctx, *, query):
+    async def book_minimum(self, ctx, *, query):
         query = query.lower()
         async with ctx.typing():
             try:
