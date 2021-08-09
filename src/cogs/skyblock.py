@@ -301,7 +301,7 @@ class Skyblock(commands.Cog):
 
     async def ask_name(self, ctx, query):
         all_names = await self.skyblock_db.auctions.distinct("item_name")
-        valid_names = [x for x in all_names if query.lower() in x]
+        valid_names = [x for x in all_names if query.lower() in x.lower()]
         if len(valid_names) == 0:
             await ctx.reply(embed=self.bot.create_error_embed("I couldn't find any items matching that name!"))
             ctx.kwargs["resolved"] = True
