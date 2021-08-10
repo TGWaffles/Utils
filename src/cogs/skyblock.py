@@ -7,6 +7,7 @@ from discord.ext import commands
 
 from main import UtilsBot
 from src.helpers.graph_helper import plot_multiple
+from src.helpers.models.skyblock_models import Rarity
 from src.helpers.paginator import Paginator
 
 
@@ -29,14 +30,15 @@ class Skyblock(commands.Cog):
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`, `average`, `minimum`"))
 
-    async def auctions_from_names(self, names):
+    async def auctions_from_names(self, names, rarity=Rarity.ALL):
         pipeline = [
             {
                 "$match": {
                     "item_name": {
                         "$in": names
                     },
-                    "bin": True
+                    "bin": True,
+                    "tier": rarity.name if rarity != Rarity.ALL else {"$exists": True}
                 }
             },
             {
@@ -79,11 +81,11 @@ class Skyblock(commands.Cog):
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
         return auctions
 
-    async def get_item_from_name(self, item_names):
+    async def get_item_from_name(self, item_names, rarity=Rarity.ALL):
         minimum_prices = []
         average_prices = []
         maximum_prices = []
-        for auction in await self.auctions_from_names(item_names):
+        for auction in await self.auctions_from_names(item_names, rarity):
             minimum_prices.append((auction["_id"], auction["minimum"]))
             average_prices.append((auction["_id"], auction["average"]))
             maximum_prices.append((auction["_id"], auction["maximum"]))
@@ -263,13 +265,14 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def history(self, ctx, *, query):
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query)
+            valid_names, rarity = await self.ask_name(ctx, query)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
             with ProcessPoolExecutor() as pool:
                 data = await self.bot.loop.run_in_executor(pool, partial(plot_multiple,
-                                                                         title=f"Prices for {query}",
+                                                                         title=f"Historical prices for {query}",
                                                                          x_label="Date",
                                                                          y_label="Price in coins",
                                                                          Minimum=minimum_prices,
@@ -283,7 +286,8 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def average(self, ctx, *, query):
         async with ctx.typing():
-            minimum_prices, average_prices, maximum_prices = await self.get_item_data(query)
+            valid_names, rarity = await self.ask_name(ctx, query)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -298,6 +302,25 @@ class Skyblock(commands.Cog):
             file.seek(0)
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
+
+    async def ask_rarity(self, ctx):
+        await ctx.reply(
+            embed=self.bot.create_completed_embed("Rarity",
+                                                  "Respond with the rarity you would like to search for.\n\n" +
+                                                  "\n ".join([f"{i} - {x}" for i, x in
+                                                              [(x.value, x.name) for x in Rarity]])))
+        rarity_index = await self.bot.ask_question(ctx, None)
+        try:
+            rarity_index = int(rarity_index)
+        except ValueError:
+            await ctx.reply(embed=self.bot.create_error_embed("Invalid index! Please enter a valid number. "
+                                                              "Returning to rarity input."))
+            return await self.ask_rarity(ctx)
+        if rarity_index < 0 or rarity_index > len(Rarity) - 1:
+            await ctx.reply(embed=self.bot.create_error_embed("That's not a valid rarity! Returning to rarity input."))
+            return await self.ask_rarity(ctx)
+
+        return Rarity(rarity_index)
 
     async def ask_name(self, ctx, query):
         all_names = await self.skyblock_db.auctions.distinct("item_name")
@@ -326,13 +349,14 @@ class Skyblock(commands.Cog):
             await ctx.reply(embed=self.bot.create_error_embed("I couldn't find any items matching that name!"))
             ctx.kwargs["resolved"] = True
             raise commands.BadArgument()
-        return valid_names
+        rarity = await self.ask_rarity(ctx)
+        return valid_names, rarity
 
     @skyblock.command()
     async def minimum(self, ctx, *, query):
         async with ctx.typing():
-            valid_names = await self.ask_name(ctx, query)
-            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names)
+            valid_names, rarity = await self.ask_name(ctx, query)
+            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -346,8 +370,6 @@ class Skyblock(commands.Cog):
             file.seek(0)
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
-
-
 
 
 def setup(bot):
