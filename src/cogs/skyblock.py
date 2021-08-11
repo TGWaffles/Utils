@@ -30,6 +30,47 @@ class Skyblock(commands.Cog):
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`, `average`, `minimum`"))
 
+    async def all_auctions_average_graph(self):
+        pipeline = [{
+            "$unwind": "$updates"
+            },
+            {
+                "$group": {
+                    "_id": "$updates",
+                    "minimum": {
+                        "$min": "$starting_bid"
+                    },
+                    "average": {
+                        "$avg": "$starting_bid"
+                    },
+                    "maximum": {
+                        "$max": "$starting_bid"
+                    }
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "auction_updates",
+                    "localField": "_id",
+                    "foreignField": "_id",
+                    "as": "auction"
+                }
+            },
+            {
+                "$project": {
+                    "_id": "$auction.timestamp",
+                    "minimum": 1,
+                    "average": 1,
+                    "maximum": 1
+                }
+            },
+            {
+                "$unwind": "$_id"
+            }
+        ]
+        auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
+        return auctions
+
     async def auctions_from_names(self, names, rarity=Rarity.ALL):
         pipeline = [
             {
@@ -265,8 +306,11 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def history(self, ctx, *, query):
         async with ctx.typing():
-            valid_names, rarity = await self.ask_name(ctx, query)
-            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
+            if query.lower() == "all":
+                minimum_prices, average_prices, maximum_prices = await self.all_auctions_average_graph()
+            else:
+                valid_names, rarity = await self.ask_name(ctx, query)
+                minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -286,8 +330,11 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def average(self, ctx, *, query):
         async with ctx.typing():
-            valid_names, rarity = await self.ask_name(ctx, query)
-            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
+            if query.lower() == "all":
+                minimum_prices, average_prices, maximum_prices = await self.all_auctions_average_graph()
+            else:
+                valid_names, rarity = await self.ask_name(ctx, query)
+                minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
@@ -355,8 +402,11 @@ class Skyblock(commands.Cog):
     @skyblock.command()
     async def minimum(self, ctx, *, query):
         async with ctx.typing():
-            valid_names, rarity = await self.ask_name(ctx, query)
-            minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
+            if query.lower() == "all":
+                minimum_prices, average_prices, maximum_prices = await self.all_auctions_average_graph()
+            else:
+                valid_names, rarity = await self.ask_name(ctx, query)
+                minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
             if len(maximum_prices) == 0:
                 await ctx.reply(embed=self.bot.create_error_embed("No auctions could be found."))
                 return
