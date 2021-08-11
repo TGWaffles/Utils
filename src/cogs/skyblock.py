@@ -30,7 +30,7 @@ class Skyblock(commands.Cog):
                                                               "Please specify a subcommand. Valid "
                                                               "subcommands: `history`, `average`, `minimum`"))
 
-    async def all_auctions_average_graph(self):
+    async def all_auctions_average_data(self):
         pipeline = [{
             "$unwind": "$updates"
             },
@@ -121,6 +121,19 @@ class Skyblock(commands.Cog):
         ]
         auctions = await self.skyblock_db.auctions.aggregate(pipeline=pipeline).to_list(length=None)
         return auctions
+
+    async def all_auctions_determine(self):
+        minimum_prices = []
+        average_prices = []
+        maximum_prices = []
+        for auction in await self.all_auctions_average_data():
+            minimum_prices.append((auction["_id"], auction["minimum"]))
+            average_prices.append((auction["_id"], auction["average"]))
+            maximum_prices.append((auction["_id"], auction["maximum"]))
+        minimum_prices.sort(key=lambda x: x[0])
+        average_prices.sort(key=lambda x: x[0])
+        maximum_prices.sort(key=lambda x: x[0])
+        return minimum_prices, average_prices, maximum_prices
 
     async def get_item_from_name(self, item_names, rarity=Rarity.ALL):
         minimum_prices = []
@@ -307,7 +320,7 @@ class Skyblock(commands.Cog):
     async def history(self, ctx, *, query):
         async with ctx.typing():
             if query.lower() == "all":
-                minimum_prices, average_prices, maximum_prices = await self.all_auctions_average_graph()
+                minimum_prices, average_prices, maximum_prices = await self.all_auctions_determine()
             else:
                 valid_names, rarity = await self.ask_name(ctx, query)
                 minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
@@ -331,7 +344,7 @@ class Skyblock(commands.Cog):
     async def average(self, ctx, *, query):
         async with ctx.typing():
             if query.lower() == "all":
-                minimum_prices, average_prices, maximum_prices = await self.all_auctions_average_graph()
+                minimum_prices, average_prices, maximum_prices = await self.all_auctions_determine()
             else:
                 valid_names, rarity = await self.ask_name(ctx, query)
                 minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
@@ -403,7 +416,7 @@ class Skyblock(commands.Cog):
     async def minimum(self, ctx, *, query):
         async with ctx.typing():
             if query.lower() == "all":
-                minimum_prices, average_prices, maximum_prices = await self.all_auctions_average_graph()
+                minimum_prices, average_prices, maximum_prices = await self.all_auctions_determine()
             else:
                 valid_names, rarity = await self.ask_name(ctx, query)
                 minimum_prices, average_prices, maximum_prices = await self.get_item_from_name(valid_names, rarity)
