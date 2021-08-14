@@ -465,6 +465,7 @@ class Skyblock(commands.Cog):
             }
         ]
         data = await self.skyblock_db.auctions.aggregate(pipeline).to_list(length=None)
+        data = data[0]
         return data["minimum"], data["average"], data["maximum"]
 
     @skyblock.command(aliases=["sp"])
@@ -472,7 +473,7 @@ class Skyblock(commands.Cog):
         valid_names, rarity = await self.ask_name(ctx, query)
         try:
             minimum, average, maximum = await self.get_sell_price(valid_names, rarity)
-        except KeyError:
+        except (KeyError, IndexError):
             await ctx.reply("That item appears to have never sold!")
             return
         await ctx.reply(embed=self.bot.create_completed_embed(f"{query}", f"Minimum Sell Price: {minimum}\n"
