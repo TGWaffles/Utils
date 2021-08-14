@@ -33,7 +33,7 @@ class Skyblock(commands.Cog):
     async def all_auctions_average_data(self):
         pipeline = [{
             "$unwind": "$updates"
-            },
+        },
             {
                 "$group": {
                     "_id": "$updates",
@@ -433,6 +433,51 @@ class Skyblock(commands.Cog):
             file.seek(0)
             discord_file = discord.File(fp=file, filename="image.png")
             await ctx.reply(file=discord_file)
+
+    async def get_sell_price(self, names, rarity):
+        pipeline = [
+            {
+                "$match": {
+                    "item_name": {
+                        "$in": names
+                    },
+                    "bin": True,
+                    "sold": True,
+                    "tier": rarity.name if rarity != Rarity.ALL else {"$exists": True}
+                }
+            },
+            {
+                "$unwind": "$updates"
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "minimum": {
+                        "$min": "$starting_bid"
+                    },
+                    "average": {
+                        "$avg": "$starting_bid"
+                    },
+                    "maximum": {
+                        "$max": "$starting_bid"
+                    }
+                }
+            }
+        ]
+        data = await self.skyblock_db.auctions.aggregate(pipeline).to_list(length=None)
+        return data["minimum"], data["average"], data["maximum"]
+
+    @skyblock.command(aliases=["sp"])
+    async def sell_price(self, ctx, *, query):
+        valid_names, rarity = await self.ask_name(ctx, query)
+        try:
+            minimum, average, maximum = await self.get_sell_price(valid_names, rarity)
+        except KeyError:
+            await ctx.reply("That item appears to have never sold!")
+            return
+        await ctx.reply(embed=self.bot.create_completed_embed(f"{query}", f"Minimum Sell Price: {minimum}\n"
+                                                                          f"Average Sell Price: {average}\n"
+                                                                          f"Maximum Sell Price: {maximum}"))
 
 
 def setup(bot):
