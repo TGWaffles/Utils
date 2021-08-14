@@ -16,7 +16,7 @@ class Skyblock(commands.Cog):
         self.bot: UtilsBot = bot
         self.skyblock_db = self.bot.mongo.client.skyblock
 
-    @commands.group(case_insensitive=True)
+    @commands.group(case_insensitive=True, aliases=["sb"])
     async def skyblock(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
@@ -466,7 +466,7 @@ class Skyblock(commands.Cog):
         ]
         data = await self.skyblock_db.auctions.aggregate(pipeline).to_list(length=None)
         data = data[0]
-        return data["minimum"], data["average"], data["maximum"]
+        return data["minimum"], round(data["average"], 2), data["maximum"]
 
     @skyblock.command(aliases=["sp"])
     async def sell_price(self, ctx, *, query):
@@ -476,9 +476,9 @@ class Skyblock(commands.Cog):
         except (KeyError, IndexError):
             await ctx.reply("That item appears to have never sold!")
             return
-        await ctx.reply(embed=self.bot.create_completed_embed(f"{query}", f"Minimum Sell Price: {minimum}\n"
-                                                                          f"Average Sell Price: {average}\n"
-                                                                          f"Maximum Sell Price: {maximum}"))
+        await ctx.reply(embed=self.bot.create_completed_embed(f"{query}", f"Minimum Sell Price: {minimum:,} coins\n"
+                                                                          f"Average Sell Price: {average:,} coins\n"
+                                                                          f"Maximum Sell Price: {maximum:,} coins"))
 
 
 def setup(bot):
