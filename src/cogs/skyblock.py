@@ -443,7 +443,8 @@ class Skyblock(commands.Cog):
                     },
                     "bin": True,
                     "sold": True,
-                    "tier": rarity.name if rarity != Rarity.ALL else {"$exists": True}
+                    "tier": rarity.name if rarity != Rarity.ALL else {"$exists": True},
+                    "count": 1
                 }
             },
             {
