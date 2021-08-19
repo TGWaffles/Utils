@@ -252,7 +252,8 @@ class Skyblock(commands.Cog):
         pipeline = [
             {
                 "$match": {
-                    "$text": {"$search": f"{query}"}
+                    "$text": {"$search": f"{query}"},
+                    "sold": True
                 }
             },
             {
@@ -293,6 +294,7 @@ class Skyblock(commands.Cog):
             }
         ]
         match_dict = {"bin": True,
+                      "sold": True,
                       "item_name": {
                           "$regex": f".*{query}.*",
                           "$options": 'i'}}
@@ -471,15 +473,16 @@ class Skyblock(commands.Cog):
 
     @skyblock.command(aliases=["sp"])
     async def sell_price(self, ctx, *, query):
-        valid_names, rarity = await self.ask_name(ctx, query)
-        try:
-            minimum, average, maximum = await self.get_sell_price(valid_names, rarity)
-        except (KeyError, IndexError):
-            await ctx.reply("That item appears to have never sold!")
-            return
-        await ctx.reply(embed=self.bot.create_completed_embed(f"{query}", f"Minimum Sell Price: {minimum:,} coins\n"
-                                                                          f"Average Sell Price: {average:,} coins\n"
-                                                                          f"Maximum Sell Price: {maximum:,} coins"))
+        async with ctx.typing():
+            valid_names, rarity = await self.ask_name(ctx, query)
+            try:
+                minimum, average, maximum = await self.get_sell_price(valid_names, rarity)
+            except (KeyError, IndexError):
+                await ctx.reply("That item appears to have never sold!")
+                return
+            await ctx.reply(embed=self.bot.create_completed_embed(f"{query}", f"Minimum Sell Price: {minimum:,} coins\n"
+                                                                              f"Average Sell Price: {average:,} coins\n"
+                                                                              f"Maximum Sell Price: {maximum:,} coins"))
 
 
 def setup(bot):
