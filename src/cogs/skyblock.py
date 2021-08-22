@@ -79,7 +79,9 @@ class Skyblock(commands.Cog):
                         "$in": names
                     },
                     "bin": True,
-                    "tier": rarity.name if rarity != Rarity.ALL else {"$exists": True}
+                    "sold": True,
+                    "tier": rarity.name if rarity != Rarity.ALL else {"$exists": True},
+                    "count": 1
                 }
             },
             {
