@@ -49,12 +49,12 @@ class Blacklist(commands.Cog):
         for word in this_guild_words:
             if word in content:
                 await message.delete()
-                sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
-                try:
-                    await self.bot.wait_for("message", check=check, timeout=10)
-                except asyncio.TimeoutError:
-                    pass
-                await sent.delete()
+                # sent = await message.channel.send("~warn {} Bad word usage.".format(message.author.mention))
+                # try:
+                #     await self.bot.wait_for("message", check=check, timeout=10)
+                # except asyncio.TimeoutError:
+                #     pass
+                # await sent.delete()
                 return
 
     @commands.Cog.listener()
