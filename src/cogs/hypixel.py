@@ -502,6 +502,8 @@ class Hypixel(commands.Cog):
             channel = await self.bot.fetch_channel(channel_id)
         except discord.errors.NotFound:
             channel = None
+        except discord.errors.Forbidden:
+            channel = None
         if channel is None:
             await self.hypixel_db.channels.delete_many({"_id": channel_id})
             await self.delete_channel_from_all_users(channel_id)
