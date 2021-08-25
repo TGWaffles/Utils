@@ -1,15 +1,13 @@
 import asyncio
-import discord
 from subprocess import Popen, check_output
-from typing import Optional
 
+import discord
 from discord.ext import commands
 
-from src.checks.user_check import is_owner
-from src.checks.custom_check import restart_check
-from src.helpers.storage_helper import DataHelper
-from src.storage import config
 from main import UtilsBot
+from src.checks.custom_check import restart_check
+from src.checks.user_check import is_owner
+from src.storage import config
 
 
 class Restart(commands.Cog):
@@ -23,7 +21,7 @@ class Restart(commands.Cog):
         while git_pull.poll() is None:
             await asyncio.sleep(0.2)
             waited += 0.2
-            if waited > 5.0:
+            if waited > 10.0:
                 await reply_message.edit(embed=self.bot.create_error_embed("Update download failed."))
                 return
         return reply_message
