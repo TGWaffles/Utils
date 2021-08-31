@@ -22,6 +22,8 @@ class DBMaintainer(commands.Cog):
         if isinstance(message.channel, discord.DMChannel) or message.channel.guild is None or \
                 not isinstance(message.author, discord.Member):
             return
+        if bool(message.flags.value & 1 << 6):  # If message is ephemeral
+            return
         await self.bot.mongo.insert_message(message)
 
     @commands.Cog.listener()
