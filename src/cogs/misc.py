@@ -15,6 +15,7 @@ from src.checks.role_check import is_staff, is_high_staff
 from src.checks.user_check import is_owner
 from src.helpers.colour_helper import convert_colour
 from src.cogs.og_checker import OGCog
+from src.helpers.misc_helpers import format_execute
 from src.helpers.storage_helper import DataHelper
 from src.storage import config
 
@@ -296,6 +297,19 @@ class Misc(commands.Cog):
     @commands.command()
     async def choose(self, ctx, *choices):
         await ctx.reply(embed=self.bot.create_completed_embed("Random Choice", f"I choose {random.choice(choices)}"))
+
+    @commands.command(aliases=["exec"])
+    @is_owner()
+    async def execute(self, ctx, *, code):
+        author = ctx.message.author
+        tmp_dic = {}
+        executing_string = format_execute(ctx.message.content)
+        print(executing_string)
+        exec(executing_string, {**globals(), **locals()}, tmp_dic)
+        print(tmp_dic)
+        print(tmp_dic['temp_func'])
+        function = tmp_dic['temp_func']
+        await function()
 
 
 def setup(bot):
