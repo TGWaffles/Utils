@@ -50,6 +50,7 @@ class Hypixel(commands.Cog):
         self.smooth_mode = True
         self.site = None
         self.app = web.Application()
+        self.user_stats_cache = {}
         self.app.add_routes(
             [web.get("/ping", self.website_ping),
              web.get('/{user}-{uid}.png', self.request_image), web.get('/{user}.png', self.request_image),
@@ -192,7 +193,13 @@ class Hypixel(commands.Cog):
         :param reset: Whether to still update the embeds (later) even if the image hasn't changed
         :return: player dictionary with player["file"] being the generated image.
         """
-        player = await self.get_user_stats(user_uuid, prioritize)
+        if user_uuid in self.user_stats_cache:
+            player, last_checked = self.user_stats_cache[user_uuid]
+            if (datetime.datetime.now() - last_checked).total_seconds() > 30:
+                player = await self.get_user_stats(user_uuid, prioritize)
+        else:
+            player = await self.get_user_stats(user_uuid, prioritize)
+        self.user_stats_cache[user_uuid] = (player, datetime.datetime.now())
         player["head_image"] = await self.get_head_image(player["uuid"])
         # Run the get_file_for_member function in another process and await its completion
         member_file = await self.bot.loop.run_in_executor(pool, partial(get_file_for_member, player))
@@ -300,13 +307,13 @@ class Hypixel(commands.Cog):
             username = await self.username_from_uuid(uuid)
             data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
             if data is None or (now - last_timestamp).total_seconds() > 300:
-                valid = await self.check_valid_player(uuid)
+                valid = await self.check_valid_player(uuid, prioritize=True)
                 if not valid:
                     await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played on hypixel. Get them to "
                                                                       "log in (and out!) at least once."))
                     return
                 with concurrent.futures.ProcessPoolExecutor() as pool:
-                    player = await self.get_expanded_player(uuid, pool, True)
+                    player = await self.get_expanded_player(uuid, pool, True, prioritize=True)
                 data = player["file"]
                 self.user_to_files[username.lower()] = (data, datetime.datetime.now())
             # Wraps the data (bytes) in file-like object so discord.py can take it as a file.
@@ -413,8 +420,11 @@ class Hypixel(commands.Cog):
         :return: True if they are a valid BedWars player, False if not or undetermined.
         """
         try:
+            if uuid in self.user_stats_cache:
+                return True
             # noinspection PyUnboundLocalVariable
-            await self.get_user_stats(uuid, prioritize)
+            stats = await self.get_user_stats(uuid, prioritize)
+            self.user_stats_cache[uuid] = (stats, datetime.datetime.now())
         except (TypeError, KeyError):
             return False
         return True
