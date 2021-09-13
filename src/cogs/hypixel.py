@@ -292,6 +292,7 @@ class Hypixel(commands.Cog):
         """Runs the hinfo command.
 
         Essentially, just sends the bedwars image as a file independent of the web host."""
+        print("Starting hinfo.")
         if username is None:
             username = await self.discord_to_hypixel(ctx.author)
         now = datetime.datetime.now()
@@ -307,13 +308,17 @@ class Hypixel(commands.Cog):
             username = await self.username_from_uuid(uuid)
             data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
             if data is None or (now - last_timestamp).total_seconds() > 300:
+                print("running check valid.")
                 valid = await self.check_valid_player(uuid, prioritize=True)
+                print("check valid done.")
                 if not valid:
                     await ctx.reply(embed=self.bot.create_error_embed("That user hasn't played on hypixel. Get them to "
                                                                       "log in (and out!) at least once."))
                     return
                 with concurrent.futures.ProcessPoolExecutor() as pool:
+                    print("running get expanded player")
                     player = await self.get_expanded_player(uuid, pool, True, prioritize=True)
+                print("expanded player done")
                 data = player["file"]
                 self.user_to_files[username.lower()] = (data, datetime.datetime.now())
             # Wraps the data (bytes) in file-like object so discord.py can take it as a file.
