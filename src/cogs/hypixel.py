@@ -155,9 +155,7 @@ class Hypixel(commands.Cog):
         try:
             member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
         except TypeError:
-            print(player)
-            print(user_uuid)
-            return None
+            member_online = False
         experience = player.get("stats").get("Bedwars", {}).get("Experience", 0)
         try:
             # fkdr = bedwars final kills over bedwars final deaths
