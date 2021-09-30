@@ -83,9 +83,13 @@ class Hypixel(commands.Cog):
     def offline_player(player, experience, user_uuid, threat_index, fkdr):
         """Turns the file into a neater dictionary with known variables,
         so it can be pickled and accessed by the file creation process. """
+        try:
+            last_logout_date = datetime.datetime.fromtimestamp(player.get("lastLogout").timestamp(),
+                                                               datetime.timezone.utc)
+        except AttributeError:
+            last_logout_date = datetime.datetime(2015, 1, 1)
         return {"name": player.get("displayname"),
-                "last_logout": datetime.datetime.fromtimestamp(player.get("lastLogout").timestamp(),
-                                                               datetime.timezone.utc),
+                "last_logout": last_logout_date,
                 "online": False,
                 "bedwars_level": get_level_from_xp(experience),
                 "bedwars_winstreak": player.get("stats").get("Bedwars", {}).get("winstreak", 0), "uuid": user_uuid,
