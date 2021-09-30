@@ -152,7 +152,12 @@ class Hypixel(commands.Cog):
         player = await self.hypixel_api.get_player(user_uuid, prioritize)
         self.bot.loop.create_task(self.store_discord_data(player))
         # They are online if they last logged in after they last logged out
-        member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
+        try:
+            member_online = bool(player.get("lastLogout") < player.get("lastLogin"))
+        except TypeError:
+            print(player)
+            print(user_uuid)
+            return None
         experience = player.get("stats").get("Bedwars", {}).get("Experience", 0)
         try:
             # fkdr = bedwars final kills over bedwars final deaths
