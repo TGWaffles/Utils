@@ -154,7 +154,10 @@ class Statistics(commands.Cog):
         after = datetime.datetime(2015, 1, 1)
         most_recent_message = channel.history(limit=1)
         most_recent_message = await most_recent_message.flatten()
-        most_recent_message = most_recent_message[0]
+        try:
+            most_recent_message = most_recent_message[0]
+        except IndexError:
+            return
         earliest_message = channel.history(oldest_first=True, limit=1)
         earliest_message = await earliest_message.flatten()
         earliest_message = earliest_message[0]
