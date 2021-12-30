@@ -64,7 +64,7 @@ def tfm_graph(flip_data):
     # noinspection PyUnresolvedReferences
     axes = series.groupby(series.index.hour).mean().plot()
     axes.set_xlabel("Time of Day")
-    axes.set_ylabel("Profit (hundred millions)")
+    axes.set_ylabel("Average Profit")
     axes.ticklabel_format(useOffset=False)
     axes.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(format_with_suffix))
     axes.set_xticks(list(range(24)))
