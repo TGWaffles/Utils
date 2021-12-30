@@ -19,6 +19,8 @@ class Skyblock(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.skyblock_db = self.bot.mongo.client.skyblock
+        self.cached_graph = None
+        self.last_cached_time = datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
     @commands.group(case_insensitive=True, aliases=["sb"])
     async def skyblock(self, ctx):
@@ -30,28 +32,32 @@ class Skyblock(commands.Cog):
 
     @skyblock.command(name="tfm")
     async def tfm_graph(self, ctx):
-        async with ctx.typing():
-            client = self.bot.mongo.client
-            current_datetime = PROFITS_START_DATE
-            flip_data = []
-            now = datetime.datetime.now()
-            now = now.replace(tzinfo=datetime.timezone.utc)
-            while current_datetime < now:
-                next_datetime = current_datetime + datetime.timedelta(hours=1)
-                flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
-                    length=None)
-                profit = sum([x["target"] - x["price"] for x in flips if "Hyperion" not in x["auction_name"] and
-                              "Terminator" not in x["auction_name"]])
-                flip_data.append((current_datetime, profit))
-                current_datetime = next_datetime
-            with ProcessPoolExecutor() as pool:
-                data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data))
-            file = BytesIO(data)
-            file.seek(0)
-            discord_file = discord.File(fp=file, filename="image.png")
+        data = self.cached_graph
+        # If data is none (no cache), or it's from last hour, or it's greater than 6 hours old:
+        if data is None or self.last_cached_time.hour != datetime.datetime.utcnow().hour or \
+                ((datetime.datetime.utcnow() - self.last_cached_time).total_seconds() / 3600) > 6:
+            async with ctx.typing():
+                client = self.bot.mongo.client
+                current_datetime = PROFITS_START_DATE
+                flip_data = []
+                now = datetime.datetime.now()
+                now = now.replace(tzinfo=datetime.timezone.utc)
+                while current_datetime < now:
+                    next_datetime = current_datetime + datetime.timedelta(hours=1)
+                    flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
+                        length=None)
+                    profit = sum([x["target"] - x["price"] for x in flips if "Hyperion" not in x["auction_name"] and
+                                  "Terminator" not in x["auction_name"]])
+                    flip_data.append((current_datetime, profit))
+                    current_datetime = next_datetime
+                with ProcessPoolExecutor() as pool:
+                    data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data))
+                self.cached_graph = data
+                self.last_cached_time = datetime.datetime.utcnow()
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
         await ctx.reply(file=discord_file)
-
-
 
     @skyblock.group(case_insensitive=True)
     async def book(self, ctx):
