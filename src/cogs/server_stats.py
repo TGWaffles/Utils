@@ -282,7 +282,7 @@ class Statistics(commands.Cog):
         cursor = self.bot.mongo.discord_db.messages.find({"mentions": member.id, "role_mentions": {"$in": role_ids},
                                                           "mention_everyone": True, "deleted": True,
                                                           "channel_id": ctx.channel.id})
-        cursor.sort({"created_at": -1}).limit(1)
+        cursor.sort("created_at", -1).limit(1)
         ghost_ping = await cursor.to_list(length=1)
         if len(ghost_ping) == 0:
             await sent.edit(embed=self.bot.create_error_embed("I couldn't find a ghost ping for you!"))
