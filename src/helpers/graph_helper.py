@@ -1,6 +1,7 @@
 import humanize
 import pandas
 import matplotlib
+import matplotlib.ticker
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import make_interp_spline
@@ -38,6 +39,25 @@ def pie_chart_from_amount_and_labels(labels, amounts):
     return file.read()
 
 
+EXPONENT_SYMBOLS = ["", "K", "M", "B", "T", "Q"]
+
+
+def format_with_suffix(number, _):
+    exponent_place = 0
+    is_negative = number < 0
+    number = abs(number)
+    while number >= 1000:
+        exponent_place += 1
+        if exponent_place > 5:
+            exponent_place -= 1
+            break
+        number /= 1000
+    if is_negative:
+        number = -number
+    number = round(number)
+    return str(number) + EXPONENT_SYMBOLS[exponent_place]
+
+
 def tfm_graph(flip_data):
     file = BytesIO()
     series = pandas.Series([x[1] for x in flip_data], index=[x[0] for x in flip_data])
@@ -45,6 +65,8 @@ def tfm_graph(flip_data):
     axes = series.groupby(series.index.hour).mean().plot()
     axes.set_xlabel("Time of Day")
     axes.set_ylabel("Profit (hundred millions)")
+    axes.ticklabel_format(useOffset=False)
+    axes.get_yaxis().set_major_formatter(matplotlib.ticker.FuncFormatter(format_with_suffix))
     axes.set_xticks(list(range(24)))
     axes.grid(visible=True)
     fig = axes.get_figure()
