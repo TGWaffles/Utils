@@ -1,3 +1,4 @@
+import datetime
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from io import BytesIO
@@ -6,9 +7,12 @@ import discord
 from discord.ext import commands
 
 from main import UtilsBot
-from src.helpers.graph_helper import plot_multiple
+from src.helpers.graph_helper import plot_multiple, tfm_graph
 from src.helpers.models.skyblock_models import Rarity
 from src.helpers.paginator import Paginator
+
+
+PROFITS_START_DATE = datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
 
 class Skyblock(commands.Cog):
@@ -21,7 +25,33 @@ class Skyblock(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.reply(embed=self.bot.create_error_embed("Invalid format! "
                                                               "Please specify a subcommand. Valid "
-                                                              "subcommands: `history`, `average`, `minimum`, `book`"))
+                                                              "subcommands: `history`, `average`, `minimum`, `book`,"
+                                                              "`tfm`"))
+
+    @skyblock.command(name="tfm")
+    async def tfm_graph(self, ctx):
+        async with ctx.typing():
+            client = self.bot.mongo.client
+            current_datetime = PROFITS_START_DATE
+            flip_data = []
+            now = datetime.datetime.now()
+            now = now.replace(tzinfo=datetime.timezone.utc)
+            while current_datetime < now:
+                next_datetime = current_datetime + datetime.timedelta(hours=1)
+                flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
+                    length=None)
+                profit = sum([x["target"] - x["price"] for x in flips if "Hyperion" not in x["auction_name"] and
+                              "Terminator" not in x["auction_name"]])
+                flip_data.append((current_datetime, profit))
+                current_datetime = next_datetime
+            with ProcessPoolExecutor() as pool:
+                data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data))
+            file = BytesIO(data)
+            file.seek(0)
+            discord_file = discord.File(fp=file, filename="image.png")
+        await ctx.reply(file=discord_file)
+
+
 
     @skyblock.group(case_insensitive=True)
     async def book(self, ctx):

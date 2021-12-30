@@ -38,6 +38,21 @@ def pie_chart_from_amount_and_labels(labels, amounts):
     return file.read()
 
 
+def tfm_graph(flip_data):
+    file = BytesIO()
+    series = pandas.Series([x[1] for x in flip_data], index=[x[0] for x in flip_data])
+    # noinspection PyUnresolvedReferences
+    axes = series.groupby(series.index.hour).mean().plot()
+    axes.set_xlabel("Time of Day")
+    axes.set_ylabel("Profit (hundred millions)")
+    axes.set_xticks(list(range(24)))
+    axes.grid(visible=True)
+    fig = plt.figure()
+    fig.savefig(file)
+    file.seek(0)
+    return file.read()
+
+
 def num_humanizer(x, pos=0):
     return humanize.intword(x, format="%.2f")
 
