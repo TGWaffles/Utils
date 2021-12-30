@@ -47,7 +47,7 @@ def tfm_graph(flip_data):
     axes.set_ylabel("Profit (hundred millions)")
     axes.set_xticks(list(range(24)))
     axes.grid(visible=True)
-    fig = plt.figure()
+    fig = axes.get_figure()
     fig.savefig(file)
     file.seek(0)
     return file.read()
