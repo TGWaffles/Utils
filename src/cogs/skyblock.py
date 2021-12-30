@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
@@ -30,6 +31,14 @@ class Skyblock(commands.Cog):
                                                               "subcommands: `history`, `average`, `minimum`, `book`,"
                                                               "`tfm`"))
 
+    @staticmethod
+    async def do_tfm_lookup(client, current_datetime, next_datetime):
+        flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
+            length=None)
+        profit = sum([x["target"] - x["price"] for x in flips if "Hyperion" not in x["auction_name"] and
+                      "Terminator" not in x["auction_name"]])
+        return current_datetime, profit
+
     @skyblock.command(name="tfm")
     async def tfm_graph(self, ctx):
         data = self.cached_graph
@@ -39,17 +48,14 @@ class Skyblock(commands.Cog):
             async with ctx.typing():
                 client = self.bot.mongo.client
                 current_datetime = PROFITS_START_DATE
-                flip_data = []
+                tasks = []
                 now = datetime.datetime.now()
                 now = now.replace(tzinfo=datetime.timezone.utc)
                 while current_datetime < now:
                     next_datetime = current_datetime + datetime.timedelta(hours=1)
-                    flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
-                        length=None)
-                    profit = sum([x["target"] - x["price"] for x in flips if "Hyperion" not in x["auction_name"] and
-                                  "Terminator" not in x["auction_name"]])
-                    flip_data.append((current_datetime, profit))
+                    tasks.append(self.do_tfm_lookup(client, current_datetime, next_datetime))
                     current_datetime = next_datetime
+                flip_data = await asyncio.gather(*tasks)
                 with ProcessPoolExecutor() as pool:
                     data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data))
                 self.cached_graph = data
