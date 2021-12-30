@@ -3,7 +3,6 @@ import datetime
 
 import discord
 import motor.motor_asyncio
-from pymongo import UpdateOne
 from discord.ext import commands
 from pymongo.errors import BulkWriteError
 
@@ -66,6 +65,16 @@ class MongoDB:
                            "nick": member.nick, "joined_at": member.joined_at, "deleted": False}
         await self.force_insert(self.discord_db.members, member_document)
 
+    @staticmethod
+    def _make_message_document(message):
+        message_document = {"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
+                            "content": message.content, "created_at": message.created_at, "guild_id": message.guild.id,
+                            "embeds": [embed.to_dict() for embed in message.embeds if embed is not None],
+                            "deleted": False, "edits": [], "mentions": [x.id for x in message.mentions],
+                            "role_mentions": [x.id for x in message.role_mentions],
+                            "mention_everyone": message.mention_everyone}
+        return message_document
+
     async def insert_message(self, message: discord.Message):
         channel_result = await self.discord_db.channels.find_one({"_id": message.channel.id})
         if channel_result is None:
@@ -76,10 +85,7 @@ class MongoDB:
         member_result = await self.discord_db.members.find_one({"_id": message.author.id})
         if member_result is None:
             await self.insert_member(message.author)
-        message_document = {"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
-                            "content": message.content, "created_at": message.created_at, "guild_id": message.guild.id,
-                            "embeds": [embed.to_dict() for embed in message.embeds if embed is not None],
-                            "deleted": False, "edits": []}
+        message_document = self._make_message_document(message)
         await self.force_insert(self.discord_db.messages, message_document)
 
     async def insert_channel_messages(self, list_of_messages):
@@ -92,11 +98,7 @@ class MongoDB:
         for message in list_of_messages:
             all_users.add(message.author)
             all_channels.add(message.channel)
-            message_documents.append({"_id": message.id, "channel_id": message.channel.id, "user_id": message.author.id,
-                                      "content": message.content, "created_at": message.created_at,
-                                      "guild_id": message.guild.id,
-                                      "embeds": [embed.to_dict() for embed in message.embeds if embed is not None],
-                                      "deleted": False, "edits": []})
+            message_documents.append(self._make_message_document(message))
         user_documents = []
         channel_documents = []
         for user in all_users:
