@@ -273,14 +273,17 @@ class Statistics(commands.Cog):
         await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id}, {"$set": {"nostore": True}})
         await ctx.reply("nostore set.")
 
-    @commands.command()
+    @commands.command(aliases=["ghostping", "ghost"])
     async def ghost_ping(self, ctx, member: Optional[discord.Member]):
         if member is None:
             member = ctx.author
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Searching...", "Looking for your last ghost ping!"))
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Searching...",
+                                                                      "Looking for your last ghost ping!"))
         role_ids = [x.id for x in member.roles]
-        cursor = self.bot.mongo.discord_db.messages.find({"mentions": member.id, "role_mentions": {"$in": role_ids},
-                                                          "mention_everyone": True, "deleted": True,
+        cursor = self.bot.mongo.discord_db.messages.find({"$or": [{"mentions": member.id},
+                                                                  {"role_mentions": {"$in": role_ids}},
+                                                                  {"mention_everyone": True}],
+                                                          "deleted": True,
                                                           "channel_id": ctx.channel.id})
         cursor.sort("created_at", -1).limit(1)
         ghost_ping = await cursor.to_list(length=1)
