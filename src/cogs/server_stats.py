@@ -224,16 +224,7 @@ class Statistics(commands.Cog):
                 await member.add_roles(motw_role)
                 await motw_channel.send(f"Welcome {member.mention}! I hope you enjoy your stay!")
 
-    @commands.command()
-    async def snipe(self, ctx, amount=1):
-        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
-        cursor = self.bot.mongo.discord_db.messages.find({"deleted": True, "channel_id": ctx.channel.id})
-        cursor.sort("created_at", -1).limit(1).skip(amount - 1)
-        messages_found = await cursor.to_list(length=1)
-        if len(messages_found) == 0:
-            await sent.edit(embed=self.bot.create_error_embed("There aren't that many deleted messages!"))
-            return
-        message_found = messages_found[0]
+    async def _compile_snipe(self, message_found, channel):
         user_id = message_found.get("user_id")
         content = message_found.get("content")
         try:
@@ -247,7 +238,7 @@ class Statistics(commands.Cog):
         embed = discord.Embed(title="Sniped Message", colour=discord.Colour.red())
         embed.set_author(name=user.name, icon_url=user.avatar_url)
         embed.set_footer(text=f"Message ID: {message_found.get('_id')}")
-        preceding_message = (await ctx.channel.history(before=timestamp, limit=1).flatten())[0] or None
+        preceding_message = (await channel.history(before=timestamp, limit=1).flatten())[0] or None
         if embed_json is None:
             embed.description = content
         else:
@@ -259,6 +250,19 @@ class Statistics(commands.Cog):
             embed.add_field(name="\u200b", value=f"[Previous Message]({preceding_message.jump_url})",
                             inline=False)
         embed.timestamp = timestamp
+        return embed
+
+    @commands.command()
+    async def snipe(self, ctx, amount=1):
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Processing...", "Getting sniped message..."))
+        cursor = self.bot.mongo.discord_db.messages.find({"deleted": True, "channel_id": ctx.channel.id})
+        cursor.sort("created_at", -1).limit(1).skip(amount - 1)
+        messages_found = await cursor.to_list(length=1)
+        if len(messages_found) == 0:
+            await sent.edit(embed=self.bot.create_error_embed("There aren't that many deleted messages!"))
+            return
+        message_found = messages_found[0]
+        embed = await self._compile_snipe(message_found, ctx.channel)
         await sent.edit(embed=embed)
 
     @commands.command()
@@ -268,6 +272,24 @@ class Statistics(commands.Cog):
             channel = ctx.channel
         await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id}, {"$set": {"nostore": True}})
         await ctx.reply("nostore set.")
+
+    @commands.command()
+    async def ghost_ping(self, ctx, member: Optional[discord.Member]):
+        if member is None:
+            member = ctx.author
+        sent = await ctx.reply(embed=self.bot.create_processing_embed("Searching...", "Looking for your last ghost ping!"))
+        role_ids = [x.id for x in member.roles]
+        cursor = self.bot.mongo.discord_db.messages.find({"mentions": member.id, "role_mentions": {"$in": role_ids},
+                                                          "mention_everyone": True, "deleted": True,
+                                                          "channel_id": ctx.channel.id})
+        cursor.sort({"created_at": -1}).limit(1)
+        ghost_ping = await cursor.to_list(length=1)
+        if len(ghost_ping) == 0:
+            await sent.edit(embed=self.bot.create_error_embed("I couldn't find a ghost ping for you!"))
+            return
+        ghost_ping = ghost_ping[0]
+        embed = await self._compile_snipe(ghost_ping, ctx.channel)
+        await sent.edit(embed=embed)
 
     @commands.command()
     async def edits(self, ctx, message_id: Optional[int]):
