@@ -125,7 +125,7 @@ class Misc(commands.Cog):
         data["guild_error_channels"] = error_channels
 
     @commands.command()
-    @is_owner()
+    @is_high_staff()
     async def oldest(self, ctx):
         if self.bot.latest_joins == {}:
             await self.bot.get_latest_joins()
