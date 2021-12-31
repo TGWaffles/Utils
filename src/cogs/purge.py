@@ -50,8 +50,11 @@ class Purge(commands.Cog):
             await ctx.message.channel.purge(limit=None, bulk=bulk, check=check)
         else:
             if amount > config.confirm_amount:
-                true_amount = len([message for message in await ctx.message.channel.history(limit=amount).flatten()
-                                   if check(message)])
+                if member is not None:
+                    true_amount = len([message for message in await ctx.message.channel.history(limit=amount).flatten()
+                                       if check(message)])
+                else:
+                    true_amount = amount
                 if true_amount < amount:
                     to_send = "{} of {}".format(true_amount, amount)
                 else:
