@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "3.0.2"
+version_number = "3.0.3"
 
 port = 8080
 restart_port = 8880
@@ -40,7 +40,7 @@ apollo_guild_id = 770972021487304714
 cat_guild_id = 689012589455474710
 
 error_channel_id = 795057163768037376
-staff_role_id = 726453086331338802
+staff_role_ids = [726453086331338802, 889184675346665502]
 mod_role_id = 725894916839964682
 mod_dev_role_id = 759431719748501575
 mod_god_role_id = 750406434180563055

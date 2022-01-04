@@ -4,8 +4,15 @@ from src.storage import config
 from discord.ext import commands
 
 
+def _check_staff_ids(member):
+    roles = set(role.id for role in member.roles)
+    for staff_role_id in config.staff_role_ids:
+        if staff_role_id in roles:
+            return True
+
+
 def is_staff_backend(member):
-    return (config.staff_role_id in [role.id for role in member.roles] or member.guild_permissions.administrator
+    return (_check_staff_ids(member) or member.guild_permissions.administrator
             or member.id == config.owner_id or member.guild_permissions.manage_guild or
             member.guild_permissions.manage_roles or member.guild_permissions.manage_channels)
 
