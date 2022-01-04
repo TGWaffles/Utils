@@ -64,6 +64,7 @@ class Purge(commands.Cog):
                         to_send)))
                 if not response:
                     return
+                await response.delete()
                 while True:
                     try:
                         await ctx.message.channel.purge(limit=amount + 3, bulk=bulk, check=check)
