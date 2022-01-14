@@ -48,7 +48,7 @@ class Skyblock(commands.Cog):
         profit = sum([calculation(x) for x in flips])
         return current_datetime, profit
 
-    async def produce_graph(self, ctx, name, y_label, calculation, db_lookup_func=do_profits_db_lookup):
+    async def produce_graph(self, ctx, name, y_label, calculation, db_lookup_func):
         data = self.cached_graphs[name]
         # If data is none (no cache), or it's from last hour, or it's greater than 6 hours old:
         if data is None or self.last_cached_time[name].hour != datetime.datetime.utcnow().hour or \
@@ -85,7 +85,8 @@ class Skyblock(commands.Cog):
                 return x["sell_price"] * 0.99 - x["price"]
             return x["target"] - x["price"]
 
-        await self.produce_graph(ctx, "tfm", "Average Profit (coins)", find_true_profit)
+        await self.produce_graph(ctx, "tfm", "Average Profit (coins)", find_true_profit,
+                                 self.do_profits_db_lookup)
 
     @tfm.command(name="help")
     async def tfm_help(self, ctx):
@@ -95,23 +96,25 @@ class Skyblock(commands.Cog):
 
     @tfm.command()
     async def cost(self, ctx):
-        await self.produce_graph(ctx, "cost", "Average Cost (coins)", lambda x: x["price"])
+        await self.produce_graph(ctx, "cost", "Average Cost (coins)", lambda x: x["price"],
+                                 self.do_profits_db_lookup)
 
     @tfm.command()
     async def purchases(self, ctx):
-        await self.produce_graph(ctx, "purchases", "Average Purchases", lambda x: 1)
+        await self.produce_graph(ctx, "purchases", "Average Purchases", lambda x: 1,
+                                 self.do_profits_db_lookup)
 
     @tfm.group()
     async def flips(self, ctx):
         if ctx.invoked_subcommand is not None:
             return
         await self.produce_graph(ctx, "flips_profit", "Average Theoretical Profit (coins)",
-                                 lambda x: x["target"] - x["price"])
+                                 lambda x: x["target"] - x["price"], self.do_flips_db_lookup)
 
     @flips.command()
     async def count(self, ctx):
         await self.produce_graph(ctx, "flips_count", "Average Theoretical Flips",
-                                 lambda x: 1)
+                                 lambda x: 1, self.do_flips_db_lookup)
 
     @skyblock.group(case_insensitive=True)
     async def book(self, ctx):
