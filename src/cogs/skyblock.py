@@ -21,7 +21,7 @@ class Skyblock(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.skyblock_db = self.bot.mongo.client.skyblock
-        self.cached_graphs = defaultdict(None)
+        self.cached_graphs = defaultdict(bytes)
         self.last_cached_time = defaultdict(datetime.datetime)
 
     @commands.group(case_insensitive=True, aliases=["sb"])
