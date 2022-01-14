@@ -111,7 +111,7 @@ class Skyblock(commands.Cog):
         if ctx.invoked_subcommand is not None:
             return
         await self.produce_graph(ctx, "flips_profit", "Average Theoretical Profit (coins)",
-                                 lambda x: x["target"] - x["price"], self.do_flips_db_lookup)
+                                 lambda x: ((x["target"] + x["lowBin"]) // 2) - x["price"], self.do_flips_db_lookup)
 
     @flips.command()
     async def count(self, ctx):
