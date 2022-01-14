@@ -20,8 +20,9 @@ class Skyblock(commands.Cog):
     def __init__(self, bot: UtilsBot):
         self.bot: UtilsBot = bot
         self.skyblock_db = self.bot.mongo.client.skyblock
-        self.cached_graph = None
-        self.last_cached_time = datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)
+        self.cached_graphs = {"tfm": None, "cost": None}
+        self.last_cached_time = {"tfm": datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc),
+                                 "cost": datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)}
 
     @commands.group(case_insensitive=True, aliases=["sb"])
     async def skyblock(self, ctx):
@@ -32,19 +33,21 @@ class Skyblock(commands.Cog):
                                                               "`tfm`"))
 
     @staticmethod
-    async def do_tfm_lookup(client, current_datetime, next_datetime):
+    async def do_tfm_lookup(client, current_datetime, next_datetime, calculation):
         flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
             length=None)
-        profit = sum([x["target"] - x["price"] for x in flips if "Hyperion" not in x["auction_name"] and
+        profit = sum([calculation(x) for x in flips if "Hyperion" not in x["auction_name"] and
                       "Terminator" not in x["auction_name"]])
         return current_datetime, profit
 
-    @skyblock.command(name="tfm")
-    async def tfm_graph(self, ctx):
-        data = self.cached_graph
+    @skyblock.group()
+    async def tfm(self, ctx):
+        if ctx.invoked_subcommand is not None:
+            return
+        data = self.cached_graphs["tfm"]
         # If data is none (no cache), or it's from last hour, or it's greater than 6 hours old:
-        if data is None or self.last_cached_time.hour != datetime.datetime.utcnow().hour or \
-                ((datetime.datetime.utcnow() - self.last_cached_time).total_seconds() / 3600) > 6:
+        if data is None or self.last_cached_time["tfm"].hour != datetime.datetime.utcnow().hour or \
+                ((datetime.datetime.utcnow() - self.last_cached_time["tfm"]).total_seconds() / 3600) > 6:
             async with ctx.typing():
                 client = self.bot.mongo.client
                 current_datetime = PROFITS_START_DATE
@@ -53,13 +56,45 @@ class Skyblock(commands.Cog):
                 now = now.replace(tzinfo=datetime.timezone.utc)
                 while current_datetime < now:
                     next_datetime = current_datetime + datetime.timedelta(hours=1)
-                    tasks.append(self.do_tfm_lookup(client, current_datetime, next_datetime))
+                    tasks.append(self.do_tfm_lookup(client, current_datetime, next_datetime,
+                                                    lambda x: x["target"] - x["price"]))
                     current_datetime = next_datetime
                 flip_data = await asyncio.gather(*tasks)
                 with ProcessPoolExecutor() as pool:
-                    data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data))
-                self.cached_graph = data
-                self.last_cached_time = datetime.datetime.utcnow()
+                    data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data,
+                                                                             "Average Profit (coins)"))
+                self.cached_graphs["tfm"] = data
+                self.last_cached_time["tfm"] = datetime.datetime.utcnow()
+        file = BytesIO(data)
+        file.seek(0)
+        discord_file = discord.File(fp=file, filename="image.png")
+        await ctx.reply(file=discord_file)
+
+    @tfm.command()
+    async def cost(self, ctx):
+        if ctx.invoked_subcommand is not None:
+            return
+        data = self.cached_graphs["cost"]
+        # If data is none (no cache), or it's from last hour, or it's greater than 6 hours old:
+        if data is None or self.last_cached_time["cost"].hour != datetime.datetime.utcnow().hour or \
+                ((datetime.datetime.utcnow() - self.last_cached_time["cost"]).total_seconds() / 3600) > 6:
+            async with ctx.typing():
+                client = self.bot.mongo.client
+                current_datetime = PROFITS_START_DATE
+                tasks = []
+                now = datetime.datetime.now()
+                now = now.replace(tzinfo=datetime.timezone.utc)
+                while current_datetime < now:
+                    next_datetime = current_datetime + datetime.timedelta(hours=1)
+                    tasks.append(self.do_tfm_lookup(client, current_datetime, next_datetime,
+                                                    lambda x: x["price"]))
+                    current_datetime = next_datetime
+                flip_data = await asyncio.gather(*tasks)
+                with ProcessPoolExecutor() as pool:
+                    data = await self.bot.loop.run_in_executor(pool, partial(tfm_graph, flip_data,
+                                                                             "Average Cost (coins)"))
+                self.cached_graphs["cost"] = data
+                self.last_cached_time["cost"] = datetime.datetime.utcnow()
         file = BytesIO(data)
         file.seek(0)
         discord_file = discord.File(fp=file, filename="image.png")

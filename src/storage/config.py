@@ -1,7 +1,7 @@
 import os
 import src.storage.token as token
 
-version_number = "3.0.4"
+version_number = "3.0.5"
 
 port = 8080
 restart_port = 8880
