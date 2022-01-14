@@ -34,14 +34,21 @@ class Skyblock(commands.Cog):
                                                               "`tfm`"))
 
     @staticmethod
-    async def do_tfm_lookup(client, current_datetime, next_datetime, calculation):
+    async def do_profits_db_lookup(client, current_datetime, next_datetime, calculation):
         flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
             length=None)
         profit = sum([calculation(x) for x in flips if "Hyperion" not in x["auction_name"] and
                       "Terminator" not in x["auction_name"]])
         return current_datetime, profit
 
-    async def produce_graph(self, ctx, name, y_label, calculation):
+    @staticmethod
+    async def do_flips_db_lookup(client, current_datetime, next_datetime, calculation):
+        flips = await client.tfm.flips.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
+            length=None)
+        profit = sum([calculation(x) for x in flips])
+        return current_datetime, profit
+
+    async def produce_graph(self, ctx, name, y_label, calculation, db_lookup_func=do_profits_db_lookup):
         data = self.cached_graphs[name]
         # If data is none (no cache), or it's from last hour, or it's greater than 6 hours old:
         if data is None or self.last_cached_time[name].hour != datetime.datetime.utcnow().hour or \
@@ -54,8 +61,8 @@ class Skyblock(commands.Cog):
                 now = now.replace(tzinfo=datetime.timezone.utc)
                 while current_datetime < now:
                     next_datetime = current_datetime + datetime.timedelta(hours=1)
-                    tasks.append(self.do_tfm_lookup(client, current_datetime, next_datetime,
-                                                    calculation))
+                    tasks.append(db_lookup_func(client, current_datetime, next_datetime,
+                                                           calculation))
                     current_datetime = next_datetime
                 flip_data = await asyncio.gather(*tasks)
                 with ProcessPoolExecutor() as pool:
@@ -72,15 +79,39 @@ class Skyblock(commands.Cog):
     async def tfm(self, ctx):
         if ctx.invoked_subcommand is not None:
             return
-        await self.produce_graph(ctx, "tfm", "Average Profit (coins)", lambda x: x["target"] - x["price"])
+
+        def find_true_profit(x):
+            if "sell_price" in x:
+                return x["sell_price"] * 0.99 - x["price"]
+            return x["target"] - x["price"]
+
+        await self.produce_graph(ctx, "tfm", "Average Profit (coins)", find_true_profit)
+
+    @tfm.command(name="help")
+    async def tfm_help(self, ctx):
+        await ctx.reply(embed=self.bot.create_completed_embed(
+            "TFM Commands", "u!skyblock tfm <cost/purchases>\n"
+                            "u!skyblock tfm flips [count]"))
 
     @tfm.command()
     async def cost(self, ctx):
         await self.produce_graph(ctx, "cost", "Average Cost (coins)", lambda x: x["price"])
 
     @tfm.command()
+    async def purchases(self, ctx):
+        await self.produce_graph(ctx, "purchases", "Average Purchases", lambda x: 1)
+
+    @tfm.group()
     async def flips(self, ctx):
-        await self.produce_graph(ctx, "flips", "Average Flips", lambda x: 1)
+        if ctx.invoked_subcommand is not None:
+            return
+        await self.produce_graph(ctx, "flips_profit", "Average Theoretical Profit (coins)",
+                                 lambda x: x["target"] - x["price"])
+
+    @flips.command()
+    async def count(self, ctx):
+        await self.produce_graph(ctx, "flips_count", "Average Theoretical Flips",
+                                 lambda x: 1)
 
     @skyblock.group(case_insensitive=True)
     async def book(self, ctx):
