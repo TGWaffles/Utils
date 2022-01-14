@@ -15,6 +15,7 @@ from src.helpers.paginator import Paginator
 
 
 PROFITS_START_DATE = datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)
+FLIPS_START_DATE = datetime.datetime(2022, 1, 12, 21, 0, 0, tzinfo=datetime.timezone.utc)
 
 
 class Skyblock(commands.Cog):
@@ -55,7 +56,8 @@ class Skyblock(commands.Cog):
                 ((datetime.datetime.utcnow() - self.last_cached_time[name]).total_seconds() / 3600) > 6:
             async with ctx.typing():
                 client = self.bot.mongo.client
-                current_datetime = PROFITS_START_DATE
+                current_datetime = PROFITS_START_DATE if db_lookup_func == self.do_profits_db_lookup else \
+                    FLIPS_START_DATE
                 tasks = []
                 now = datetime.datetime.now()
                 now = now.replace(tzinfo=datetime.timezone.utc)
