@@ -22,7 +22,8 @@ class Skyblock(commands.Cog):
         self.bot: UtilsBot = bot
         self.skyblock_db = self.bot.mongo.client.skyblock
         self.cached_graphs = defaultdict(bytes)
-        self.last_cached_time = defaultdict(datetime.datetime)
+        self.last_cached_time = defaultdict(lambda: datetime.datetime(2021, 12, 14, 0, 0, 0,
+                                                                      tzinfo=datetime.timezone.utc))
 
     @commands.group(case_insensitive=True, aliases=["sb"])
     async def skyblock(self, ctx):
