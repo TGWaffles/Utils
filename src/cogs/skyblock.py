@@ -46,7 +46,7 @@ class Skyblock(commands.Cog):
     async def do_flips_db_lookup(client, current_datetime, next_datetime, calculation):
         flips = await client.tfm.flips.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
             length=None)
-        profit = sum([calculation(x) for x in flips])
+        profit = sum([calculation(x) for x in flips]) * 2
         return current_datetime, profit
 
     async def produce_graph(self, ctx, name, y_label, calculation, db_lookup_func):
@@ -62,7 +62,7 @@ class Skyblock(commands.Cog):
                 now = datetime.datetime.now()
                 now = now.replace(tzinfo=datetime.timezone.utc)
                 while current_datetime < now:
-                    next_datetime = current_datetime + datetime.timedelta(hours=1)
+                    next_datetime = current_datetime + datetime.timedelta(minutes=30)
                     tasks.append(db_lookup_func(client, current_datetime, next_datetime,
                                                            calculation))
                     current_datetime = next_datetime
