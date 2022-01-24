@@ -62,7 +62,7 @@ def tfm_graph(flip_data, y_label):
     file = BytesIO()
     series = pandas.Series([x[1] for x in flip_data], index=[x[0] for x in flip_data])
     # noinspection PyUnresolvedReferences
-    axes = series.groupby([series.index.hour, series.index.minute]).mean().plot()
+    axes = series.groupby(series.index.hour).mean().plot()
     axes.set_xlabel("Time of Day (UTC)")
     axes.set_ylabel(y_label)
     axes.ticklabel_format(useOffset=False)
