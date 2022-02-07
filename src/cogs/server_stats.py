@@ -625,7 +625,7 @@ class Statistics(commands.Cog):
         sent = await ctx.reply(embed=self.bot.create_processing_embed("Excluding channel...",
                                                                       "Sending exclusion request..."))
         channel = await self.bot.mongo.find_by_id(self.bot.mongo.discord_db.channels, channel.id)
-        await self.bot.mongo.discord_db.channels.update_one({"_id": channel.id},
+        await self.bot.mongo.discord_db.channels.update_one({"_id": channel["_id"]},
                                                             {'$set': {"excluded": not channel.get("excluded", False)}})
         await sent.edit(embed=self.bot.create_completed_embed("Changed excluded status!",
                                                               f"Channel has been "

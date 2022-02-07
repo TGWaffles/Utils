@@ -13,7 +13,6 @@ from src.helpers.graph_helper import plot_multiple, tfm_graph
 from src.helpers.models.skyblock_models import Rarity
 from src.helpers.paginator import Paginator
 
-
 PROFITS_START_DATE = datetime.datetime(2021, 12, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)
 FLIPS_START_DATE = datetime.datetime(2022, 1, 12, 21, 0, 0, tzinfo=datetime.timezone.utc)
 
@@ -64,7 +63,7 @@ class Skyblock(commands.Cog):
                 while current_datetime < now:
                     next_datetime = current_datetime + datetime.timedelta(hours=1)
                     tasks.append(db_lookup_func(client, current_datetime, next_datetime,
-                                                           calculation))
+                                                calculation))
                     current_datetime = next_datetime
                 flip_data = await asyncio.gather(*tasks)
                 with ProcessPoolExecutor() as pool:
