@@ -116,7 +116,7 @@ class Restart(commands.Cog):
         version_number = config.version_number
         embed = discord.Embed(title=f"Version {version_number}", colour=discord.Colour.purple())
         embed.add_field(name="Most Recent Update", value=last_commit_message)
-        embed.set_footer(text="Update courtesy of THOMAS#1707")
+        embed.set_footer(text="Update courtesy of ThomasW#1707")
         await ctx.reply(embed=embed)
 
 
