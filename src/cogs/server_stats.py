@@ -629,7 +629,7 @@ class Statistics(commands.Cog):
                                                             {'$set': {"excluded": not channel.get("excluded", False)}})
         await sent.edit(embed=self.bot.create_completed_embed("Changed excluded status!",
                                                               f"Channel has been "
-                                                              f"{'un' if not channel.get('excluded', False) else ''}"
+                                                              f"{'un' if channel.get('excluded', False) else ''}"
                                                               f"excluded!"))
 
     @commands.command()
