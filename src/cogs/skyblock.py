@@ -37,8 +37,7 @@ class Skyblock(commands.Cog):
     async def do_profits_db_lookup(client, current_datetime, next_datetime, calculation):
         flips = await client.tfm.profits.find({"timestamp": {"$gt": current_datetime, "$lt": next_datetime}}).to_list(
             length=None)
-        profit = sum([calculation(x) for x in flips if "Hyperion" not in x["auction_name"] and
-                      "Terminator" not in x["auction_name"]])
+        profit = sum([calculation(x) for x in flips])
         return current_datetime, profit
 
     @staticmethod
@@ -50,9 +49,9 @@ class Skyblock(commands.Cog):
 
     async def produce_graph(self, ctx, name, y_label, calculation, db_lookup_func):
         data = self.cached_graphs[name]
-        # If data is none (no cache), or it's from last hour, or it's greater than 6 hours old:
+        # If data is none (no cache), or it's from last hour, or it's greater than 2 hours old:
         if data is None or self.last_cached_time[name].hour != datetime.datetime.utcnow().hour or \
-                ((datetime.datetime.utcnow() - self.last_cached_time[name]).total_seconds() / 3600) > 6:
+                ((datetime.datetime.utcnow() - self.last_cached_time[name]).total_seconds() / 3600) > 2:
             async with ctx.typing():
                 client = self.bot.mongo.client
                 # current_datetime = PROFITS_START_DATE if db_lookup_func == self.do_profits_db_lookup else \
@@ -60,7 +59,7 @@ class Skyblock(commands.Cog):
                 tasks = []
                 now = datetime.datetime.now()
                 now = now.replace(tzinfo=datetime.timezone.utc)
-                current_datetime = now - datetime.timedelta(days=14)
+                current_datetime = now - datetime.timedelta(days=30)
                 while current_datetime < now:
                     next_datetime = current_datetime + datetime.timedelta(hours=1)
                     tasks.append(db_lookup_func(client, current_datetime, next_datetime,
@@ -84,8 +83,9 @@ class Skyblock(commands.Cog):
 
         def find_true_profit(x):
             if "sell_price" in x:
-                return x["sell_price"] * 0.99 - x["price"]
-            return x["target"] - x["price"]
+                return (x["sell_price"] * 0.99) - x["price"]
+            # target is 80% of the price, take 2% for tax
+            return (x["target"] / 0.82) - x["price"]
 
         await self.produce_graph(ctx, "tfm", "Average Profit (coins)", find_true_profit,
                                  self.do_profits_db_lookup)
