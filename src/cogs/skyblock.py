@@ -55,11 +55,12 @@ class Skyblock(commands.Cog):
                 ((datetime.datetime.utcnow() - self.last_cached_time[name]).total_seconds() / 3600) > 6:
             async with ctx.typing():
                 client = self.bot.mongo.client
-                current_datetime = PROFITS_START_DATE if db_lookup_func == self.do_profits_db_lookup else \
-                    FLIPS_START_DATE
+                # current_datetime = PROFITS_START_DATE if db_lookup_func == self.do_profits_db_lookup else \
+                #     FLIPS_START_DATE
                 tasks = []
                 now = datetime.datetime.now()
                 now = now.replace(tzinfo=datetime.timezone.utc)
+                current_datetime = now - datetime.timedelta(days=14)
                 while current_datetime < now:
                     next_datetime = current_datetime + datetime.timedelta(hours=1)
                     tasks.append(db_lookup_func(client, current_datetime, next_datetime,
