@@ -1,20 +1,14 @@
 import asyncio
-import concurrent.futures
 import re
-from functools import partial
-from io import BytesIO
 from multiprocessing import Manager
-from typing import Optional
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 from main import UtilsBot
 from src.checks.guild_check import monkey_check
 from src.checks.message_check import check_trusted_reaction
 from src.checks.role_check import is_staff
-from src.checks.user_check import is_owner
-from src.helpers.tiktok_helper import get_video, get_user
 from src.storage import config
 
 

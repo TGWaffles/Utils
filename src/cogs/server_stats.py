@@ -218,11 +218,11 @@ class Statistics(commands.Cog):
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
                 await member.remove_roles(motw_role)
-                await motw_channel.send(f"Goodbye {member.mention}! You will be missed!")
+                await motw_channel.send(f"Goodbye {member.display_name}! You will be missed!")
         for member in members:
             if motw_role not in member.roles:
                 await member.add_roles(motw_role)
-                await motw_channel.send(f"Welcome {member.mention}! I hope you enjoy your stay!")
+                await motw_channel.send(f"Welcome {member.display_name}! I hope you enjoy your stay!")
 
     async def _compile_snipe(self, message_found, channel):
         user_id = message_found.get("user_id")
