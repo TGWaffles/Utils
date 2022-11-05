@@ -106,16 +106,21 @@ class Statistics(commands.Cog):
                 if lowest_percent == 100:
                     done_guild_ids.append(guild_id)
                 update_channel = self.bot.get_channel(sent_message_channel_id)
-                update_message = await update_channel.fetch_message(sent_message_id)
+                if update_channel is not None:
+                    update_message = await update_channel.fetch_message(sent_message_id)
+                else:
+                    update_message = None
                 stars = int(round(lowest_percent / 10))
                 stars_string = "\\*" * stars
                 dashes = 10 - stars
                 if lowest_percent != 100:
-                    await update_message.edit(embed=self.bot.create_processing_embed(
-                        "Back-Dating Statistics",
-                        f"Progress: {stars_string}{'-' * dashes} ({lowest_percent:.2f}%)"))
+                    if update_message is not None:
+                        await update_message.edit(embed=self.bot.create_processing_embed(
+                            "Back-Dating Statistics",
+                            f"Progress: {stars_string}{'-' * dashes} ({lowest_percent:.2f}%)"))
                 else:
-                    await update_message.edit(embed=self.bot.create_completed_embed("Back-Dated Statistics!",
+                    if update_message is not None:
+                        await update_message.edit(embed=self.bot.create_completed_embed("Back-Dated Statistics!",
                                                                                     "Finished back-dating statistics!"))
             for guild_id in done_guild_ids:
                 unique_guild_ids.remove(guild_id)
