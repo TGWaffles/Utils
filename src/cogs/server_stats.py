@@ -203,7 +203,6 @@ class Statistics(commands.Cog):
         await self.bot.mongo.insert_channel_messages(this_batch)
         return this_batch[-1] if len(this_batch) != 0 else None
 
-    @tasks.loop(seconds=1800, count=None)
     async def update_motw(self):
         monkey_guild: discord.Guild = self.bot.get_guild(config.monkey_guild_id)
         motw_role = monkey_guild.get_role(config.motw_role_id)
@@ -212,22 +211,37 @@ class Statistics(commands.Cog):
             results = await self.bot.loop.run_in_executor(pool, partial(get_guild_score, config.monkey_guild_id))
         results = results[:12]
         members = []
-        for user in results:
-            member = monkey_guild.get_member(user[0])
+        for motw_member in results:
+            member = monkey_guild.get_member(motw_member[0])
             if member is None:
-                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": user[0],
+                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": motw_member[0],
                                                                             "guild_id": monkey_guild.id}},
                                                                    {'$set': {"deleted": True}})
                 continue
             members.append(member)
+            if motw_role not in member.roles:
+                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": motw_member[0],
+                                                                            "guild_id": monkey_guild.id}},
+                                                                   {"$set": {"motw": datetime.datetime.utcnow()}})
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
                 await member.remove_roles(motw_role)
-                await motw_channel.send(f"Goodbye {member.display_name}! You will be missed!")
+                motw_member = await self.bot.mongo.discord_db.members.find_one({"_id": {"user_id": member.id,
+                                                                                "guild_id": monkey_guild.id}})
+                if motw_member is not None and "motw" in motw_member:
+                    delta = datetime.datetime.utcnow() - motw_member["motw"]
+                    duration = f"\nYou were here for {delta.days} days and {delta.seconds // 3600} hours!"
+                else:
+                    duration = ""
+                await motw_channel.send(f"Goodbye {member.display_name}! You will be missed!{duration}")
+                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": member.id,
+                                                                            "guild_id": monkey_guild.id}},
+                                                                   {"$unset": {"motw": ""}})
         for member in members:
             if motw_role not in member.roles:
                 await member.add_roles(motw_role)
                 await motw_channel.send(f"Welcome {member.display_name}! I hope you enjoy your stay!")
+
 
     async def _compile_snipe(self, message_found, channel):
         user_id = message_found.get("user_id")
