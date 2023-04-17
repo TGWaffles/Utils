@@ -108,7 +108,7 @@ class HypixelAPI:
                         waited_event = await self.request_queue.get()
                         this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
                     await asyncio.sleep((self.ratelimit_reset_time - datetime.datetime.now()).total_seconds())
-                self.ratelimit_remaining = 120
+                self.ratelimit_remaining = 60
             for i in range(self.ratelimit_remaining):
                 waited_event = await self.request_queue.get()
                 this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
