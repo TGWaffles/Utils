@@ -531,7 +531,8 @@ class Hypixel(commands.Cog):
             await self.delete_channel_from_all_users(channel_id)
             return
         history = await channel.history(limit=None, oldest_first=True).flatten()
-        editable_messages = [message for message in history if message.author == self.bot.user]
+        # Discord imposed a limit on how old messages can be edited, so we have to purge the channel if it's too old
+        editable_messages = [message for message in history if message.author == self.bot.user and message.created_at > datetime.datetime.now() - datetime.timedelta(minutes=55)]
         member_files = [member["file"] for member in our_members]
         if (len(editable_messages) != len(our_members) or
                 len([message for message in editable_messages if len(message.embeds) == 1]) != len(our_members)):
