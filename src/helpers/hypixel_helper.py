@@ -299,14 +299,14 @@ def get_file_for_member(member):
     return final_file
 
 
-def extrapolate_threat_index(input_threat_indexes: list[int], amount):
+def extrapolate_threat_index(input_threat_indexes: list[int], target):
     a, b, c, d = run_curve_fit(input_threat_indexes)
     print(a)
     print(b)
     print(c)
     print(d)
-    if a > 0 and b != 0 and amount > d:
-        return round(((math.log(amount - d) - c * math.log(a)) / (b * math.log(a))) -
+    if a > 0 and b != 0 and target > d and a != 1:
+        return round((((math.log(target - d) / math.log(a)) - c) / b) -
                      (len(input_threat_indexes) - 1), 2)
     else:
         return float("inf")
