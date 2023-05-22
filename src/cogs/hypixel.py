@@ -220,15 +220,19 @@ class Hypixel(commands.Cog):
             else:
                 same_file = await self.bot.loop.run_in_executor(pool, partial(are_equal, last_file, member_file))
                 if same_file:
+                    print(f"Player {player['name']} has not changed.")
                     member_file.close()
                     member_file = last_file
                 else:
+                    print(f"Player {player['name']} has changed!")
                     last_file.close()
         else:
             # If we're resetting, mark the image to be changed in the embed.
             same_file = False
         player["file"] = member_file.read()
         player["unchanged"] = same_file
+        if not same_file:
+            print(f"Player {player['name']} has changed!")
         self.user_to_files[player["name"].lower()] = (player["file"], datetime.datetime.now())
         # Remember to close the file since we're only storing the raw bytes.
         member_file.close()
@@ -533,14 +537,13 @@ class Hypixel(commands.Cog):
         history = await channel.history(limit=None, oldest_first=True).flatten()
         # Discord imposed a limit on how old messages can be edited, so we have to purge the channel if it's too old
         editable_messages = [message for message in history if message.author == self.bot.user and message.created_at > datetime.datetime.now() - datetime.timedelta(minutes=55)]
-        member_files = [member["file"] for member in our_members]
         if (len(editable_messages) != len(our_members) or
                 len([message for message in editable_messages if len(message.embeds) == 1]) != len(our_members)):
             await channel.purge(limit=None)
             new_messages = True
         else:
             new_messages = False
-        for member, file in zip(our_members, member_files):
+        for member in our_members:
             token = secrets.token_urlsafe(6).replace("-", "")
             embed = await self.get_user_embed(member)
             embed.set_image(url="https://hypixel.thom.club/{}-{}.png".format(member["name"], token))
@@ -549,6 +552,8 @@ class Hypixel(commands.Cog):
             else:
                 embed_member_name = editable_messages[i].embeds[0].title
                 if embed_member_name != member["name"] or not member["unchanged"]:
+                    print("Editing message {} to {}".format(embed_member_name, member["name"]))
+                    print("Unchanged: {}".format(member["unchanged"]))
                     await editable_messages[i].edit(embed=embed)
                 i += 1
 
@@ -617,8 +622,8 @@ class Hypixel(commands.Cog):
             players_query = self.hypixel_db.players.find()
             all_players = await players_query.to_list(length=None)
             now = datetime.datetime.now()
-            # Completely refresh the embeds every 3 minutes. Just so last update time isn't more than 3 mins ago.
-            reset = (now - self.last_reset).total_seconds() > 180
+            # Completely refresh the embeds every 10 minutes. Just so last update time isn't more than 10 mins ago.
+            reset = (now - self.last_reset).total_seconds() > 600
             # Fetches hypixel data in the main thread, then
             # runs a pool of processes (machine core count simultaneously) to generate the player images.
             member_futures = []
