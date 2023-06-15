@@ -212,10 +212,10 @@ class Statistics(commands.Cog):
             results = await self.bot.loop.run_in_executor(pool, partial(get_guild_score, config.monkey_guild_id))
         results = results[:12]
         members = []
-        for user in results:
-            member = monkey_guild.get_member(user[0])
+        for motw_member in results:
+            member = monkey_guild.get_member(motw_member[0])
             if member is None:
-                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": user[0],
+                await self.bot.mongo.discord_db.members.update_one({"_id": {"user_id": motw_member[0],
                                                                             "guild_id": monkey_guild.id}},
                                                                    {'$set': {"deleted": True}})
                 continue
@@ -223,10 +223,21 @@ class Statistics(commands.Cog):
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
                 await member.remove_roles(motw_role)
-                await motw_channel.send(f"Goodbye {member.display_name}! You will be missed!")
+                motw_member = await self.bot.mongo.finlay.motw.find_one_and_delete(
+                    {"_id": {"user_id": member.id, "guild_id": monkey_guild.id}})
+                if motw_member is not None and "timestamp" in motw_member:
+                    delta = datetime.datetime.utcnow() - motw_member["timestamp"]
+                    duration = f"\nYou were here for {delta.days} days and {delta.seconds // 3600} hours!"
+                else:
+                    duration = ""
+                await motw_channel.send(f"Goodbye {member.display_name}! You will be missed!{duration}")
         for member in members:
             if motw_role not in member.roles:
                 await member.add_roles(motw_role)
+                await self.bot.mongo.finlay.motw.update_one({"_id": {"user_id": member.id,
+                                                                     "guild_id": monkey_guild.id}},
+                                                            {"$set": {"timestamp": datetime.datetime.utcnow()}},
+                                                            upsert=True)
                 await motw_channel.send(f"Welcome {member.display_name}! I hope you enjoy your stay!")
 
     async def _compile_snipe(self, message_found, channel):
