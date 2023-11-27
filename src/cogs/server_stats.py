@@ -223,7 +223,7 @@ class Statistics(commands.Cog):
         for member in monkey_guild.members:
             if motw_role in member.roles and member not in members:
                 await member.remove_roles(motw_role)
-                motw_member = await self.bot.mongo.finlay.motw.find_one_and_delete(
+                motw_member = await self.bot.mongo.client.finlay.motw.find_one_and_delete(
                     {"_id": {"user_id": member.id, "guild_id": monkey_guild.id}})
                 if motw_member is not None and "timestamp" in motw_member:
                     delta = datetime.datetime.utcnow() - motw_member["timestamp"]
@@ -234,7 +234,7 @@ class Statistics(commands.Cog):
         for member in members:
             if motw_role not in member.roles:
                 await member.add_roles(motw_role)
-                await self.bot.mongo.finlay.motw.update_one({"_id": {"user_id": member.id,
+                await self.bot.mongo.client.finlay.motw.update_one({"_id": {"user_id": member.id,
                                                                      "guild_id": monkey_guild.id}},
                                                             {"$set": {"timestamp": datetime.datetime.utcnow()}},
                                                             upsert=True)
