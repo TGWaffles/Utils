@@ -149,7 +149,7 @@ class OGCog(commands.Cog):
         start_embed = discord.Embed(title="Doing all OGs.", description="I will now start to process all messages "
                                                                         "until the predefined OG date.",
                                     colour=discord.Colour.orange())
-        processing_message = await ctx.reply(embed=start_embed)
+        processing_message: discord.Message = await ctx.reply(embed=start_embed)
         last_edit = datetime.datetime.now()
         for channel in ctx.guild.text_channels:
             async for message in channel.history(limit=None, before=og_date.replace(tzinfo=None), oldest_first=True):
@@ -162,7 +162,11 @@ class OGCog(commands.Cog):
                                               channel.mention), colour=discord.Colour.orange())
                     embed.set_author(name=author.name, icon_url=author.avatar_url)
                     embed.timestamp = message.created_at
-                    await processing_message.edit(embed=embed)
+                    if (datetime.datetime.now().replace(tzinfo=datetime.timezone.utc) - processing_message.created_at.replace(tzinfo=datetime.timezone.utc)).total_seconds() > 60*60:
+                        # Original message was sent longer than an hour ago
+                        processing_message = await processing_message.reply(embed=embed)
+                    else:
+                        await processing_message.edit(embed=embed)
                     last_edit = datetime.datetime.now()
                 if str(author.id) not in message_member_ids.keys():
                     join_date = message.created_at.replace(tzinfo=datetime.timezone.utc)
