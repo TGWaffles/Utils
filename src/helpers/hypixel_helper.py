@@ -37,12 +37,17 @@ class CustomAsyncDeque(asyncio.Queue):
             pass
         self._queue.append(item)
 
-    def peek(self):
+    def peek_nowait(self):
         if self.empty():
             return None
         item = self._queue.popleft()
         self._queue.appendleft(item)
         return item
+
+    async def peek(self):
+        next_item = await self.get()
+        self._queue.appendleft(next_item)
+        return next_item
 
 
 class HypixelAPI:
@@ -53,14 +58,20 @@ class HypixelAPI:
         self.ratelimit_remaining = 1
         self.ratelimit_reset_time = datetime.datetime.now()
         self.ratelimit_lock = asyncio.Lock()
+        self.check_requests_event = asyncio.Event()
 
     async def safe_request(self, endpoint, parameters=None, prioritize=False):
         returned_json = {}
         completed_event = asyncio.Event()
         stored_task = (endpoint, parameters, completed_event, returned_json, prioritize)
         await self.request_queue.put(stored_task)
+        self.check_requests_event.set()
         await completed_event.wait()
         return returned_json
+
+    async def wait_till_ratelimit_reset(self):
+        await asyncio.sleep((self.ratelimit_reset_time - datetime.datetime.now()).total_seconds())
+        self.check_requests_event.set()
 
     async def make_request(self, waited_event):
         async with aiohttp.ClientSession() as session:
@@ -101,15 +112,29 @@ class HypixelAPI:
     async def queue_loop(self):
         while True:
             this_loop_tasks = []
-            if self.ratelimit_remaining < 10:
+            # Less than 100 requests remaining, only run priority requests until reset time.
+            if self.ratelimit_remaining < 100:
+                self.check_requests_event.clear()
+                wait_till_reset = asyncio.get_event_loop().create_task(self.wait_till_ratelimit_reset())
                 while datetime.datetime.now() < self.ratelimit_reset_time:
-                    peek_item = self.request_queue.peek()
-                    if peek_item is not None and peek_item[4] and self.ratelimit_remaining != 0:
+                    if self.ratelimit_remaining == 0:
+                        # Just wait until the ratelimit resets.
+                        await wait_till_reset
+                        continue
+                    # Waits until an item is available in the request queue, then returns it.
+                    peek_item = await self.request_queue.peek()
+                    if not peek_item[4]:
+                        # not a priority request. this will now stay in the queue, so we wait until
+                        # either the ratelimit resets or a priority request is available.
+                        await self.check_requests_event.wait()
+                    if peek_item[4] and self.ratelimit_remaining != 0:
                         waited_event = await self.request_queue.get()
+                        # Next loop depends on the ratelimit remaining, so we decrement it early.
+                        self.ratelimit_remaining -= 1
                         this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
-                    await asyncio.sleep((self.ratelimit_reset_time - datetime.datetime.now()).total_seconds())
                 self.ratelimit_remaining = 60
-            for i in range(self.ratelimit_remaining):
+            for i in range(self.ratelimit_remaining - 100):
+                # Leave 100 requests remaining for priority requests.
                 waited_event = await self.request_queue.get()
                 this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
             try:
