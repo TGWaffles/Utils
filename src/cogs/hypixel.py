@@ -260,10 +260,13 @@ class Hypixel(commands.Cog):
         :param request: web request from browser (aiohttp)
         :return: web response to send to the browser
         """
+        user_agent = request.headers.get("User-Agent", "Unknown")
+        origin_ip = request.headers.get("CF-Connecting-IP", request.remote)
         # The username as specified in the routes.
         username = request.match_info['user']
         # The current time.
         now = datetime.datetime.now()
+        print(f"[{now.isoformat()}] Request for {username} from {origin_ip} with user agent {user_agent}.")
         # Checks cache for member, if not in cache data is None and last_timestamp is 0.
         data, last_timestamp = self.user_to_files.get(username.lower(), (None, datetime.datetime(1970, 1, 1)))
         # If the user is not cached or the cached version is more than 5 minutes old...
@@ -295,6 +298,9 @@ class Hypixel(commands.Cog):
         await response.prepare(request)
         # Sends image.
         await response.write(data)
+        finished_time = datetime.datetime.now()
+        print(f"[{finished_time.isoformat()}] Took {(finished_time-now).total_seconds():.2f}s for {username} Hypixel "
+              f"request from {origin_ip} with user agent {user_agent}.")
         # Closes connection.
         return response
 

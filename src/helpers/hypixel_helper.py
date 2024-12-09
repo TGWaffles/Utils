@@ -54,7 +54,7 @@ class HypixelAPI:
     def __init__(self, bot: UtilsBot, key):
         self.bot = bot
         self.key = key
-        self.request_queue = CustomAsyncDeque()
+        self.request_queue = CustomAsyncDeque(500)
         self.ratelimit_remaining = 1
         self.ratelimit_reset_time = datetime.datetime.now()
         self.ratelimit_lock = asyncio.Lock()
