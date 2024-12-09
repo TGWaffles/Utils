@@ -132,7 +132,7 @@ class HypixelAPI:
                         # Next loop depends on the ratelimit remaining, so we decrement it early.
                         self.ratelimit_remaining -= 1
                         this_loop_tasks.append(self.bot.loop.create_task(self.make_request(waited_event)))
-                self.ratelimit_remaining = 60
+                self.ratelimit_remaining = 300
             for i in range(self.ratelimit_remaining - 100):
                 # Leave 100 requests remaining for priority requests.
                 waited_event = await self.request_queue.get()
